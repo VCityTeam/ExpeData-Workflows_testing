@@ -207,7 +207,7 @@ $ df | grep data
 $            # Empty! There is no occurrence of /data as filesystem
 ```
 
-Reeferences:
+References:
 - https://minikube.sigs.k8s.io/docs/handbook/persistent_volumes/
 - https://minikube.sigs.k8s.io/docs/handbook/mount/
 - https://stackoverflow.com/questions/54993532/how-to-use-kubernetes-persistent-local-volumes-with-minikube-on-osx

@@ -1,5 +1,5 @@
  * [Upstream technical needs](Workflow_technical_needs.md)
  * AW (Argo Workflows) [desktop installation and usage notes](Argo_Worfkows_notes_and_tricks.md)
  * [Running the build examples and full workflow](Running_the_pipeline.md)
- * [AW evualtion results](Evaluation_result.md)
+ * [AW evaluation results](Evaluation_result.md)
  * [TODO list](Todo.md)

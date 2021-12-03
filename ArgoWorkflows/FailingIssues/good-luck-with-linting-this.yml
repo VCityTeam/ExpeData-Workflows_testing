@@ -1,6 +1,8 @@
-# Try finding them with the indications that the "argo lint" linter 
-# provides you...
-# If you get stuck read the last line of this file
+# As an exercice illustrating the difficulty of usage of the argo "linter"
+# (provided by the `argo lint` command), try finding the syntax errors embeded
+# in the following workflow with the sole indications that the linter provides 
+# you...
+# If you get stuck read the hints at the bottom of this file.
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
@@ -101,9 +103,9 @@ spec:
       - name: input_filename   # Absolute file path
       - name: output_dir       # Absolute directory path 
       - name: output_filename  # Filename (relative to output_dir)
-     # The container is bugged because it is misaligned: it should be dedented
-     # of two spaces. Note that, to be faire, in this case `argo lint` can be
-     # of some help
+     # The container entry is bugged because it is misaligned: it should be 
+     # dedented of two spaces less. Note that, to be fair, in this case 
+     # `argo lint` can be of some help
       container:
       image: vcity/3Duse
       workingDir: /root/3DUSE/Build/src/utils/cmdline/
@@ -127,4 +129,3 @@ spec:
 # Hint for finding the errors: some mistakes are annotated with the "bugged" 
 # string embedded in some comments. But try playing the game without this
 # help at first.
-

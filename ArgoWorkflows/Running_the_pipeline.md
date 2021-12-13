@@ -87,7 +87,7 @@ the `argo template delete --all` merciless command might do the trick.
 
 ```bash
 argo submit --watch --log full-workflow.yml \
-            --parameter-file demo_configuration_static.yaml
+            --parameter-file workflow_input.yaml
 ```
 
 In addition to the outputs printed at execution time, you can access to
@@ -102,7 +102,7 @@ Notice that you can overload any of the parameters at invocation stage with
 
 ```bash
 argo submit --watch --log full-workflow.yml \
-   --parameter-file demo_configuration_static.yaml \
+   --parameter-file workflow_input.yaml \
    -p pattern=BATI
 ```
 

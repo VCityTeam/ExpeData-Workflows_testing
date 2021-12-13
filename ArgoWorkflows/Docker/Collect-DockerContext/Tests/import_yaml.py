@@ -1,6 +1,6 @@
 import yaml
 
-with open('../../../demo_configuration_static.yaml') as stream:
+with open('../../../workflow_input.yaml') as stream:
   try:
     parsed_yaml=yaml.safe_load(stream)
     print(parsed_yaml)

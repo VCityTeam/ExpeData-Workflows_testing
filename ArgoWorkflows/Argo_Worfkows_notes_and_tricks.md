@@ -267,6 +267,9 @@ By default the execution of the tasks of the loop is done in parallel. Yet it is
 
 ## Tasks
 
+The Tasks term is here used with its
+[k8s terminology](https://kubernetes.io/docs/tasks/).
+
 ### Data persistence: mounting a host directory into the guest with Minikube
 
 When developing docker containers on a desktop host, and in order to offer 

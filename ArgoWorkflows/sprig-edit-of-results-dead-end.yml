@@ -63,8 +63,8 @@ spec:
         withParam: "{{workflow.parameters.boroughs}}"
         # LIMITATION:
         # it is NOT (or at least it does NOT seem) possible to define a
-        # [workflowStep]((at least it does NOT seem)) with an "outputs" field.
-        # Instead what is offered is called 
+        # workflowStep with an "outputs" field. Instead what is offered is 
+        # called 
         # [parameter aggregation](https://stackoverflow.com/questions/60569353/dynamic-fan-in-in-argo-workflows)
         # But this has some drawbacks since the aggregation process collects
         # the results of each step when sometimes it would be much simpler

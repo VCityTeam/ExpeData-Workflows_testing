@@ -17,7 +17,9 @@ spec:
   - name: main
     steps:
     - - name: collect-boroughs
-        template: collect-lyon-data
+        templateRef:
+          name: workflow-template-atomic-steps-template
+          template: collect-lyon-data-template
         arguments:
           parameters:
           - name: borough
@@ -40,29 +42,3 @@ spec:
           parameters:
           - name: message
             value: "{{steps.collect-boroughs.outputs.parameters.resulting-filenames}}"
-            
-  - name: collect-lyon-data
-    inputs:
-      parameters:
-      - name: borough
-      - name: pattern
-      - name: results_dir
-      - name: vintage
-    container:
-      image: vcity/collect_lyon_data
-      imagePullPolicy: Never
-      args: ["python3", "entrypoint.py",
-            "--borough",     "{{inputs.parameters.borough}}",
-            "--pattern",     "{{inputs.parameters.pattern}}",
-            "--results_dir", "{{inputs.parameters.results_dir}}",
-            "--vintage",     "{{inputs.parameters.vintage}}",
-            "--volume",      "{{workflow.parameters.persistedVolume}}"]
-      volumeMounts:
-       - name: workdir
-         mountPath: "{{workflow.parameters.persistedVolume}}"
-    outputs:
-      parameters:
-      - name: resulting-filenames
-        valueFrom:
-          path: "{{workflow.parameters.persistedVolume}}/{{inputs.parameters.results_dir}}/Resulting_Filenames.txt"
-

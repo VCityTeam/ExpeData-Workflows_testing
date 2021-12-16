@@ -76,10 +76,10 @@ docker build --no-cache -t vcity/3DUse ../Docker/3DUse-DockerContext/
 ### Populate the workflow library [workflowTemplates](https://github.com/argoproj/argo-workflows/blob/release-3.2/docs/workflow-templates.md)
 
 ```bash
-argo template create workflow-template/utils.yml
+argo template create workflow-template/*.yml
 ```
 
-You can assert the `templateRef` were properly created by e.g. listing them
+You can assert the `templateRef`s were properly created by e.g. listing them
 with `argo template list`. Note: in case some cleanup is required then
 the `argo template delete --all` merciless command might do the trick.
 
@@ -133,6 +133,19 @@ some disk space
 ```bash
 minikube ssh
 $ docker system prune   # and hit y for yes
+```
+
+### In case the minikube's k8s cluster gets corrupted
+
+When using `minikube` and the associated k8s ends up
+[SNAFU](https://en.wikipedia.org/wiki/SNAFU)
+a [partial](https://stackoverflow.com/questions/53871053/how-to-completely-purge-minikube-config-or-reset-ip-back-to-192-168-99-100)
+purge can be obtained with
+
+```bash
+minikube delete
+rm -rf ~/.minikube
+rm -rf ~/.kube
 ```
 
 ### Dealing with "using the emissary executor" error

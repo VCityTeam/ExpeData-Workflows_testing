@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: workflow-template-atomic-steps-template
+spec:
+  entrypoint: collect-lyon-data-template
+  templates:
+  - name: collect-lyon-data-template
+    inputs:
+      parameters:
+      - name: borough
+      - name: pattern
+      - name: results_dir
+      - name: vintage
+      - name: persistedVolume
+    container:
+      image: vcity/collect_lyon_data
+      imagePullPolicy: Never
+      args: ["python3", "entrypoint.py",
+            "--borough",     "{{inputs.parameters.borough}}",
+            "--pattern",     "{{inputs.parameters.pattern}}",
+            "--results_dir", "{{inputs.parameters.results_dir}}",
+            "--vintage",     "{{inputs.parameters.vintage}}",
+            "--volume",      "{{inputs.parameters.persistedVolume}}"]
+      volumeMounts:
+       - name: workdir
+         mountPath: "{{inputs.parameters.persistedVolume}}"
+    outputs:
+      parameters:
+      - name: resulting-filenames
+        valueFrom:
+          path: "{{inputs.parameters.persistedVolume}}/{{inputs.parameters.results_dir}}/Resulting_Filenames.txt"
+  - name: split-buildings-template
+    inputs:
+      parameters:
+      # Absolute file path
+      - name: input_filename
+      # Absolute directory path 
+      - name: output_dir
+      # Filename (relative to output_dir)
+      - name: output_filename
+    container:
+      image: vcity/3Duse
+      imagePullPolicy: Never
+      workingDir: /root/3DUSE/Build/src/utils/cmdline/
+      # https://github.com/VCityTeam/UD-Reproducibility/blob/master/Computations/3DTiles/LyonTemporal/PythonCallingDocker/docker_split_buildings.py
+      args: ["splitCityGMLBuildings",
+            "--input-file",      "{{inputs.parameters.input_filename}}",
+            "--output-filename", "{{inputs.parameters.output_filename}}",
+            "--output-dir",      "{{inputs.parameters.output_dir}}"]

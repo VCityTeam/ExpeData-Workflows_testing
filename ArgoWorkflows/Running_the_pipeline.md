@@ -86,6 +86,11 @@ the `argo template delete --all` merciless command might do the trick.
 ### Run the pipeline
 
 ```bash
+\rm -fr junk     # Remove possible previous results to avoid collisions 
+argo submit --watch --log just-collect.yml  --parameter-file just-collect-input.yaml 
+```
+
+```bash
 argo submit --watch --log full-workflow.yml \
             --parameter-file workflow_input.yaml
 ```
@@ -113,7 +118,7 @@ argo submit --watch --log full-workflow.yml \
 When running the pipeline (with `argo submit`) you might get the following
 error message
 
-```
+```bash
 Error (exit code 1): failed to put file: Storage backend has reached its 
 minimum free disk threshold. Please delete a few objects to proceed
 ```
@@ -128,6 +133,29 @@ some disk space
 ```bash
 minikube ssh
 $ docker system prune   # and hit y for yes
+```
+
+### Dealing with "using the emissary executor" error
+
+At runtime (i.e. when using `argo submit`) one gets an error message of the
+form
+
+```bash
+Message:  step group deemed errored due to child parameters-[...] 
+error: when using the emissary executor you must either explicitly specify
+the command, or list the image command in the index
+```
+
+This seems to be due to the fact that (starting from argo version > 3.2) the
+default executor is 
+[not docker anymore but emissary](https://argoproj.github.io/argo-workflows/workflow-executors/#emissary-emissary).
+Although the 
+[docker executor is announced as deprecated](https://argoproj.github.io/argo-workflows/workflow-executors/#docker-docker)
+we can force (within the configmap) the executor to be `docker` with the 
+following command
+
+```bash
+kubectl -n argo patch cm workflow-controller-configmap -p '{"data": {"containerRuntimeExecutor": "docker"}}'
 ```
 
 ## Developers

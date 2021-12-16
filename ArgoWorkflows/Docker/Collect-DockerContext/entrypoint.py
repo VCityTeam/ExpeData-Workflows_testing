@@ -1,12 +1,10 @@
 import argparse
 import logging
 import os.path
-import shutil
 import sys
-import yaml
 import psutil
 
-from lyon_metropole_dowload_and_sanitize import LyonMetropoleDowloadAndSanitize
+from city_gml_files_from_archive import CityGMLFileFromArchive
 
 
 def ParseCommandLine():
@@ -54,7 +52,6 @@ def ParseCommandLine():
 
 def ReconstructInputParameters():
     cli_args = ParseCommandLine()
-    print("Entrypoint: parsed arguments", cli_args)
 
     # The downstream code (using the input parameters) was written with the
     # assumption that it will handle over an object out of with that code will
@@ -79,26 +76,28 @@ def ReconstructInputParameters():
         )
     )
     if len(volume_present) == 1:
-        print("The persisted volume ", persisted_output_dir, " is duly mounted")
-    else:
-        print(
-            "The persisted volume directory ",
-            persisted_output_dir,
-            " does NOT seem to be properly mounted.",
+        logging.info(
+            f"The persisted volume directory {persisted_output_dir}is duly mounted"
         )
-        # We must at least assert that the directory exists:
+    else:
+        # The persisted volume directory does NOT seem to be properly mounted
+        # but this could be due to a failure of usage of
+        # psutil.disk_partitions(). Let use assume this is the case and still
+        # try to assert that the directory exists and is accessible:
         if not os.path.isdir(persisted_output_dir):
-            print("Unfound persisted volume directory: ", persisted_output_dir)
-            print("Exiting")
+            logging.info(f"Unfound persisted volume directory: {persisted_output_dir}")
+            logging.info("Exiting")
             sys.exit(1)
         else:
-            print("Yet the persisted volume directory seems to exist.")
             # Just to give some debug feedback by listing the files
             # Refer to
             # https://stackoverflow.com/questions/3207219/how-do-i-list-all-files-of-a-directory
             # for the one liner on listing files
             filenames = next(os.walk(persisted_output_dir), (None, None, []))[2]
-            print("List of files within persisted volume directory: ", filenames)
+            logging.info(f"Persisted volume directory file access check: {filenames}")
+            logging.info(
+                f"The persisted volume directory {persisted_output_dir}is duly mounted"
+            )
 
     # Then, within the container, the configured results directory path must be
     # prepended with the persisted volume directory path.
@@ -108,14 +107,11 @@ def ReconstructInputParameters():
         if not os.path.isdir(parameters.results_dir):
             print("FAILED TO CREATE RESULTS DIR:", parameters.results_dir)
             sys.exit(1)
-        else:
-            print("Results dir: ", parameters.results_dir, "successfully created.")
 
     return parameters
 
 
 parameters = ReconstructInputParameters()
-print("Entrypoint parameters: ", vars(parameters))
 
 log_filename = os.path.join(parameters.results_dir, "Download_And_Sanitize.log")
 logger = logging.getLogger(__name__)
@@ -127,17 +123,26 @@ logging.basicConfig(
     filemode="w",
 )
 
-download = LyonMetropoleDowloadAndSanitize(parameters)
+archive_to_download = CityGMLFileFromArchive(
+    borough=parameters.borough,
+    pattern=parameters.pattern,
+    vintage=parameters.vintage,
+    output_dir=parameters.results_dir,
+)
+archive_to_download.set_tidy_up()  # Comment out this line when debugging
 
-logging.info("##################DemoFullWorkflow##### 1: Starting download.")
-download.run()
-if not download.assert_output_files_exist():
-    logging.info("##################DemoFullWorkflow##### 1: Failed.")
+
+logging.info("##################DowloadAndSanitize##### 1: Starting download.")
+archive_to_download.extract()
+if not archive_to_download.assert_file_exists():
+    logging.info("##################DowloadAndSanitize##### 1: Failed.")
     sys.exit(1)
-logging.info("##################DemoFullWorkflow##### 1: Resulting files: ")
-[logging.info("   " + file) for file in download.get_resulting_filenames()]
-with open(os.path.join(parameters.results_dir, "Resulting_Filenames.txt"), "a+") as f:
-    [f.write(file + "\n") for file in download.get_resulting_filenames()]
-logging.info("##################DemoFullWorkflow##### 1: Done.")
+logging.info("##################DowloadAndSanitize##### 1: Resulting file: ")
+logging.info(f"    {archive_to_download.get_filename()}")
 
-print("Exiting with success.")
+# The following file creation is required because of the calling workflow
+# that handles the dataflow and thus needs to retrieve the produced output
+# path:
+with open(os.path.join(parameters.results_dir, "Resulting_Filenames.txt"), "a+") as f:
+    f.write(archive_to_download.get_filename())
+logging.info("##################DowloadAndSanitize##### 1: Done.")

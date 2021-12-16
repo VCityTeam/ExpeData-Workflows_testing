@@ -6,7 +6,7 @@
 FROM python:3.7-buster
 
 COPY city_gml_files_from_archive.py ./
-COPY lyon_metropole_dowload_and_sanitize.py ./
+COPY DataPatches/ ./DataPatches/
 COPY entrypoint.py ./
 COPY pushd.py ./
 

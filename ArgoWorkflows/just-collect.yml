@@ -1,0 +1,68 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-
+spec:
+  entrypoint: main
+  volumes:
+  - name: workdir
+    hostPath:
+      path: /data/host
+  arguments:
+    parameters:
+    - name: persistedVolume   
+      value: /within-container-mount-point/
+
+  templates:
+  - name: main
+    steps:
+    - - name: collect-boroughs
+        template: collect-lyon-data
+        arguments:
+          parameters:
+          - name: borough
+            value: "{{item}}"
+          - name: pattern
+            value: "{{workflow.parameters.pattern}}"
+          - name: results_dir
+            value: "{{workflow.parameters.experiment_output_dir}}/stage_1/{{item}}_{{workflow.parameters.vintage}}"
+          - name: vintage
+            value: "{{workflow.parameters.vintage}}"
+          - name: persistedVolume
+            value: "{{workflow.parameters.persistedVolume}}"
+        withParam: "{{workflow.parameters.boroughs}}"
+            
+    - - name: print-file-names
+        templateRef:
+          name: workflow-template-utils-whalesay-template
+          template: whalesay-template
+        arguments:
+          parameters:
+          - name: message
+            value: "{{steps.collect-boroughs.outputs.parameters.resulting-filenames}}"
+            
+  - name: collect-lyon-data
+    inputs:
+      parameters:
+      - name: borough
+      - name: pattern
+      - name: results_dir
+      - name: vintage
+    container:
+      image: vcity/collect_lyon_data
+      imagePullPolicy: Never
+      args: ["python3", "entrypoint.py",
+            "--borough",     "{{inputs.parameters.borough}}",
+            "--pattern",     "{{inputs.parameters.pattern}}",
+            "--results_dir", "{{inputs.parameters.results_dir}}",
+            "--vintage",     "{{inputs.parameters.vintage}}",
+            "--volume",      "{{workflow.parameters.persistedVolume}}"]
+      volumeMounts:
+       - name: workdir
+         mountPath: "{{workflow.parameters.persistedVolume}}"
+    outputs:
+      parameters:
+      - name: resulting-filenames
+        valueFrom:
+          path: "{{workflow.parameters.persistedVolume}}/{{inputs.parameters.results_dir}}/Resulting_Filenames.txt"
+

@@ -109,7 +109,7 @@ RUN apt-get -y install cmake
 
 # Eventually install 3DUSE internal (embarked) dependencies
 RUN cd                                                 && \
-    git clone https://github.com/MEPP-team/3DUSE       && \
+    git clone https://github.com/VCityTeam/3DUSE       && \
     cd 3DUSE                                           && \
     cd externals/laslib                                && \
     mkdir Build                                        && \

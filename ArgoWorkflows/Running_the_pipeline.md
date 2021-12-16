@@ -70,7 +70,7 @@ docker pull refstudycentre/scratch-base:latest
 # https://stackoverflow.com/questions/25509828/can-a-docker-build-use-the-url-of-a-git-branch#27295336 )
 # we designate the Dockerfile through a relative path notation (which creates
 # an implicit dependency within this repository):
-docker build --no-cache -t vcity/3DUse ../Docker/3DUse-DockerContext/
+docker build --no-cache -t vcity/3duse ../Docker/3DUse-DockerContext/
 ```
 
 ### Populate the workflow library [workflowTemplates](https://github.com/argoproj/argo-workflows/blob/release-3.2/docs/workflow-templates.md)

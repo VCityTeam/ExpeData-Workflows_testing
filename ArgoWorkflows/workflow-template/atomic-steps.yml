@@ -23,8 +23,8 @@ spec:
             "--vintage",     "{{inputs.parameters.vintage}}",
             "--volume",      "{{inputs.parameters.persistedVolume}}"]
       volumeMounts:
-       - name: workdir
-         mountPath: "{{inputs.parameters.persistedVolume}}"
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"
     outputs:
       parameters:
       - name: resulting-filenames
@@ -39,12 +39,19 @@ spec:
       - name: output_dir
       # Filename (relative to output_dir)
       - name: output_filename
+      - name: persistedVolume
     container:
-      image: vcity/3Duse
+      image: vcity/3duse
       imagePullPolicy: Never
       workingDir: /root/3DUSE/Build/src/utils/cmdline/
-      # https://github.com/VCityTeam/UD-Reproducibility/blob/master/Computations/3DTiles/LyonTemporal/PythonCallingDocker/docker_split_buildings.py
       args: ["splitCityGMLBuildings",
-            "--input-file",      "{{inputs.parameters.input_filename}}",
-            "--output-filename", "{{inputs.parameters.output_filename}}",
-            "--output-dir",      "{{inputs.parameters.output_dir}}"]
+            "--input-file",  "{{inputs.parameters.persistedVolume}}{{inputs.parameters.input_filename}}",
+            "--output-file", "{{inputs.parameters.output_filename}}",
+            "--output-dir",  "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}"]
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"
+    outputs:
+      parameters:
+      - name: resulting-filenames
+        value: "{{inputs.parameters.output_dir}}/{{inputs.parameters.output_filename}}"

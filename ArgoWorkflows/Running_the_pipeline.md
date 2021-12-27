@@ -56,22 +56,21 @@ aligned with the workflow volume definition.
 # https://stackoverflow.com/questions/42564058/how-to-use-local-docker-images-with-minikube
 eval $(minikube docker-env)
 docker build -t vcity/collect_lyon_data Docker/Collect-DockerContext/
-```
-
-```bash
-# Really tiny container used as a trick (refer to workflow e.g. 
-# Examples/loading-json-fromValue.ym)
+docker build --no-cache -t vcity/3duse ../Docker/3DUse-DockerContext/
+docker build --no-cache -t vcity/citygml2stripper ../Docker/CityGML2Stripper-DockerContext/
 docker pull refstudycentre/scratch-base:latest
 ```
 
-```bash
-# Because docker build can NOT use the url of sub-directory of git repository
-# (refer e.g. to  
-# https://stackoverflow.com/questions/25509828/can-a-docker-build-use-the-url-of-a-git-branch#27295336 )
-# we designate the Dockerfile through a relative path notation (which creates
-# an implicit dependency within this repository):
-docker build --no-cache -t vcity/3duse ../Docker/3DUse-DockerContext/
-```
+Notes:
+
+* `refstudycentre/scratch-base` is a really tiny container used as a trick
+  (refer to workflow e.g. `Examples/loading-json-fromValue.yml`
+
+* `docker build` can NOT use the url of sub-directory of git repository (refer
+  e.g. to [this StackOverflow](https://stackoverflow.com/questions/25509828/can-a-docker-build-use-the-url-of-a-git-branch#27295336). This is why some
+  of the above `docker build` commands designate their Dockerfile arguments
+  through a relative path notation which creates an alas implicit dependency
+  (within this repository).
 
 ### Populate the workflow library [workflowTemplates](https://github.com/argoproj/argo-workflows/blob/release-3.2/docs/workflow-templates.md)
 
@@ -85,9 +84,11 @@ the `argo template delete --all` merciless command might do the trick.
 
 ### Run the pipeline
 
+Running the pipeline step by step
 ```bash
 \rm -fr junk     # Remove possible previous results to avoid collisions 
-argo submit --watch --log just-collect.yml  --parameter-file just-collect-input.yaml 
+argo submit --watch --log just-collect.yml --parameter-file input-2012-tiny-no_db.yaml
+argo submit --watch --log just-split.yml --parameter-file input-2012-tiny-no_db.yaml
 ```
 
 ```bash

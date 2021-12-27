@@ -1,0 +1,66 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-
+spec:
+  entrypoint: main
+  volumes:
+  - name: workdir
+    hostPath:
+      path: /data/host
+  arguments:
+    parameters:
+    - name: persistedVolume   
+      value: /within-container-mount-point/
+
+  templates:
+  - name: main
+    steps:
+    # Warning: this assumes that just-split (stage 2) was ran before
+    - - name: strip-gml-loop
+        template: strip-gml-template
+        arguments:
+          parameters:
+          - name: input_filename
+            value: "{{workflow.parameters.experiment_output_dir}}/stage_2/{{item}}_{{workflow.parameters.vintage}}/{{item}}_{{workflow.parameters.pattern}}_{{workflow.parameters.vintage}}_split.gml"
+          - name: output_dir
+            value: "{{workflow.parameters.experiment_output_dir}}/stage_3/{{item}}_{{workflow.parameters.vintage}}"
+          - name: output_filename
+            value: "{{item}}_{{workflow.parameters.pattern}}_{{workflow.parameters.vintage}}_stipped.gml"
+          - name: persistedVolume
+            value: "{{workflow.parameters.persistedVolume}}"
+        withParam: "{{workflow.parameters.boroughs}}"
+
+    - - name: print-file-names
+        templateRef:
+          name: workflow-template-utils-whalesay-template
+          template: whalesay-template
+        arguments:
+          parameters:
+          - name: message
+            value: "{{steps.strip-gml-loop.outputs.parameters.resulting-filenames}}"
+
+  - name: strip-gml-template
+    inputs:
+      parameters:
+      # Absolute file path
+      - name: input_filename
+      # Absolute directory path 
+      - name: output_dir
+      # Filename (relative to output_dir)
+      - name: output_filename
+      - name: persistedVolume
+    container:
+      image: vcity/citygml2stripper
+      imagePullPolicy: Never
+      # workingDir: is not necessary in this case
+      args: ["--input",      "{{inputs.parameters.persistedVolume}}{{inputs.parameters.input_filename}}",
+             "--output",     "{{inputs.parameters.output_filename}}",
+             "--output-dir", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}"]
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"
+    outputs:
+      parameters:
+      - name: resulting-filenames
+        value: "{{inputs.parameters.output_dir}}/{{inputs.parameters.output_filename}}"

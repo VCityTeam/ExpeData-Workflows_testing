@@ -79,3 +79,19 @@ spec:
       volumeMounts:
       - name: workdir
         mountPath: "{{inputs.parameters.persistedVolume}}"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: workflow-template-utils-sleep-template
+spec:
+  entrypoint: sleep-template
+  templates:
+  - name: sleep-template
+    inputs:
+      parameters:
+      - name: number-seconds
+    container:
+      image: busybox:latest
+      command: [ "sh", "-c", "--" ]
+      args: [ "sleep {{inputs.parameters.number-seconds}}" ] 

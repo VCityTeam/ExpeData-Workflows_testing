@@ -10,7 +10,7 @@ experiment_output_dir: 'junk'
 #  * setting up the docker containerized database after its creation 
 #  * the "client containers" to access it.
 #
-database_pg_name: 'citydb-test'
-database_pg_password: 'postgres'
-database_pg_port: '5435'
-database_pg_user: 'postgres'
+database_name: 'citydb-test'
+database_password: 'postgres'
+database_port: '5435'
+database_user: 'postgres'

@@ -12,6 +12,9 @@ spec:
       path: /data/host
   arguments:
     parameters:
+    - name: database_name
+    - name: database_password
+    - name: database_user
     - name: persistedVolume   
       value: /within-container-mount-point/
 
@@ -19,17 +22,19 @@ spec:
   - name: main
     steps:
     - - name: 3dcitydb-start-db
-        template: 3dcitydb-daemon
+        templateRef:
+          name: workflow-template-atomic-steps-template
+          template: 3dcitydb-daemon
         arguments:
           parameters:
           - name: database_name
-            value: "{{workflow.parameters.database_pg_name}}"
+            value: "{{workflow.parameters.database_name}}"
           - name: persistedVolume
             value: "{{workflow.parameters.persistedVolume}}"
           - name: password
-            value: "{{workflow.parameters.database_pg_password}}"
+            value: "{{workflow.parameters.database_password}}"
           - name: user
-            value: "{{workflow.parameters.database_pg_user}}"
+            value: "{{workflow.parameters.database_user}}"
 
     - - name: client-check
         template: 3dcitydb-client-check-template
@@ -41,51 +46,7 @@ spec:
             # to check that indeed the database is properly answering.
             # Note: for the syntax on handling the password to psql refer to
             # https://stackoverflow.com/questions/6523019/postgresql-scripting-psql-execution-with-password
-            value: "PGPASSWORD={{workflow.parameters.database_pg_password}} psql -h {{steps.3dcitydb-start-db.ip}} -p 5432 -U {{workflow.parameters.database_pg_user}} -d {{workflow.parameters.database_pg_name}} -c 'SELECT * FROM pg_catalog.pg_tables'"
-
-  - name: 3dcitydb-daemon
-    daemon: true                        # start 3dcitydb as a daemon
-    retryStrategy:
-      limit: 10                         # retry container if it fails
-    inputs:
-      parameters:
-      - name: persistedVolume
-      - name: database_name
-      - name: password
-      - name: user
-    container:
-      image: tumgis/3dcitydb-postgis:v4.0.2
-      imagePullPolicy: IfNotPresent
-      env:
-        - name: CITYDBNAME
-          value: "{{inputs.parameters.database_name}}"
-        - name: POSTGRES_PASSWORD
-          value: "{{inputs.parameters.password}}"
-        - name: POSTGRES_USER
-          value: "{{inputs.parameters.user}}"
-        # Hardwired parameters FIXME
-        # Notice that, in this particular case, this is a particulary lame
-        # practice because the following "knowledge" was manually extracted 
-        # from a specific set of data and manually burned in this workflow. 
-        # Change the input data and the workflow will fail when trying to
-        # import data to the DB
-        - name: SRID
-          value: '3946'
-        - name: SRSNAME
-          value: 'espg:3946'    
-      volumeMounts:
-        - name: workdir
-          mountPath: "{{inputs.parameters.persistedVolume}}"   
-      readinessProbe:                   # wait for readinessProbe to succeed
-        # References:
-        # - https://argoproj.github.io/argo-workflows/fields/#probe
-        # - https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
-        # - https://github.com/bitnami/charts/issues/2682 (for inspiration)
-        exec:
-            command:
-            - /bin/sh
-            - -c
-            - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+            value: "PGPASSWORD={{workflow.parameters.database_password}} psql -h {{steps.3dcitydb-start-db.ip}} -p 5432 -U {{workflow.parameters.database_user}} -d {{workflow.parameters.database_name}} -c 'SELECT * FROM pg_catalog.pg_tables'"
 
   - name: 3dcitydb-client-check-template
     inputs:

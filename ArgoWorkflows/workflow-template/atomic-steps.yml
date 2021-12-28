@@ -81,3 +81,48 @@ spec:
       parameters:
       - name: resulting-filenames
         value: "{{inputs.parameters.output_dir}}/{{inputs.parameters.output_filename}}"
+
+  - name: 3dcitydb-daemon
+    daemon: true                        # start 3dcitydb as a daemon
+    retryStrategy:
+      limit: 10                         # retry container if it fails
+    inputs:
+      parameters:
+      - name: persistedVolume
+      - name: database_name
+      - name: password
+      - name: user
+    container:
+      image: tumgis/3dcitydb-postgis:v4.0.2
+      # Reference: https://3dcitydb-docs.readthedocs.io/en/latest/3dcitydb/docker.html#
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: CITYDBNAME
+          value: "{{inputs.parameters.database_name}}"
+        - name: POSTGRES_PASSWORD
+          value: "{{inputs.parameters.password}}"
+        - name: POSTGRES_USER
+          value: "{{inputs.parameters.user}}"
+        # Hardwired parameters FIXME
+        # Notice that, in this particular case, this is a particulary lame
+        # practice because the following "knowledge" was manually extracted 
+        # from a specific set of data and manually burned in this workflow. 
+        # Change the input data and the workflow will fail when trying to
+        # import data to the DB
+        - name: SRID
+          value: '3946'
+        - name: SRSNAME
+          value: 'espg:3946'    
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"   
+      readinessProbe:                   # wait for readinessProbe to succeed
+        # References:
+        # - https://argoproj.github.io/argo-workflows/fields/#probe
+        # - https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
+        # - https://github.com/bitnami/charts/issues/2682 (for inspiration)
+        exec:
+            command:
+            - /bin/sh
+            - -c
+            - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432

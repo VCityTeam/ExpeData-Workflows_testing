@@ -1,0 +1,16 @@
+# Only the parameters that concern the 3dcity data base configuration
+---
+
+# The output directory where all the results of the computational pipeline
+# will be placed.
+experiment_output_dir: 'junk'
+
+# At some stage the computational pipeline will make use of a 3DCityDB database
+# requiring the following "credentials" that will be used both for
+#  * setting up the docker containerized database after its creation 
+#  * the "client containers" to access it.
+#
+database_pg_name: 'citydb-test'
+database_pg_password: 'postgres'
+database_pg_port: '5435'
+database_pg_user: 'postgres'

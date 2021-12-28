@@ -264,6 +264,28 @@ By default the execution of the tasks of the loop is done in parallel. Yet it is
 
 - [Retrying failed/errored steps](https://github.com/argoproj/argo-workflows/tree/master/examples#retrying-failed-or-errored-steps)
 
+### Technical notes
+
+### Concerning Port forwarding
+
+Assume we wish to describe a workflow that consumes two postgres database
+(servers). When using `docker-compose` we would need to distinguish the two
+instances of postgres container through the usage
+[port redirection/forwarding](https://docs.docker.com/config/containers/container-networking/).
+For example the first postgres container could publish default port `5432` (on
+the native host) while the second instance would use port forwarding to publish
+its port as e.g. `5433` (on the native host with a redirection to the container
+internal port `5432`).
+
+Within the kubernetes way of things, each pods gets attributed with its own
+IP number. The distinction between the two postgres instances can thus be done
+at the IP level has opposed to the port level (on condition that such container
+do not run on the same pod ?).
+This might explain why AW documentation doesn't seem to offer a syntax for
+redirection 
+([`containerPort`](https://argoproj.github.io/argo-workflows/fields/#containerport)
+look like a simple exposure of a port as opposed to redirection).
+
 ---
 
 ## Tasks

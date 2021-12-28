@@ -18,7 +18,9 @@ spec:
     steps:
     # Warning: this assumes that just-split (stage 2) was ran before
     - - name: strip-gml-loop
-        template: strip-gml-template
+        templateRef:
+          name: workflow-template-atomic-steps-template
+          template: strip-gml-template
         arguments:
           parameters:
           - name: input_filename
@@ -39,28 +41,4 @@ spec:
           parameters:
           - name: message
             value: "{{steps.strip-gml-loop.outputs.parameters.resulting-filenames}}"
-
-  - name: strip-gml-template
-    inputs:
-      parameters:
-      # Absolute file path
-      - name: input_filename
-      # Absolute directory path 
-      - name: output_dir
-      # Filename (relative to output_dir)
-      - name: output_filename
-      - name: persistedVolume
-    container:
-      image: vcity/citygml2stripper
-      imagePullPolicy: Never
-      # workingDir: is not necessary in this case
-      args: ["--input",      "{{inputs.parameters.persistedVolume}}{{inputs.parameters.input_filename}}",
-             "--output",     "{{inputs.parameters.output_filename}}",
-             "--output-dir", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}"]
-      volumeMounts:
-        - name: workdir
-          mountPath: "{{inputs.parameters.persistedVolume}}"
-    outputs:
-      parameters:
-      - name: resulting-filenames
-        value: "{{inputs.parameters.output_dir}}/{{inputs.parameters.output_filename}}"
+            

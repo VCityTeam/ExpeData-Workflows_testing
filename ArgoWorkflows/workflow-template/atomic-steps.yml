@@ -30,6 +30,7 @@ spec:
       - name: resulting-filenames
         valueFrom:
           path: "{{inputs.parameters.persistedVolume}}/{{inputs.parameters.results_dir}}/Resulting_Filenames.txt"
+ 
   - name: split-buildings-template
     inputs:
       parameters:
@@ -48,6 +49,31 @@ spec:
             "--input-file",  "{{inputs.parameters.persistedVolume}}{{inputs.parameters.input_filename}}",
             "--output-file", "{{inputs.parameters.output_filename}}",
             "--output-dir",  "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}"]
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"
+    outputs:
+      parameters:
+      - name: resulting-filenames
+        value: "{{inputs.parameters.output_dir}}/{{inputs.parameters.output_filename}}"
+
+  - name: strip-gml-template
+    inputs:
+      parameters:
+      # Absolute file path
+      - name: input_filename
+      # Absolute directory path 
+      - name: output_dir
+      # Filename (relative to output_dir)
+      - name: output_filename
+      - name: persistedVolume
+    container:
+      image: vcity/citygml2stripper
+      imagePullPolicy: Never
+      # workingDir: is not necessary in this case
+      args: ["--input",      "{{inputs.parameters.persistedVolume}}{{inputs.parameters.input_filename}}",
+             "--output",     "{{inputs.parameters.output_filename}}",
+             "--output-dir", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}"]
       volumeMounts:
         - name: workdir
           mountPath: "{{inputs.parameters.persistedVolume}}"

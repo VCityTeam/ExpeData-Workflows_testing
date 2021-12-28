@@ -85,10 +85,12 @@ the `argo template delete --all` merciless command might do the trick.
 ### Run the pipeline
 
 Running the pipeline step by step
+
 ```bash
 \rm -fr junk     # Remove possible previous results to avoid collisions 
 argo submit --watch --log just-collect.yml --parameter-file input-2012-tiny-no_db.yaml
 argo submit --watch --log just-split.yml --parameter-file input-2012-tiny-no_db.yaml
+argo submit --watch --log just-strip.yml --parameter-file input-2012-tiny-no_db.yaml
 ```
 
 ```bash
@@ -179,6 +181,14 @@ kubectl -n argo patch cm workflow-controller-configmap -p '{"data": {"containerR
 ```bash
 # Install kub eval refer to https://www.kubeval.com/installation/
 brew install kubeval
+```
+
+### Running the examples
+
+```bash
+eval $(minikube docker-env)    # Just in case docker builds get required
+argo template create workflow-template/*.yml
+argo submit --watch --log Examples/example-3dcitydb-daemon.yml  --parameter-file input-just_db.yaml 
 ```
 
 ## The process of adapting PythonCallingDocker

@@ -18,20 +18,30 @@ spec:
   templates:
   - name: main
     steps:
-    # Warning: this assumes that just-split (stage 2) was ran before
     - - name: 3dcitydb-start-db
         template: 3dcitydb-daemon
         arguments:
           parameters:
+          - name: database_name
+            value: "{{workflow.parameters.database_pg_name}}"
           - name: persistedVolume
             value: "{{workflow.parameters.persistedVolume}}"
+          - name: password
+            value: "{{workflow.parameters.database_pg_password}}"
+          - name: user
+            value: "{{workflow.parameters.database_pg_user}}"
 
-    - - name: sleep
-        template: sleep-template
+    - - name: client-check
+        template: 3dcitydb-client-check-template
         arguments:
           parameters:
-          - name: number-seconds
-            value: "60"
+          - name: command
+            # Immediatly (that is as soon as the argo engine considers the
+            # database is up) submit a dummy query (list __all__ tables) just 
+            # to check that indeed the database is properly answering.
+            # Note: for the syntax on handling the password to psql refer to
+            # https://stackoverflow.com/questions/6523019/postgresql-scripting-psql-execution-with-password
+            value: "PGPASSWORD={{workflow.parameters.database_pg_password}} psql -h {{steps.3dcitydb-start-db.ip}} -p 5432 -U {{workflow.parameters.database_pg_user}} -d {{workflow.parameters.database_pg_name}} -c 'SELECT * FROM pg_catalog.pg_tables'"
 
   - name: 3dcitydb-daemon
     daemon: true                        # start 3dcitydb as a daemon
@@ -40,16 +50,20 @@ spec:
     inputs:
       parameters:
       - name: persistedVolume
+      - name: database_name
+      - name: password
+      - name: user
     container:
       image: tumgis/3dcitydb-postgis:v4.0.2
+      imagePullPolicy: IfNotPresent
       env:
         - name: CITYDBNAME
-          value: "{{workflow.parameters.database_pg_name}}"
+          value: "{{inputs.parameters.database_name}}"
         - name: POSTGRES_PASSWORD
-          value: "{{workflow.parameters.database_pg_password}}"
+          value: "{{inputs.parameters.password}}"
         - name: POSTGRES_USER
-          value: "{{workflow.parameters.database_pg_user}}"
-        # Hardwired parameters
+          value: "{{inputs.parameters.user}}"
+        # Hardwired parameters FIXME
         # Notice that, in this particular case, this is a particulary lame
         # practice because the following "knowledge" was manually extracted 
         # from a specific set of data and manually burned in this workflow. 
@@ -73,11 +87,13 @@ spec:
             - -c
             - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
 
-  - name: sleep-template
+  - name: 3dcitydb-client-check-template
     inputs:
       parameters:
-      - name: number-seconds
+      - name: command
     container:
-      image: ubuntu:latest
-      command: [ "/bin/bash", "-c", "--" ]
-      args: [ "sleep {{inputs.parameters.number-seconds}}" ]
+      image: postgres:latest
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/bash", "-c" ]
+      args: [ "{{inputs.parameters.command}}" ]
+

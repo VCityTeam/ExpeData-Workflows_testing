@@ -1,0 +1,150 @@
+# The problem: 
+# when running this workflow with e.g.
+#    argo submit --watch --log FailingIssues/postgres-pgdata-permission-issue.yml --parameter-file input-just_db.yaml
+# one gets the following error message
+#    chmod: changing permissions of '/within-container-mount-point/junk/pgdata-results': Operation not permitted
+# that gets triggered by 3dcitydb-start-db.
+#
+# This is a well known issue (at least of the docker community) as illustrated
+# by the following stackoverflow that cleanly describes the problem as well
+# as possible workarounds (that seem to fail in the argo workflows context): 
+#    https://stackoverflow.com/questions/60192819/cant-get-either-postgres-permissions-or-pvc-working-in-aks
+#
+# Search below for the "ISSUE" string to get directly were things hurt.
+# 
+# Notes
+# * VolumeMount doesn't not support mountOptions (here is the doc
+#   https://argoproj.github.io/argo-workflows/fields/#volumemount )
+#   This prevents applying possible k8s level solutions using things like
+#      mountOptions:
+#        - dir_mode=0777
+#        - file_mode=0777 
+
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-
+spec:
+  entrypoint: main
+  volumes:
+  - name: workdir
+    hostPath:
+      path: /data/host
+  arguments:
+    parameters:
+    - name: database_name
+    - name: database_password
+    - name: database_user
+    - name: experiment_output_dir
+    - name: persistedVolume   
+      value: /within-container-mount-point/
+
+  templates:
+  - name: main
+    steps:
+    - - name: psql-data-permission-fix-step
+        template: psql-data-permission-fix
+        arguments:
+          parameters:
+          - name: output_dir
+            value: "{{workflow.parameters.experiment_output_dir}}/pgdata-results"
+
+    - - name: 3dcitydb-start-db
+        template: 3dcitydb-daemon
+        arguments:
+          parameters:
+          - name: database_name
+            value: "{{workflow.parameters.database_name}}"
+          - name: persistedVolume
+            value: "{{workflow.parameters.persistedVolume}}"
+          - name: password
+            value: "{{workflow.parameters.database_password}}"
+          - name: user
+            value: "{{workflow.parameters.database_user}}"
+          - name: output_dir
+            value: "{{workflow.parameters.experiment_output_dir}}/pgdata-results"
+
+    - - name: client-check
+        template: 3dcitydb-client-check-template
+        arguments:
+          parameters:
+          - name: command
+            value: "PGPASSWORD={{workflow.parameters.database_password}} psql -h {{steps.3dcitydb-start-db.ip}} -p 5432 -U {{workflow.parameters.database_user}} -d {{workflow.parameters.database_name}} -c 'SELECT * FROM pg_catalog.pg_tables'"
+
+  - name: 3dcitydb-client-check-template
+    inputs:
+      parameters:
+      - name: command
+    container:
+      image: postgres:latest
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/bash", "-c" ]
+      args: [ "{{inputs.parameters.command}}" ]
+  
+  - name: psql-data-permission-fix
+    inputs:
+      parameters:
+      - name: output_dir
+    container:
+      image: busybox:latest
+      command: [ "mkdir","-p","-m", "777", "/data/{{inputs.parameters.output_dir}}" ]
+      volumeMounts:
+      - name: workdir
+        mountPath: /data
+
+  - name: 3dcitydb-daemon
+    daemon: true
+    retryStrategy:
+      limit: 2
+    inputs:
+      parameters:
+      - name: password
+      - name: user
+      - name: database_name
+      - name: persistedVolume
+      - name: output_dir
+      
+    container:
+      image: tumgis/3dcitydb-postgis:v4.0.2
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: CITYDBNAME
+          value: "{{inputs.parameters.database_name}}"
+        - name: POSTGRES_PASSWORD
+          value: "{{inputs.parameters.password}}"
+        - name: POSTGRES_USER
+          value: "{{inputs.parameters.user}}"
+        - name: SRID
+          value: '3946'
+        - name: SRSNAME
+          value: 'espg:3946'
+        # ISSUE: this PGDATA causes the problem
+        - name: PGDATA
+          value: "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}"
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"
+      readinessProbe:
+        exec:
+            command:
+            - /bin/sh
+            - -c
+            - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+    # SUB-ISSUE: for some reason (problably that the initContainers directive
+    # doesn't belong here although `argo lint` doesn't report any issue) the
+    # following is not executed.
+    # This trial came from the workaround suggested by this post
+    #    https://faun.pub/digitalocean-kubernetes-and-volume-permissions-820f46598965
+    # As a workaround the first psql-data-permission-fix step applies (with
+    # apparent not effect) the psql-data-permission-fix template which is 
+    # equivalent to the following initContainers.
+    # 
+    # initContainers:
+    # - name: hello
+    #   image: busybox:latest
+    #   command: [ "/bin/chmod","-R","777", "/data/{{inputs.parameters.output_dir}}" ]
+    #   volumeMounts:
+    #     - name: workdir
+    #       mountPath: /data
+
+

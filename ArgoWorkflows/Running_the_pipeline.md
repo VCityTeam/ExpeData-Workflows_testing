@@ -191,6 +191,12 @@ argo template create workflow-template/*.yml
 argo submit --watch --log Examples/example-3dcitydb-daemon.yml  --parameter-file input-just_db.yaml 
 ```
 
+### Running the ongoing issues/failures
+
+```bash
+argo submit --watch --log FailingIssues/postgres-pgdata-permission-issue.yml --parameter-file input-just_db.yaml 
+```
+
 ## The process of adapting PythonCallingDocker
 
 ### Creation of ArgoWorflows/Docker/Collect-DockerContext

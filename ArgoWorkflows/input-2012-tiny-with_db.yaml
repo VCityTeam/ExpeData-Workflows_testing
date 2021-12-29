@@ -1,0 +1,24 @@
+# The output directory where all the results of the computational pipeline
+# will be placed.
+experiment_output_dir: 'junk'
+
+# The CityGML type of data that should be extracted
+pattern: 'BATI'
+
+# The considered vintage year among the Lyon Open data available ones
+vintage: 2012
+
+# The list of boroughs that should be extracted
+boroughs:
+  - 'LYON_8EME'     # Require the application of a patch
+
+# At some stage the computational pipeline will make use of a 3DCityDB database
+# requiring the following "credentials" that will be used both for
+#  * setting up the docker containerized database after its creation 
+#  * the "client containers" to access it.
+#
+database_name: 'citydb-test'
+database_password: 'postgres'
+database_user: 'postgres'
+# FIXME: WARNING the following parameter is not used (5432 is hard-coded)
+database_port: '5435'

@@ -28,7 +28,7 @@ spec:
           - name: output_dir
             value: "{{workflow.parameters.experiment_output_dir}}/stage_3/{{item}}_{{workflow.parameters.vintage}}"
           - name: output_filename
-            value: "{{item}}_{{workflow.parameters.pattern}}_{{workflow.parameters.vintage}}_stipped.gml"
+            value: "{{item}}_{{workflow.parameters.pattern}}_{{workflow.parameters.vintage}}_stripped.gml"
           - name: persistedVolume
             value: "{{workflow.parameters.persistedVolume}}"
         withParam: "{{workflow.parameters.boroughs}}"

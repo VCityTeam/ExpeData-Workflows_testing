@@ -88,9 +88,10 @@ Running the pipeline step by step
 
 ```bash
 \rm -fr junk     # Remove possible previous results to avoid collisions 
-argo submit --watch --log just-collect.yml --parameter-file input-2012-tiny-no_db.yaml
-argo submit --watch --log just-split.yml --parameter-file input-2012-tiny-no_db.yaml
-argo submit --watch --log just-strip.yml --parameter-file input-2012-tiny-no_db.yaml
+argo submit --watch --log just-collect.yml       --parameter-file input-2012-tiny-no_db.yaml
+argo submit --watch --log just-split.yml         --parameter-file input-2012-tiny-no_db.yaml
+argo submit --watch --log just-strip.yml         --parameter-file input-2012-tiny-no_db.yaml
+argo submit --watch --log just-load-3dcitydb.yml --parameter-file input-2012-tiny-with_db.yaml
 ```
 
 ```bash
@@ -163,9 +164,9 @@ the command, or list the image command in the index
 ```
 
 This seems to be due to the fact that (starting from argo version > 3.2) the
-default executor is 
+default executor is
 [not docker anymore but emissary](https://argoproj.github.io/argo-workflows/workflow-executors/#emissary-emissary).
-Although the 
+Although the
 [docker executor is announced as deprecated](https://argoproj.github.io/argo-workflows/workflow-executors/#docker-docker)
 we can force (within the configmap) the executor to be `docker` with the 
 following command

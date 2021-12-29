@@ -5,9 +5,6 @@
   (i.e. le step d'avant dans cet boucle?)
   Tip: pythonsay a l'interieur de la boucle
 
-- Regarder si on peut élégamment et conjointement définir les paramètres du
-  workflow en laissant leur valeur dans le yml de de param. Cela aiderait le
-  linter
 
 - A mettre dans les Lesson learned d'Expedata:
   - il faut systématiquement promouvoir tous les fichiers de sortie en
@@ -34,6 +31,10 @@ Olivier said:
 - regarder comment AW peut faire usage d'un S3 bucket
 
 ## Done
+- Regarder si on peut élégamment et conjointement définir les paramètres du
+  workflow en laissant leur valeur dans le yml de de param. Cela aiderait le
+  linter.
+  Reponse: oui, on peut, cf e.g. just-load-3dcitydb.yml
 
 - Constatons que l'exemple AW de loop qui fait un withParam sur la sortie d'un
   job Python est effectif pour

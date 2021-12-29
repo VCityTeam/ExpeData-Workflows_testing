@@ -1,0 +1,101 @@
+# References:
+# - https://github.com/argoproj/argo-workflows/tree/master/examples#daemon-containers
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-
+spec:
+  entrypoint: main
+  volumes:
+  - name: workdir
+    hostPath:
+      path: /data/host
+  arguments:
+    parameters:
+    # Numerical experiment related
+    - name: boroughs
+    - name: pattern
+    - name: vintage
+    # Database related
+    - name: database_name
+    - name: database_password
+    - name: database_user
+    - name: experiment_output_dir
+    # Local (to this workflow definition) parameters   
+    - name: persistedVolume   
+      value: /within-container-mount-point/
+
+  templates:
+  - name: main
+    steps:
+    - - name: 3dcitydb-start-db
+        templateRef:
+          name: workflow-template-atomic-steps-template
+          template: 3dcitydb-daemon
+        arguments:
+          parameters:
+          - name: database_name
+            value: "{{workflow.parameters.database_name}}"
+          - name: persistedVolume
+            value: "{{workflow.parameters.persistedVolume}}"
+          - name: password
+            value: "{{workflow.parameters.database_password}}"
+          - name: user
+            value: "{{workflow.parameters.database_user}}"
+
+    - - name: client-check-step
+        template: 3dcitydb-client-check-template
+        arguments:
+          parameters:
+          - name: command
+            # Immediatly (that is as soon as the argo engine considers the
+            # database is up) submit a dummy query (list __all__ tables) just 
+            # to check that indeed the database is properly answering.
+            # Note: for the syntax on handling the password to psql refer to
+            # https://stackoverflow.com/questions/6523019/postgresql-scripting-psql-execution-with-password
+            value: "PGPASSWORD={{workflow.parameters.database_password}} psql -h {{steps.3dcitydb-start-db.ip}} -p 5432 -U {{workflow.parameters.database_user}} -d {{workflow.parameters.database_name}} -c 'SELECT * FROM pg_catalog.pg_tables'"
+
+    - - name: import-file-to-db-step-loop
+        template: import-file-to-db-template
+        arguments:
+          parameters:
+          - name: database_name
+            value: "{{workflow.parameters.database_name}}"
+          - name: hostname
+            value: "{{steps.3dcitydb-start-db.ip}}"
+          - name: persistedVolume
+            value: "{{workflow.parameters.persistedVolume}}"
+          - name: password
+            value: "{{workflow.parameters.database_password}}"
+          - name: user
+            value: "{{workflow.parameters.database_user}}"
+          - name: filename
+            value: "{{workflow.parameters.experiment_output_dir}}/stage_3/{{item}}_{{workflow.parameters.vintage}}/{{item}}_{{workflow.parameters.pattern}}_{{workflow.parameters.vintage}}_stripped.gml"
+        withParam: "{{workflow.parameters.boroughs}}"  
+
+  - name: 3dcitydb-client-check-template
+    inputs:
+      parameters:
+      - name: command
+    container:
+      image: postgres:latest
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/bash", "-c" ]
+      args: [ "{{inputs.parameters.command}}" ]
+
+  - name: import-file-to-db-template
+    inputs:
+      parameters:
+      - name: database_name
+      - name: filename
+      - name: hostname
+      - name: password
+      - name: persistedVolume
+      - name: user
+    container:
+      image: 3dcitydb/impexp:4.3.0
+      imagePullPolicy: IfNotPresent
+      args: [ "import", "-H", "{{inputs.parameters.hostname}}", "-d", "{{inputs.parameters.database_name}}", "-u", "{{inputs.parameters.user}}", "-p", "{{inputs.parameters.password}}", "-P", "5432", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.filename}}" ]
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"  

@@ -1,0 +1,33 @@
+# Trial to define nested loops (loop in loop) without resolving to
+# explicitly declare a template for the inner loop. Refer to 
+# Examples/example-loop-in-loop-through-template-call.yml for a
+# the original working examples whose syntax is too heavy and
+# that this failing workflow tries to simplify.
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-
+spec:
+  entrypoint: main
+  volumes:
+  
+  templates:
+  - name: main
+    steps:
+    - - name: outer-loop-step
+        # argo lint will complain at the following line with
+        #     json: unknown field "steps"
+        # while the above one (for the "main" template) was ok.
+        # Lesson learned: a template can have a steps, but a step
+        # can NOT (have sub-steps).
+        steps:
+        - - name: inner-loop-step
+            templateRef:
+              name: workflow-template-utils-whalesay-template
+              template: whalesay-template
+            arguments:
+              parameters:
+              - name: message
+                value: "outer:  inner: {{item}}"
+            withParam:  "{{=toJson([1, 2])}}"
+        withParam: "{{=toJson(['A', 'B', 'C'])}}"

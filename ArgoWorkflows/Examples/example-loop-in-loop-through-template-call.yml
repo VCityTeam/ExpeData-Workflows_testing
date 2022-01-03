@@ -1,0 +1,33 @@
+# Running nested loops (loop in loop) exampleapiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-
+spec:
+  entrypoint: main
+  volumes:
+  
+  templates:
+  - name: main
+    steps:
+    - - name: outer-loop-step
+        template: inner-loop-template
+        arguments:
+          parameters:
+          - name: outerindex
+            value: "{{item}}"
+        withParam: "{{=toJson(['A', 'B', 'C'])}}"
+
+  - name: inner-loop-template
+    inputs: 
+      parameters:
+      - name: outerindex
+    steps:
+    - - name: inner-loop-step
+        templateRef:
+          name: workflow-template-utils-whalesay-template
+          template: whalesay-template
+        arguments:
+          parameters:
+          - name: message
+            value: "outer: {{inputs.parameters.outerindex}} inner: {{item}}"
+        withParam:  "{{=toJson([1, 2])}}"

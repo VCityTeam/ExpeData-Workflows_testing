@@ -189,7 +189,9 @@ brew install kubeval
 ```bash
 eval $(minikube docker-env)    # Just in case docker builds get required
 argo template create workflow-template/*.yml
-argo submit --watch --log Examples/example-3dcitydb-daemon.yml  --parameter-file input-just_db.yaml 
+argo submit --watch --log Examples/example-3dcitydb-daemon.yml  --parameter-file input-just_db.yaml
+argo submit --watch --log  Examples/example-loop-in-loop-through-template-call.yml
+...
 ```
 
 ### Running the ongoing issues/failures

@@ -1,0 +1,62 @@
+##### First issue
+# $ minikube start
+# $ minikube mount `pwd`:/data/host &
+# $ mkdir junk
+# $ argo submit --parameter output_dir=junk/junk-creating-directory-issue --watch --log FailingIssues/creating-directory-issue.yml
+# will duly produce a directory junk/junk-creating-directory-issue/ 
+# But
+# $ rmdir junk-creating-directory-issue/
+# $ minikube stop
+# $ minikube start  # and we skip the `minikube mount` step 
+#                   # (because the process is still running)
+# $ argo submit --parameter output_dir=junk/junk-creating-directory-issue --watch --log FailingIssues/creating-directory-issue.yml
+# will NOT produce the output directory junk/junk-creating-directory-issue 
+#
+# And yet "argo submit" won't complain about the non availability of the
+# "k8s:/data/host" volume
+#
+##### Second issue
+# Let us assume the minikube mount runs properly. Then the target directory 
+# will be created BUT its ownership won't be changed and no warning gets
+# emmited.
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-
+spec:
+  entrypoint: main
+  volumes:
+  - name: workdir
+    hostPath:
+      path: /data/host
+  arguments:
+    parameters:
+    - name: output_dir
+    - name: persistedVolume   
+      value: /within-container-mount-point/
+
+  templates:
+  - name: main
+    steps:
+    - - name: psql-data-permission-fix-step
+        template: psql-data-permission-fix
+        arguments:
+          parameters:
+          - name: output_dir
+            value: "{{workflow.parameters.output_dir}}"
+          - name: persistedVolume
+            value: "{{workflow.parameters.persistedVolume}}"
+
+  - name: psql-data-permission-fix
+    inputs:
+      parameters:
+      - name: output_dir
+      - name: persistedVolume
+    container:
+      image: busybox:latest
+      # FAILURE: the directory will be created but the owner won't be
+      # changed (without error/warning message)
+      command: [ "mkdir","-p","-m", "777", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}", "&&", "chown", "999", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}" ]     
+      volumeMounts:
+      - name: workdir
+        mountPath: "{{inputs.parameters.persistedVolume}}"

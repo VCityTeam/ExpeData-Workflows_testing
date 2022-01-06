@@ -15,6 +15,24 @@
 # $ sudo chown 999 junk/pgdata-results   # 999 is the postgres uid 
 # then error message will be changed to
 #    chmod: changing permissions of '/within-container-mount-point/junk/pgdata-results': Unknown error 526
+# Notice that, in this precise context
+# $ docker run  -v /data/host:/local_mount -it tumgis/3dcitydb-postgis:v4.0.2 ls -al /local_mount/junk/pgdata-results
+# will return
+#     drwx------ 1 1000 1000 64 Jan  6 13:24 pgdata-results
+# meaning that ownership is mapped by `minikube mount`.
+#
+# Reproducing this failure at the docker level (that is the docker proposed
+# by minikube) can be done with e.g. 
+#    docker run -e "PGDATA=/local_mount/junk/pgdata" -v /data/host:/local_mount -it tumgis/3dcitydb-postgis:v4.0.2 
+# where it is assumed that /data/host was created with a "bind mount" like
+#    minikube mount `pwd`:/data/host &
+#    mkdir junk
+#
+# Yet, if one uses a minikube internal directory then postgres will initialize
+# properly. For example
+# $ minikube ssh "sudo mkdir -p /data2/junk"
+# $ docker run -e "PGDATA=/data2_mnt/junk/pgdata" -v /data2:/data2_mnt -e "POSTGRES_PASSWORD=dummy" -it tumgis/3dcitydb-postgis:v4.0.2
+# will run smoothly.
 #
 # This is a well known issue (at least of the docker community) as illustrated
 # by the following stackoverflow that cleanly describes the problem as well
@@ -23,13 +41,15 @@
 #
 # Search below for the "ISSUE" string to get directly were things hurt.
 # 
-# Notes
+# Notes 
 # * VolumeMount doesn't not support mountOptions (here is the doc
 #   https://argoproj.github.io/argo-workflows/fields/#volumemount )
 #   This prevents applying possible k8s level solutions using things like
 #      mountOptions:
 #        - dir_mode=0777
 #        - file_mode=0777 
+# * MongoDB users seem to face a similar problem as chown by this StackOverflow
+#   https://stackoverflow.com/questions/51200115/chown-changing-ownership-of-data-db-operation-not-permitted/
 
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
@@ -109,7 +129,7 @@ spec:
   - name: 3dcitydb-daemon
     daemon: true
     retryStrategy:
-      limit: 2
+      limit: 1
     inputs:
       parameters:
       - name: password

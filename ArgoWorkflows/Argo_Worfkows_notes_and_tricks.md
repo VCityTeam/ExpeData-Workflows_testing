@@ -196,16 +196,16 @@ There seems to confusingly exist many sources e.g. (note that [CermakM](https://
 
 ```bash
 minikube mount --v 5 `pwd`:/data/host &
-minikube ssh
-$ ls /data/host    # OK: the content of the CWD is present
+minikube ssh ls /data/host    # OK: the content of the CWD is present
 ```
 
-Note that strangely enough the volume does not appear at the
-filesystem level:
+Note that strangely enough the volume appears quite oddly at the filesystem
+level:
 
 ```bash
-$ df | grep data
-$            # Empty! There is no occurrence of /data as filesystem
+# The following won't show any occurrence of /data as filesystem
+minikube ssh 'df | grep -v overlay | grep -v shm'
+minikube ssh 'df /data/host'  # Will display the filesystem as an IP number
 ```
 
 References:

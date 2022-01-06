@@ -1,5 +1,17 @@
 # TODO list
 
+- Pour le pb postgres
+  - piste 1: ne pas faire pas de volumeMount (pas de PGDATA, ce qui limite les
+    use case au niveau data-file) mais utiliser un pgdump dans un autre
+    conteneur.
+  - piste 2: l'usage d'une bd devant être sorti du contexte exprimable dans le
+    workflow lancer postgres avec un helm chart
+
+- Peut-on faire des bind mount autrement qu'avec Minikube cf
+  la remarque d'Olivier sur s3 ci-dessous
+  
+- Regarder les options de minikube mount
+
 - Peut-on faire reference a un step qui se trouve dans une loop ? (dans une
   structure iterative). Et peut-on faire reference relativement au contexte ?
   (i.e. le step d'avant dans cet boucle?)

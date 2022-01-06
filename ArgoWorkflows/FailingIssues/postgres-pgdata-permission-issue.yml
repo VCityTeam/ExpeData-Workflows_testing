@@ -34,11 +34,23 @@
 # $ docker run -e "PGDATA=/data2_mnt/junk/pgdata" -v /data2:/data2_mnt -e "POSTGRES_PASSWORD=dummy" -it tumgis/3dcitydb-postgis:v4.0.2
 # will run smoothly.
 #
-# This is a well known issue (at least of the docker community) as illustrated
-# by the following stackoverflow that cleanly describes the problem as well
-# as possible workarounds (that seem to fail in the argo workflows context): 
+### Workaround attempt
+# Mapping of uid can be done at
+#   minikube mount --uid=999 `pwd`:/data/host &
+# in which the 
+#   argo submit --parameter-file input-just_db.yaml  --watch --log FailingIssues/postgres-pgdata-permission-issue.yml
+# will partially pass the createdb stage to reach the next stag that goes
+#    LOG:  could not link file "pg_wal/xlogtemp.39" to 
+#    "pg_wal/000000010000000000000001": Operation not permitted
+# 
+###
+# The above is a well known issue (at least of the docker community) as 
+# illustrated by the following discussions that cleanly describes the problem,
+# the associated frustration as well as possible workarounds (none of them
+# working in the argo workflows context): 
 #    https://stackoverflow.com/questions/60192819/cant-get-either-postgres-permissions-or-pvc-working-in-aks
-#
+#    https://github.com/docker-library/postgres/issues/548
+
 # Search below for the "ISSUE" string to get directly were things hurt.
 # 
 # Notes 

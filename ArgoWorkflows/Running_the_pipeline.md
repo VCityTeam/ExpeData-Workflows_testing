@@ -194,6 +194,16 @@ argo submit --watch --log  Examples/example-loop-in-loop-through-template-call.y
 ...
 ```
 
+The entrypoint template can be overridden at runtime e.g.
+
+```bash
+argo submit --parameter-file input-just_db.yaml --parameter output_dir=junk \
+            --watch --log FailingIssues/postgres-pgdata-permission-issue.yml \ --entrypoint psql-data-permission-fix
+```
+
+In the above example notice that using a template as entrypoint of course
+requires that all its parameter are defined (the output_dir).
+
 ### Running the ongoing issues/failures
 
 ```bash

@@ -56,6 +56,8 @@ spec:
       image: busybox:latest
       # FAILURE: the directory will be created but the owner won't be
       # changed (without error/warning message)
+      # Note: 999 is the uid of postgres of a postgre container as given by
+      #       docker run -it --rm postgres grep postgres /etc/passwd
       command: [ "mkdir","-p","-m", "777", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}", "&&", "chown", "999", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}" ]     
       volumeMounts:
       - name: workdir

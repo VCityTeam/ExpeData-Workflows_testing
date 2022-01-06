@@ -1,9 +1,20 @@
 # The problem: 
 # when running this workflow with e.g.
-#    argo submit --watch --log FailingIssues/postgres-pgdata-permission-issue.yml --parameter-file input-just_db.yaml
+#     argo submit --parameter-file input-just_db.yaml  --watch --log FailingIssues/postgres-pgdata-permission-issue.yml 
 # one gets the following error message
 #    chmod: changing permissions of '/within-container-mount-point/junk/pgdata-results': Operation not permitted
 # that gets triggered by 3dcitydb-start-db.
+#
+# Now this can be explained by the fact that the psql-data-permission-fix step
+# is not effective (refer to FailingIssues/creating-directory-issue.yml for
+# more on this matter).
+# Yet, if prior to running the worklow one does manually created the target
+# directory and provides it with the ownership expected by createdb (within the
+# postgres container) with
+# $ mkdir junk/pgdata-results   # junk is here the value of experiment_output_dir
+# $ sudo chown 999 junk/pgdata-results   # 999 is the postgres uid 
+# then error message will be changed to
+#    chmod: changing permissions of '/within-container-mount-point/junk/pgdata-results': Unknown error 526
 #
 # This is a well known issue (at least of the docker community) as illustrated
 # by the following stackoverflow that cleanly describes the problem as well
@@ -48,6 +59,8 @@ spec:
           parameters:
           - name: output_dir
             value: "{{workflow.parameters.experiment_output_dir}}/pgdata-results"
+          - name: persistedVolume
+            value: "{{workflow.parameters.persistedVolume}}"
 
     - - name: 3dcitydb-start-db
         template: 3dcitydb-daemon
@@ -62,8 +75,8 @@ spec:
           - name: user
             value: "{{workflow.parameters.database_user}}"
           - name: output_dir
-            value: "{{workflow.parameters.experiment_output_dir}}/pgdata-results"
-
+            value: "{{workflow.parameters.experiment_output_dir}}/pgdata-results"  
+    
     - - name: client-check
         template: 3dcitydb-client-check-template
         arguments:
@@ -80,17 +93,18 @@ spec:
       imagePullPolicy: IfNotPresent
       command: [ "/bin/bash", "-c" ]
       args: [ "{{inputs.parameters.command}}" ]
-  
+              
   - name: psql-data-permission-fix
     inputs:
       parameters:
       - name: output_dir
+      - name: persistedVolume
     container:
       image: busybox:latest
-      command: [ "mkdir","-p","-m", "777", "/data/{{inputs.parameters.output_dir}}" ]
+      command: [ "mkdir","-p","-m", "777", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}", "&&", "chown", "999", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}" ]
       volumeMounts:
       - name: workdir
-        mountPath: /data
+        mountPath: "{{inputs.parameters.persistedVolume}}"
 
   - name: 3dcitydb-daemon
     daemon: true

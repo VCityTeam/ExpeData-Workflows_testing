@@ -28,6 +28,7 @@ spec:
   templates:
   - name: main
     steps:
+
     - - name: 3dcitydb-start-db
         templateRef:
           name: workflow-template-atomic-steps-template
@@ -43,7 +44,7 @@ spec:
           - name: user
             value: "{{workflow.parameters.database_user}}"
 
-    - - name: client-check-step
+    - - name: client-check-step        
         template: 3dcitydb-client-check-template
         arguments:
           parameters:
@@ -71,7 +72,27 @@ spec:
             value: "{{workflow.parameters.database_user}}"
           - name: filename
             value: "{{workflow.parameters.experiment_output_dir}}/stage_3/{{item}}_{{workflow.parameters.vintage}}/{{item}}_{{workflow.parameters.pattern}}_{{workflow.parameters.vintage}}_stripped.gml"
-        withParam: "{{workflow.parameters.boroughs}}"  
+        withParam: "{{workflow.parameters.boroughs}}"
+
+    - - name: dump-resulting-db-step
+        template: dump-resulting-db-template
+        arguments:
+          parameters:
+          - name: vintage
+            value: "{{workflow.parameters.vintage}}"
+          - name: database_name
+            value: "{{workflow.parameters.database_name}}"
+          - name: hostname
+            value: "{{steps.3dcitydb-start-db.ip}}"
+          - name: persistedVolume
+            value: "{{workflow.parameters.persistedVolume}}"
+          - name: password
+            value: "{{workflow.parameters.database_password}}"
+          - name: user
+            value: "{{workflow.parameters.database_user}}"
+          - name: filename
+            value: "{{workflow.parameters.experiment_output_dir}}/result-{{workflow.parameters.vintage}}-{{workflow.parameters.database_name}}.sql"
+        when: "{{workflow.parameters.database_dump}} == true"
 
   - name: 3dcitydb-client-check-template
     inputs:
@@ -98,4 +119,23 @@ spec:
       args: [ "import", "-H", "{{inputs.parameters.hostname}}", "-d", "{{inputs.parameters.database_name}}", "-u", "{{inputs.parameters.user}}", "-p", "{{inputs.parameters.password}}", "-P", "5432", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.filename}}" ]
       volumeMounts:
         - name: workdir
-          mountPath: "{{inputs.parameters.persistedVolume}}"  
+          mountPath: "{{inputs.parameters.persistedVolume}}"
+          
+  - name: dump-resulting-db-template
+    inputs:
+      parameters:
+      - name: database_name
+      - name: filename
+      - name: hostname
+      - name: password
+      - name: persistedVolume
+      - name: user
+    container:
+      image: postgres:latest
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/bash", "-c" ]
+      # https://stackoverflow.com/questions/2893954/how-to-pass-in-password-to-pg-dump
+      args: [ "PGPASSWORD={{inputs.parameters.password}} pg_dump --host={{inputs.parameters.hostname}} --port=5432 --username={{inputs.parameters.user}} --dbname={{inputs.parameters.database_name}} > {{inputs.parameters.persistedVolume}}{{inputs.parameters.filename}}" ]
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"

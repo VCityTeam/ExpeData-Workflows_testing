@@ -129,14 +129,13 @@ minimum free disk threshold. Please delete a few objects to proceed
 
 According to
 [this ansible issue](https://github.com/ansible/awx-operator/issues/609)
-(with some clues from 
+(with some clues from
 [this minio issue](https://github.com/minio/minio/issues/6795))
 this indicates that the minikube file system is probably full. In order to free
 some disk space
 
 ```bash
-minikube ssh
-$ docker system prune   # and hit y for yes
+yes | minikube ssh "docker system prune"
 ```
 
 ### In case the minikube's k8s cluster gets corrupted

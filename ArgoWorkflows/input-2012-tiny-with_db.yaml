@@ -22,3 +22,7 @@ database_password: 'postgres'
 database_user: 'postgres'
 # FIXME: WARNING the following parameter is not used (5432 is hard-coded)
 database_port: '5435'
+
+### Database persistence
+# Should the database content be dumped when workflow terminates
+database_dump: true

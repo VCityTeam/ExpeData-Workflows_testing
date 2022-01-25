@@ -31,14 +31,12 @@ spec:
 
     - - name: 3dcitydb-start-db
         templateRef:
-          name: workflow-template-atomic-steps-template
+          name: workflow-database-templaterefs
           template: 3dcitydb-daemon
         arguments:
           parameters:
           - name: database_name
             value: "{{workflow.parameters.database_name}}"
-          - name: persistedVolume
-            value: "{{workflow.parameters.persistedVolume}}"
           - name: password
             value: "{{workflow.parameters.database_password}}"
           - name: user

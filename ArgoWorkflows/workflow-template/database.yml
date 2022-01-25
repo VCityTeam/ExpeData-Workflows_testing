@@ -1,0 +1,109 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: workflow-database-templaterefs
+spec:
+  # FIXME: do we really need an entrypoint ?
+  entrypoint: 3dcitydb-daemon
+  templates:
+  
+  - name: 3dcitydb-daemon
+    daemon: true                        # start 3dcitydb as a daemon
+    retryStrategy:
+      limit: 2            # Number of container retrial when failing
+    inputs:
+      parameters:
+      - name: database_name
+      - name: password
+      - name: user
+    container:
+      image: tumgis/3dcitydb-postgis:v4.0.2
+      # Reference: https://3dcitydb-docs.readthedocs.io/en/latest/3dcitydb/docker.html#
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: CITYDBNAME
+          value: "{{inputs.parameters.database_name}}"
+        - name: POSTGRES_PASSWORD
+          value: "{{inputs.parameters.password}}"
+        - name: POSTGRES_USER
+          value: "{{inputs.parameters.user}}"
+        # Hardwired parameters FIXME
+        # Notice that, in this particular case, this is a particulary lame
+        # practice because the following "knowledge" was manually extracted 
+        # from a specific set of data and manually burned in this workflow. 
+        # Change the input data and the workflow will fail when trying to
+        # import data to the DB
+        - name: SRID
+          value: '3946'
+        - name: SRSNAME
+          value: 'espg:3946'
+        # Note that the usage PGDATA is not effective in the context of
+        # minikube + postgres: refer to
+        #    Failures/postgres-pgdata-permission-issue.yml
+        # for more details on this issue.
+      readinessProbe:                   # wait for readinessProbe to succeed
+        # References:
+        # - https://argoproj.github.io/argo-workflows/fields/#probe
+        # - https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
+        # - https://github.com/bitnami/charts/issues/2682 (for inspiration)
+        exec:
+            command:
+            - /bin/sh
+            - -c
+            - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+
+  - name: 3dcitydb-daemon-persiste-volume
+    daemon: true
+    retryStrategy:
+      limit: 1
+    inputs:
+      parameters:
+      - name: password
+      - name: user
+      - name: database_name
+      - name: persistedVolume
+      - name: output_dir
+      
+    container:
+      image: tumgis/3dcitydb-postgis:v4.0.2
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: CITYDBNAME
+          value: "{{inputs.parameters.database_name}}"
+        - name: POSTGRES_PASSWORD
+          value: "{{inputs.parameters.password}}"
+        - name: POSTGRES_USER
+          value: "{{inputs.parameters.user}}"
+        - name: SRID
+          value: '3946'
+        - name: SRSNAME
+          value: 'espg:3946'
+        # ISSUE: this PGDATA causes the problem
+        - name: PGDATA
+          value: "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}"
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"
+      readinessProbe:
+        exec:
+            command:
+            - /bin/sh
+            - -c
+            - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+    # SUB-ISSUE: for some reason (problably that the initContainers directive
+    # doesn't belong here although `argo lint` doesn't report any issue) the
+    # following is not executed.
+    # This trial came from the workaround suggested by this post
+    #    https://faun.pub/digitalocean-kubernetes-and-volume-permissions-820f46598965
+    # As a workaround the first psql-data-permission-fix step applies (with
+    # apparent not effect) the psql-data-permission-fix template which is 
+    # equivalent to the following initContainers.
+    # 
+    # initContainers:
+    # - name: hello
+    #   image: busybox:latest
+    #   command: [ "/bin/chmod","-R","777", "/data/{{inputs.parameters.output_dir}}" ]
+    #   volumeMounts:
+    #     - name: workdir
+    #       mountPath: /data
+

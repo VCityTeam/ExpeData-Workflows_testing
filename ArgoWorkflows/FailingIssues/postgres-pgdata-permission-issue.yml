@@ -95,7 +95,9 @@ spec:
             value: "{{workflow.parameters.persistedVolume}}"
 
     - - name: 3dcitydb-start-db
-        template: 3dcitydb-daemon
+        templateRef:
+          name: workflow-database-templaterefs
+          template: 3dcitydb-daemon-persiste-volume
         arguments:
           parameters:
           - name: database_name
@@ -137,60 +139,4 @@ spec:
       volumeMounts:
       - name: workdir
         mountPath: "{{inputs.parameters.persistedVolume}}"
-
-  - name: 3dcitydb-daemon
-    daemon: true
-    retryStrategy:
-      limit: 1
-    inputs:
-      parameters:
-      - name: password
-      - name: user
-      - name: database_name
-      - name: persistedVolume
-      - name: output_dir
-      
-    container:
-      image: tumgis/3dcitydb-postgis:v4.0.2
-      imagePullPolicy: IfNotPresent
-      env:
-        - name: CITYDBNAME
-          value: "{{inputs.parameters.database_name}}"
-        - name: POSTGRES_PASSWORD
-          value: "{{inputs.parameters.password}}"
-        - name: POSTGRES_USER
-          value: "{{inputs.parameters.user}}"
-        - name: SRID
-          value: '3946'
-        - name: SRSNAME
-          value: 'espg:3946'
-        # ISSUE: this PGDATA causes the problem
-        - name: PGDATA
-          value: "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}"
-      volumeMounts:
-        - name: workdir
-          mountPath: "{{inputs.parameters.persistedVolume}}"
-      readinessProbe:
-        exec:
-            command:
-            - /bin/sh
-            - -c
-            - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
-    # SUB-ISSUE: for some reason (problably that the initContainers directive
-    # doesn't belong here although `argo lint` doesn't report any issue) the
-    # following is not executed.
-    # This trial came from the workaround suggested by this post
-    #    https://faun.pub/digitalocean-kubernetes-and-volume-permissions-820f46598965
-    # As a workaround the first psql-data-permission-fix step applies (with
-    # apparent not effect) the psql-data-permission-fix template which is 
-    # equivalent to the following initContainers.
-    # 
-    # initContainers:
-    # - name: hello
-    #   image: busybox:latest
-    #   command: [ "/bin/chmod","-R","777", "/data/{{inputs.parameters.output_dir}}" ]
-    #   volumeMounts:
-    #     - name: workdir
-    #       mountPath: /data
-
 

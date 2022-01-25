@@ -2,19 +2,33 @@
 
 ## Running things
 
-### Pre-requisites
+### Installation
+
+The following was tested on `OSX 12.1` (Monterey) with `Homebrew 3.3.12`
+
+Package install
 
 ```bash
 brew install kubernetes-cli
-kubectl version
+kubectl version       # v1.23.2
 alias k=kubectl
 #
-brew cask install minikube
-brew install argo
+brew install minikube # 1.25.1
+#
+brew install argo     # 3.2.6
 # or when the above fails with "no bottle is available" then use
 #      brew install --build-from-source argo
+```
+
+Launching minikube
+
+```bash
 minikube --memory=8G --cpus 4 start
-#
+```
+
+Note: minikube announces that it downloads Kubernetes v1.20.2 preload (??)
+
+```bash
 k create ns argo     # Remember the k=kubectl shell alias (refer above)
 export ARGO_NAMESPACE=argo
 k config set-context --current --namespace=$ARGO_NAMESPACE
@@ -56,12 +70,15 @@ aligned with the workflow volume definition.
 # https://stackoverflow.com/questions/42564058/how-to-use-local-docker-images-with-minikube
 eval $(minikube docker-env)
 docker build -t vcity/collect_lyon_data Docker/Collect-DockerContext/
-docker build --no-cache -t vcity/3duse ../Docker/3DUse-DockerContext/
-docker build --no-cache -t vcity/citygml2stripper ../Docker/CityGML2Stripper-DockerContext/
+docker build -t vcity/3duse ../Docker/3DUse-DockerContext/
+docker build -t vcity/citygml2stripper ../Docker/CityGML2Stripper-DockerContext/
 docker pull refstudycentre/scratch-base:latest
 ```
 
 Notes:
+
+* In case of trouble with the docker builds (e.g. when the build failed
+  because of missing disk space) consider using the `--no-cache` flag.
 
 * `refstudycentre/scratch-base` is a really tiny container used as a trick
   (refer to workflow e.g. `Examples/loading-json-fromValue.yml`
@@ -157,7 +174,7 @@ At runtime (i.e. when using `argo submit`) one gets an error message of the
 form
 
 ```bash
-Message:  step group deemed errored due to child parameters-[...] 
+Message: step group deemed errored due to child parameters-[...] 
 error: when using the emissary executor you must either explicitly specify
 the command, or list the image command in the index
 ```
@@ -197,7 +214,8 @@ The entrypoint template can be overridden at runtime e.g.
 
 ```bash
 argo submit --parameter-file input-just_db.yaml --parameter output_dir=junk \
-            --watch --log FailingIssues/postgres-pgdata-permission-issue.yml \ --entrypoint psql-data-permission-fix
+            --watch --log FailingIssues/postgres-pgdata-permission-issue.yml \
+            --entrypoint psql-data-permission-fix
 ```
 
 In the above example notice that using a template as entrypoint of course
@@ -209,9 +227,11 @@ requires that all its parameter are defined (the output_dir).
 argo submit --watch --log FailingIssues/postgres-pgdata-permission-issue.yml --parameter-file input-just_db.yaml 
 ```
 
+that will complain about `chmod: changing permissions of [...] Operation not permitted`.
+
 ## The process of adapting PythonCallingDocker
 
-### Creation of ArgoWorflows/Docker/Collect-DockerContext
+### Creation of ArgoWorkflows/Docker/Collect-DockerContext
 
 Oddly enough the PythonCallingDocker version of the pipeline does not use the
 container defined by LyonTemporal/Docker/Collect-DockerContext/. Instead it

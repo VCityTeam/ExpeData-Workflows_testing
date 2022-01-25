@@ -46,7 +46,7 @@ Olivier said:
 - Regarder si on peut élégamment et conjointement définir les paramètres du
   workflow en laissant leur valeur dans le yml de de param. Cela aiderait le
   linter.
-  Reponse: oui, on peut, cf e.g. just-load-3dcitydb.yml
+  Reponse: oui, on peut, cf e.g. just-import-to-3dcitydb-and-dump.yml 
 
 - Constatons que l'exemple AW de loop qui fait un withParam sur la sortie d'un
   job Python est effectif pour

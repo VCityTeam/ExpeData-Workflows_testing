@@ -107,3 +107,31 @@ spec:
     #     - name: workdir
     #       mountPath: /data
 
+  - name: dump-db-template
+    inputs:
+      parameters:
+      - name: database_name
+      - name: filename
+      - name: hostname
+      - name: password
+      - name: persistedVolume
+      - name: user
+    container:
+      image: postgres:latest
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/bash", "-c" ]
+      # https://stackoverflow.com/questions/2893954/how-to-pass-in-password-to-pg-dump
+      args: [ "PGPASSWORD={{inputs.parameters.password}} pg_dump --host={{inputs.parameters.hostname}} --port=5432 --username={{inputs.parameters.user}} --dbname={{inputs.parameters.database_name}} > {{inputs.parameters.persistedVolume}}{{inputs.parameters.filename}}" ]
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"
+
+  - name: send-command-to-postgres-db-template
+    inputs:
+      parameters:
+      - name: command
+    container:
+      image: postgres:latest
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/bash", "-c" ]
+      args: [ "{{inputs.parameters.command}}" ]

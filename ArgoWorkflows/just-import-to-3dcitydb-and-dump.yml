@@ -42,14 +42,16 @@ spec:
           - name: user
             value: "{{workflow.parameters.database_user}}"
 
-    - - name: client-check-step        
-        template: 3dcitydb-client-check-template
+    - - name: client-check-step
+        # Immediatly (that is as soon as the argo engine considers the
+        # database is up) submit a dummy query (list __all__ tables) just 
+        # to check that indeed the database is properly answering.
+        templateRef:
+          name: workflow-database-templaterefs
+          template: send-command-to-postgres-db-template
         arguments:
           parameters:
           - name: command
-            # Immediatly (that is as soon as the argo engine considers the
-            # database is up) submit a dummy query (list __all__ tables) just 
-            # to check that indeed the database is properly answering.
             # Note: for the syntax on handling the password to psql refer to
             # https://stackoverflow.com/questions/6523019/postgresql-scripting-psql-execution-with-password
             value: "PGPASSWORD={{workflow.parameters.database_password}} psql -h {{steps.3dcitydb-start-db.ip}} -p 5432 -U {{workflow.parameters.database_user}} -d {{workflow.parameters.database_name}} -c 'SELECT * FROM pg_catalog.pg_tables'"
@@ -73,7 +75,9 @@ spec:
         withParam: "{{workflow.parameters.boroughs}}"
 
     - - name: dump-resulting-db-step
-        template: dump-resulting-db-template
+        templateRef:
+          name: workflow-database-templaterefs
+          template: dump-db-template
         arguments:
           parameters:
           - name: vintage
@@ -92,16 +96,6 @@ spec:
             value: "{{workflow.parameters.experiment_output_dir}}/result-{{workflow.parameters.vintage}}-{{workflow.parameters.database_name}}.sql"
         when: "{{workflow.parameters.database_dump}} == true"
 
-  - name: 3dcitydb-client-check-template
-    inputs:
-      parameters:
-      - name: command
-    container:
-      image: postgres:latest
-      imagePullPolicy: IfNotPresent
-      command: [ "/bin/bash", "-c" ]
-      args: [ "{{inputs.parameters.command}}" ]
-
   - name: import-file-to-db-template
     inputs:
       parameters:
@@ -119,21 +113,4 @@ spec:
         - name: workdir
           mountPath: "{{inputs.parameters.persistedVolume}}"
           
-  - name: dump-resulting-db-template
-    inputs:
-      parameters:
-      - name: database_name
-      - name: filename
-      - name: hostname
-      - name: password
-      - name: persistedVolume
-      - name: user
-    container:
-      image: postgres:latest
-      imagePullPolicy: IfNotPresent
-      command: [ "/bin/bash", "-c" ]
-      # https://stackoverflow.com/questions/2893954/how-to-pass-in-password-to-pg-dump
-      args: [ "PGPASSWORD={{inputs.parameters.password}} pg_dump --host={{inputs.parameters.hostname}} --port=5432 --username={{inputs.parameters.user}} --dbname={{inputs.parameters.database_name}} > {{inputs.parameters.persistedVolume}}{{inputs.parameters.filename}}" ]
-      volumeMounts:
-        - name: workdir
-          mountPath: "{{inputs.parameters.persistedVolume}}"
+

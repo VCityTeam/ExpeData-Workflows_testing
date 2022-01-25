@@ -108,7 +108,7 @@ Running the pipeline step by step
 argo submit --watch --log just-collect.yml       --parameter-file input-2012-tiny-no_db.yaml
 argo submit --watch --log just-split.yml         --parameter-file input-2012-tiny-no_db.yaml
 argo submit --watch --log just-strip.yml         --parameter-file input-2012-tiny-no_db.yaml
-argo submit --watch --log just-load-3dcitydb.yml --parameter-file input-2012-tiny-with_db.yaml
+argo submit --watch --log just-import-to-3dcitydb-and-dump.yml --parameter-file input-2012-tiny-with_db.yaml
 ```
 
 ```bash

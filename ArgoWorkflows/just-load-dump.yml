@@ -1,0 +1,84 @@
+# References:
+# - https://github.com/argoproj/argo-workflows/tree/master/examples#daemon-containers
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-
+spec:
+  entrypoint: main
+  volumes:
+  - name: workdir
+    hostPath:
+      path: /data/host
+  arguments:
+    parameters:
+    # Numerical experiment related
+    - name: boroughs
+    - name: pattern
+    - name: vintage
+    # Database related
+    - name: database_name
+    - name: database_password
+    - name: database_user
+    - name: experiment_output_dir
+    - name: database_import_dump_filename
+      value: "{{workflow.parameters.experiment_output_dir}}/result-{{workflow.parameters.vintage}}-{{workflow.parameters.database_name}}.sql"
+    # Local (to this workflow definition) parameters   
+    - name: persistedVolume   
+      value: /within-container-mount-point/
+
+  templates:
+  - name: main
+    steps:
+
+    - - name: postgis-start-db
+        # Because the purpose of this workflow is to import a 3dCity database
+        # dump, we can NOT here start a 3dCityDB image. If we were to do so
+        # the importation would fail because reloading the dump, will require
+        # the creation of some tables that already exist within the
+        # 3DCityDB database: these are the 3DCityDB structural tables as
+        # opposed to the 3DCityDB content per se.
+        # We thus must start a postgis (empty) database and when loading
+        # the previously realised dump
+        #  - the structural tables of 3DCityDB will be recreated
+        #  - their content will be reloaded 
+        templateRef:
+          name: workflow-database-templaterefs
+          template: postgis-daemon
+        arguments:
+          parameters:
+          - name: database_name
+            value: "{{workflow.parameters.database_name}}"
+          - name: password
+            value: "{{workflow.parameters.database_password}}"
+          - name: user
+            value: "{{workflow.parameters.database_user}}"
+
+    - - name: import-db-dump-step
+        templateRef:
+          name: workflow-database-templaterefs
+          template: import-db-dump-template
+        arguments:
+          parameters:
+          - name: database_name
+            value: "{{workflow.parameters.database_name}}"
+          - name: hostname
+            value: "{{steps.postgis-start-db.ip}}"
+          - name: persistedVolume
+            value: "{{workflow.parameters.persistedVolume}}"
+          - name: password
+            value: "{{workflow.parameters.database_password}}"
+          - name: user
+            value: "{{workflow.parameters.database_user}}"
+          - name: filename
+            value: "{{workflow.parameters.database_import_dump_filename}}"
+
+    - - name: client-check-step
+        # Check the resulting database for the existence of imported content.
+        templateRef:
+          name: workflow-database-templaterefs
+          template: send-command-to-postgres-db-template
+        arguments:
+          parameters:
+          - name: command
+            value: "PGPASSWORD={{workflow.parameters.database_password}} psql -h {{steps.postgis-start-db.ip}} -p 5432 -U {{workflow.parameters.database_user}} -d {{workflow.parameters.database_name}} -c 'SELECT building.id, BOX3D(cityobject.envelope), cityobject.gmlid FROM citydb.building JOIN citydb.cityobject ON building.id=cityobject.id WHERE building.id=building.building_root_id'"

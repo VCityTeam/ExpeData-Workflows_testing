@@ -126,12 +126,85 @@ spec:
         - name: workdir
           mountPath: "{{inputs.parameters.persistedVolume}}"
 
+  - name: import-db-dump-template
+    inputs:
+      parameters:
+      - name: database_name
+      - name: filename
+      - name: hostname
+      - name: password
+      - name: persistedVolume
+      - name: user
+    synchronization:
+      # The following mutex is a 
+      # [technical trick](https://github.com/argoproj/argo-workflows/blob/master/examples/synchronization-mutex-tmpl-level.yaml)
+      # aiming at preventing early consumption of the database content.
+      # Consuming steps must be based on templates declaring the same mutex
+      # lock (refer e.g. to send-command-to-postgres-db-template)
+      mutex:
+        name: mutex_lock_on_database_dump_import
+    container:
+      image: postgres:latest
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/bash", "-c" ]
+      args: [ "PGPASSWORD={{inputs.parameters.password}} psql --host={{inputs.parameters.hostname}} --port=5432 --username={{inputs.parameters.user}} --dbname={{inputs.parameters.database_name}} < {{inputs.parameters.persistedVolume}}{{inputs.parameters.filename}}" ]
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"
+
   - name: send-command-to-postgres-db-template
     inputs:
       parameters:
       - name: command
+    synchronization:
+      mutex:
+        name: mutex_lock_on_database_dump_import
     container:
       image: postgres:latest
       imagePullPolicy: IfNotPresent
       command: [ "/bin/bash", "-c" ]
       args: [ "{{inputs.parameters.command}}" ]
+
+  - name: postgis-daemon
+    daemon: true                        # start 3dcitydb as a daemon
+    retryStrategy:
+      limit: 2            # Number of container retrial when failing
+    inputs:
+      parameters:
+      - name: database_name
+      - name: password
+      - name: user
+    container:
+      image: postgis/postgis:12-3.0
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: POSTGRES_DB
+          value: "{{inputs.parameters.database_name}}"
+        - name: POSTGRES_PASSWORD
+          value: "{{inputs.parameters.password}}"
+        - name: POSTGRES_USER
+          value: "{{inputs.parameters.user}}"
+        # Hardwired parameters FIXME
+        # Notice that, in this particular case, this is a particulary lame
+        # practice because the following "knowledge" was manually extracted 
+        # from a specific set of data and manually burned in this workflow. 
+        # Change the input data and the workflow will fail when trying to
+        # import data to the DB
+        - name: SRID
+          value: '3946'
+        - name: SRSNAME
+          value: 'espg:3946'
+        # Note that the usage PGDATA is not effective in the context of
+        # minikube + postgres: refer to
+        #    Failures/postgres-pgdata-permission-issue.yml
+        # for more details on this issue.
+      readinessProbe:                   # wait for readinessProbe to succeed
+        # References:
+        # - https://argoproj.github.io/argo-workflows/fields/#probe
+        # - https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
+        # - https://github.com/bitnami/charts/issues/2682 (for inspiration)
+        exec:
+            command:
+            - /bin/sh
+            - -c
+            - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432

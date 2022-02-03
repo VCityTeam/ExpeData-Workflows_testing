@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: workflow-template-atomic-steps-template
+  name: workflow-template-atomic-steps-templaterefs
 spec:
   entrypoint: collect-lyon-data-template
   templates:
@@ -81,3 +81,52 @@ spec:
       parameters:
       - name: resulting-filenames
         value: "{{inputs.parameters.output_dir}}/{{inputs.parameters.output_filename}}"
+
+  - name: generate-compute-tileset-configuration-file-template
+    inputs:
+      parameters:
+      - name: vintage
+      - name: database_name
+      - name: hostname
+      - name: password
+      - name: user
+      - name: port
+      - name: persistedVolume
+      - name: output_directory
+    script:
+      image: python:3.9-alpine
+      command: [python]
+      source: |
+        import os
+
+        vintage          = '{{inputs.parameters.vintage}}'
+        target_directory = '{{inputs.parameters.output_directory}}'
+
+        config_filename = 'CityTilerDBConfigStatic' + vintage + '.yml'
+        target_file = os.path.join(target_directory, config_filename)
+
+        with open(target_file, 'w') as output:
+            output.write('PG_HOST: {{inputs.parameters.hostname}}\n')
+            output.write('PG_PORT: {{inputs.parameters.port}}\n')
+            output.write('PG_NAME: {{inputs.parameters.database_name}}\n')
+            output.write('PG_USER: {{inputs.parameters.user}}\n')
+            output.write('PG_PASSWORD: {{inputs.parameters.password}}\n')
+            output.write(f'PG_VINTAGE: {vintage}\n')
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"
+
+  - name: compute-tileset-template
+    inputs:
+      parameters:
+      - name: configuration_filename
+      - name: output_directory
+      - name: persistedVolume
+    container:
+      image: vcity/py3dtilers
+      imagePullPolicy: Never
+      command: [ "/bin/bash", "-cv" ]
+      args: [ "cd {{inputs.parameters.persistedVolume}}{{inputs.parameters.output_directory}} && citygml-tiler --type building --db_config_path {{inputs.parameters.persistedVolume}}{{inputs.parameters.configuration_filename}}" ]
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"

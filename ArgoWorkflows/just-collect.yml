@@ -18,7 +18,7 @@ spec:
     steps:
     - - name: collect-boroughs
         templateRef:
-          name: workflow-template-atomic-steps-template
+          name: workflow-template-atomic-steps-templaterefs
           template: collect-lyon-data-template
         arguments:
           parameters:

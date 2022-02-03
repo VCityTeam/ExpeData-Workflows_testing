@@ -1,5 +1,9 @@
 # TODO list
 
+- Evaluer [HERA workflows](https://github.com/argoproj-labs/hera-workflows)
+- Aller voir le [langage BEPL](https://www.tutorialspoint.com/bpel)
+- Aller voir Kaniko
+
 - Pour le pb postgres
   - piste 1: ne pas faire pas de volumeMount (pas de PGDATA, ce qui limite les
     use case au niveau data-file) mais utiliser un pgdump dans un autre
@@ -46,7 +50,7 @@ Olivier said:
 - Regarder si on peut élégamment et conjointement définir les paramètres du
   workflow en laissant leur valeur dans le yml de de param. Cela aiderait le
   linter.
-  Reponse: oui, on peut, cf e.g. just-import-to-3dcitydb-and-dump.yml 
+  Reponse: oui, on peut, cf e.g. just-import-to-3dcitydb-and-dump.yml
 
 - Constatons que l'exemple AW de loop qui fait un withParam sur la sortie d'un
   job Python est effectif pour
@@ -70,7 +74,6 @@ Olivier said:
   - prendre cela comme entree de withParam de la tache suivante
   - Note: la logique est ici d'avoir un bout de python qui fait le mapping
     entre deux tâches et qui produit le json pour le withParam suivant
-
 
 - Pour une boucle on doit différencier les noms des fichiers intermédiaires
   ou on fera le valueFrom LORSQUE "le" fichier de sortie est sur la partition

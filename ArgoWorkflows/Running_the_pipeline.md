@@ -46,7 +46,7 @@ k -n argo port-forward deployment/argo-server 2746:2746 &
 minikube mount `pwd`:/data/host &   # Note this is process (hence the ampersand)
 ```
 
-A workflow can now use this as a volume (refer to 
+A workflow can now use this as a volume (refer to
 [this example](https://minikube.sigs.k8s.io/docs/handbook/mount/)) as
 
 ```bash
@@ -72,6 +72,7 @@ eval $(minikube docker-env)
 docker build -t vcity/collect_lyon_data Docker/Collect-DockerContext/
 docker build -t vcity/3duse ../Docker/3DUse-DockerContext/
 docker build -t vcity/citygml2stripper ../Docker/CityGML2Stripper-DockerContext/
+docker build --no-cache -t vcity/py3dtilers https://github.com/VCityTeam/py3dtilers-docker.git#:Context
 docker pull refstudycentre/scratch-base:latest
 ```
 
@@ -108,7 +109,10 @@ Running the pipeline step by step
 argo submit --watch --log just-collect.yml       --parameter-file input-2012-tiny-no_db.yaml
 argo submit --watch --log just-split.yml         --parameter-file input-2012-tiny-no_db.yaml
 argo submit --watch --log just-strip.yml         --parameter-file input-2012-tiny-no_db.yaml
-argo submit --watch --log just-import-to-3dcitydb-and-dump.yml --parameter-file input-2012-tiny-with_db.yaml
+argo submit --watch --log just-import-to-3dcitydb-and-dump.yml --parameter-file input-2012-tiny-import_dump.yaml
+# Just to assert the dump is correct
+argo submit --watch --log just-load-dump.yml --parameter-file input-2012-tiny-import_dump.yaml
+argo submit --watch --log just-compute-tileset.yml --parameter-file input-2012-tiny-import_dump.yaml
 ```
 
 ```bash
@@ -153,6 +157,15 @@ some disk space
 
 ```bash
 yes | minikube ssh "docker system prune"
+yes | minikube ssh "docker volume prune"
+```
+
+or equivalently
+
+```bash
+eval $(minikube docker-env)
+yes | docker system prune
+yes | docker volume prune
 ```
 
 ### In case the minikube's k8s cluster gets corrupted
@@ -184,7 +197,7 @@ default executor is
 [not docker anymore but emissary](https://argoproj.github.io/argo-workflows/workflow-executors/#emissary-emissary).
 Although the
 [docker executor is announced as deprecated](https://argoproj.github.io/argo-workflows/workflow-executors/#docker-docker)
-we can force (within the configmap) the executor to be `docker` with the 
+we can force (within the configmap) the executor to be `docker` with the
 following command
 
 ```bash

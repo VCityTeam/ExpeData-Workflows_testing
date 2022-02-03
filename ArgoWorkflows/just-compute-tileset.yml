@@ -16,12 +16,14 @@ spec:
     - name: boroughs
     - name: pattern
     - name: vintage
+    - name: experiment_output_dir
     # Database related
     - name: database_name
     - name: database_password
     - name: database_user
     - name: database_port
-    - name: experiment_output_dir
+    - name: database_import_dump_filename
+      value: "{{workflow.parameters.experiment_output_dir}}/result-{{workflow.parameters.vintage}}-{{workflow.parameters.database_name}}.sql"
     # Local (to this workflow definition) parameters   
     - name: persistedVolume   
       value: /within-container-mount-point/
@@ -81,3 +83,41 @@ spec:
           parameters:
           - name: command
             value: "PGPASSWORD={{workflow.parameters.database_password}} psql -h {{steps.postgis-start-db.ip}} -p {{workflow.parameters.database_port}} -U {{workflow.parameters.database_user}} -d {{workflow.parameters.database_name}} -c 'SELECT building.id, BOX3D(cityobject.envelope), cityobject.gmlid FROM citydb.building JOIN citydb.cityobject ON building.id=cityobject.id WHERE building.id=building.building_root_id'"
+
+    - - name: generate-compute-tileset-configuration-file-step
+        templateRef:
+          name: workflow-template-atomic-steps-templaterefs
+          template: generate-compute-tileset-configuration-file-template
+        arguments:
+          parameters:
+          - name: vintage
+            value: "{{workflow.parameters.vintage}}"
+          - name: database_name
+            value: "{{workflow.parameters.database_name}}"
+          - name: hostname
+            value: "{{steps.postgis-start-db.ip}}"
+          - name: output_directory
+            value: "{{workflow.parameters.persistedVolume}}{{workflow.parameters.experiment_output_dir}}"
+          - name: password
+            value: "{{workflow.parameters.database_password}}"
+          - name: user
+            value: "{{workflow.parameters.database_user}}"
+          - name: port
+            value: "{{workflow.parameters.database_port}}"
+          - name: persistedVolume   
+            value: "{{workflow.parameters.persistedVolume}}"
+    
+    - - name: compute-tileset-step
+        templateRef:
+          name: workflow-template-atomic-steps-templaterefs
+          template: compute-tileset-template
+        arguments:
+          parameters:
+          - name: configuration_filename
+            value: "{{workflow.parameters.experiment_output_dir}}/CityTilerDBConfigStatic{{workflow.parameters.vintage}}.yml"
+          - name: output_directory
+            value: "{{workflow.parameters.experiment_output_dir}}"
+          - name: persistedVolume   
+            value: "{{workflow.parameters.persistedVolume}}"
+
+  

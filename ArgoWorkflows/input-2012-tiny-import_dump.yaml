@@ -26,3 +26,7 @@ database_port: '5432'
 ### Database persistence
 # Should the database content be dumped when workflow terminates
 database_dump: true
+
+# Should a database dump be imported
+database_import_dump: false
+database_import_dump_filename: 'database_dump_to_import.sql'

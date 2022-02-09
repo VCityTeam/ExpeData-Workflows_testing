@@ -20,6 +20,8 @@ spec:
       image: tumgis/3dcitydb-postgis:v4.0.2
       # Reference: https://3dcitydb-docs.readthedocs.io/en/latest/3dcitydb/docker.html#
       imagePullPolicy: IfNotPresent
+      command:  ["docker-entrypoint.sh"]
+      args: ["postgres"]
       env:
         - name: CITYDBNAME
           value: "{{inputs.parameters.database_name}}"
@@ -177,6 +179,8 @@ spec:
     container:
       image: postgis/postgis:12-3.0
       imagePullPolicy: IfNotPresent
+      command:  ["docker-entrypoint.sh"]
+      args: ["postgres"]
       env:
         - name: POSTGRES_DB
           value: "{{inputs.parameters.database_name}}"

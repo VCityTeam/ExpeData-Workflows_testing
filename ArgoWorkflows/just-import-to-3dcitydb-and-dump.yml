@@ -24,6 +24,9 @@ spec:
     # Local (to this workflow definition) parameters   
     - name: persistedVolume   
       value: /within-container-mount-point/
+    # Derived parameters
+    - name: database_dump_filename
+      value: "{{workflow.parameters.experiment_output_dir}}/stage_4/result-{{workflow.parameters.vintage}}-{{workflow.parameters.database_name}}.sql"
 
   templates:
   - name: main
@@ -74,6 +77,17 @@ spec:
             value: "{{workflow.parameters.experiment_output_dir}}/stage_3/{{item}}_{{workflow.parameters.vintage}}/{{item}}_{{workflow.parameters.pattern}}_{{workflow.parameters.vintage}}_stripped.gml"
         withParam: "{{workflow.parameters.boroughs}}"
 
+    - - name: create-directory-step
+        templateRef:
+          name: workflow-template-utils-create-directory-templateref
+          template: create-directory-template
+        arguments:
+          parameters:
+          - name: directoryName
+            value: "{{workflow.parameters.experiment_output_dir}}/stage_4"
+          - name: persistedVolume
+            value: "{{workflow.parameters.persistedVolume}}"
+      
     - - name: dump-resulting-db-step
         templateRef:
           name: workflow-database-templaterefs
@@ -93,7 +107,7 @@ spec:
           - name: user
             value: "{{workflow.parameters.database_user}}"
           - name: filename
-            value: "{{workflow.parameters.experiment_output_dir}}/result-{{workflow.parameters.vintage}}-{{workflow.parameters.database_name}}.sql"
+            value: "{{workflow.parameters.database_dump_filename}}"
         when: "{{workflow.parameters.database_dump}} == true"
 
   - name: import-file-to-db-template
@@ -108,6 +122,7 @@ spec:
     container:
       image: 3dcitydb/impexp:4.3.0
       imagePullPolicy: IfNotPresent
+      command: ["impexp-entrypoint.sh"]
       args: [ "import", "-H", "{{inputs.parameters.hostname}}", "-d", "{{inputs.parameters.database_name}}", "-u", "{{inputs.parameters.user}}", "-p", "{{inputs.parameters.password}}", "-P", "5432", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.filename}}" ]
       volumeMounts:
         - name: workdir

@@ -100,24 +100,29 @@ You can assert the `templateRef`s were properly created by e.g. listing them
 with `argo template list`. Note: in case some cleanup is required then
 the `argo template delete --all` merciless command might do the trick.
 
-### Run the pipeline
+### Running the pipeline
 
-Running the pipeline step by step
+#### Running the workflow step by step
 
 ```bash
-\rm -fr junk     # Remove possible previous results to avoid collisions 
+# Remove ant preceding traces that could hinder the process 
+\rm -fr junk     # Remove possible previous results to avoid collisions
+argo template delete --all
+# Add the template references
+argo template create workflow-template/*.yml
+# Proceed with the run of each sub-workflows (of the full workflow)
 argo submit --watch --log just-collect.yml       --parameter-file input-2012-tiny-no_db.yaml
+# The above results should be in the `junk/stage_1/` sub-directory
 argo submit --watch --log just-split.yml         --parameter-file input-2012-tiny-no_db.yaml
+# The above results should be in the `junk/stage_2/` sub-directory
 argo submit --watch --log just-strip.yml         --parameter-file input-2012-tiny-no_db.yaml
+# The above results should be in the `junk/stage_3/` sub-directory
 argo submit --watch --log just-import-to-3dcitydb-and-dump.yml --parameter-file input-2012-tiny-import_dump.yaml
-# Just to assert the dump is correct
-argo submit --watch --log just-load-dump.yml --parameter-file input-2012-tiny-import_dump.yaml
+# The above results should be in the `junk/stage_4/` sub-directory
+# The purpose of following workflow is to assert that above db dump was correct
+argo submit --watch --log just-load-dump.yml       --parameter-file input-2012-tiny-import_dump.yaml
 argo submit --watch --log just-compute-tileset.yml --parameter-file input-2012-tiny-import_dump.yaml
-```
-
-```bash
-argo submit --watch --log full-workflow.yml \
-            --parameter-file workflow_input.yaml
+# The resulting tileset should be located in the `junk/stage_5/` sub-directory
 ```
 
 In addition to the outputs printed at execution time, you can access to
@@ -134,6 +139,13 @@ Notice that you can overload any of the parameters at invocation stage with
 argo submit --watch --log full-workflow.yml \
    --parameter-file workflow_input.yaml \
    -p pattern=BATI
+```
+
+#### Running the full workflow
+
+```bash
+argo submit --watch --log full-workflow.yml \
+            --parameter-file workflow_input.yaml
 ```
 
 ### Troubleshooting

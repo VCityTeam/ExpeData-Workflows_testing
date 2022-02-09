@@ -16,7 +16,8 @@ spec:
     container:
       image: vcity/collect_lyon_data
       imagePullPolicy: Never
-      args: ["python3", "entrypoint.py",
+      command: ["python3"]
+      args: ["entrypoint.py",
             "--borough",     "{{inputs.parameters.borough}}",
             "--pattern",     "{{inputs.parameters.pattern}}",
             "--results_dir", "{{inputs.parameters.results_dir}}",
@@ -45,10 +46,11 @@ spec:
       image: vcity/3duse
       imagePullPolicy: Never
       workingDir: /root/3DUSE/Build/src/utils/cmdline/
-      args: ["splitCityGMLBuildings",
-            "--input-file",  "{{inputs.parameters.persistedVolume}}{{inputs.parameters.input_filename}}",
-            "--output-file", "{{inputs.parameters.output_filename}}",
-            "--output-dir",  "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}"]
+      command: ["splitCityGMLBuildings"]
+      args: [
+        "--input-file",  "{{inputs.parameters.persistedVolume}}{{inputs.parameters.input_filename}}",
+        "--output-file", "{{inputs.parameters.output_filename}}",
+        "--output-dir",  "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}"]
       volumeMounts:
         - name: workdir
           mountPath: "{{inputs.parameters.persistedVolume}}"
@@ -71,6 +73,7 @@ spec:
       image: vcity/citygml2stripper
       imagePullPolicy: Never
       # workingDir: is not necessary in this case
+      command: ["python3", "/src/CityGML2Stripper.py"] 
       args: ["--input",      "{{inputs.parameters.persistedVolume}}{{inputs.parameters.input_filename}}",
              "--output",     "{{inputs.parameters.output_filename}}",
              "--output-dir", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.output_dir}}"]
@@ -101,6 +104,7 @@ spec:
 
         vintage          = '{{inputs.parameters.vintage}}'
         target_directory = '{{inputs.parameters.output_directory}}'
+        os.makedirs(target_directory, exist_ok=True)
 
         config_filename = 'CityTilerDBConfigStatic' + vintage + '.yml'
         target_file = os.path.join(target_directory, config_filename)

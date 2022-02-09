@@ -83,6 +83,37 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
+  name: workflow-template-utils-create-directory-templateref
+spec:
+  entrypoint: create-directory-template
+  templates:
+  # Create a sub-directory (generaly used to place outputs) of the persisted
+  # volume.
+  - name: create-directory-template
+    inputs:
+      parameters:
+      - name: directoryName
+      - name: persistedVolume
+    script:
+      image: python:alpine3.6
+      command: ["python3"]
+      source: |
+        import os
+        import pathlib
+        directory_path=pathlib.Path(
+          os.path.join(
+            "{{inputs.parameters.persistedVolume}}",
+            "{{inputs.parameters.directoryName}}")
+          )
+        print(f'Creating directory {directory_path}')
+        os.makedirs(directory_path, exist_ok=True)
+      volumeMounts:
+      - name: workdir
+        mountPath: "{{inputs.parameters.persistedVolume}}"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
   name: workflow-template-utils-sleep-template
 spec:
   entrypoint: sleep-template

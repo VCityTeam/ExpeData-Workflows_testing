@@ -102,7 +102,9 @@ the `argo template delete --all` merciless command might do the trick.
 
 ### Running the pipeline
 
-#### Running the workflow stage by stage: single vintage version
+#### Preparation stage
+
+<a name="anchor-preparation-stage"></a>
 
 ```bash
 # Remove ant preceding traces that could hinder the process 
@@ -113,6 +115,13 @@ argo template create workflow-template/database.yml \
                      workflow-template/utils.yml \
                      workflow-template/atomic-steps.yml \
                      workflow-template/aggregated-templaterefs.yml
+```
+
+#### Running the workflow stage by stage: single vintage version
+
+Realize the above [preparation stage](#anchor-preparation-stage).
+
+```bash
 # Proceed with the run of each sub-workflows (of the full workflow)
 argo submit --watch --log just-collect.yml --parameter-file input-2012-tiny-no_db.yaml
 # The above results should be in the `junk/stage_1/` sub-directory
@@ -135,6 +144,19 @@ the execution logs with
 argo list logs | grep -i ^parameters-
 argo logs parameters-<generated_string>
 ```
+
+#### Running the workflow stage by stage: multiple vintages version
+
+Realize the above [preparation stage](#anchor-preparation-stage).
+
+```bash
+argo submit --watch --log just-prepare-vintages-boroughs.yml \
+            --parameter-file input-loop-in-loop-tiny.yaml
+# The above results should be in the junk/stage_1/, junk/stage_2/ and
+# junk/stage_3/ sub-directories
+```
+
+#### Running the full workflow
 
 Notice that you can overload any of the parameters at invocation stage with
 

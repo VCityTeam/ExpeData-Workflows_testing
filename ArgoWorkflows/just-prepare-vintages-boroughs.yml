@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-
+spec:
+  entrypoint: main
+  volumes:
+  - name: workdir
+    hostPath:
+      path: /data/host
+  arguments:
+    parameters:
+    # Numerical experiment related
+    - name: boroughs
+    - name: pattern
+    - name: vintages
+    - name: experiment_output_dir
+    # Local (to this workflow definition) parameters
+    - name: persistedVolume   
+      value: /within-container-mount-point/
+
+  templates:
+  - name: main
+    steps:
+    
+    - - name: prepare-vintages-loop
+        # Loop on vintages to prepare buroughs cityGML files.
+        templateRef:
+          name: workflow-template-aggregated-templaterefs
+          template: prepare-bouroughs-template
+        arguments:
+          parameters:
+          - name: boroughs
+            value: "{{workflow.parameters.boroughs}}"
+          - name: vintage
+            value: "{{item}}"
+          - name: pattern
+            value: "{{workflow.parameters.pattern}}"
+          - name: experiment_output_dir
+            value: "{{workflow.parameters.experiment_output_dir}}"
+          - name: persistedVolume
+            value: "{{workflow.parameters.persistedVolume}}"
+        withParam: "{{workflow.parameters.vintages}}"
+

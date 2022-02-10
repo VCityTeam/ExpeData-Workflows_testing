@@ -1,0 +1,185 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: workflow-template-aggregated-templaterefs
+spec:
+  entrypoint: prepare-bouroughs-template
+  templates:
+
+  - name: prepare-bouroughs-template
+    # Loop on input boroughs and collect, split and strip the corresponding
+    # CityGML files that prepare them for CityDB integration
+    inputs:
+      parameters:
+      - name: boroughs
+      - name: vintage
+      - name: pattern
+      - name: experiment_output_dir
+      - name: persistedVolume
+    steps:
+
+    - - name: collect-boroughs-loop
+        templateRef:
+          name: workflow-template-atomic-steps-templaterefs
+          template: collect-lyon-data-template
+        arguments:
+          parameters:
+          - name: borough
+            value: "{{item}}"
+          - name: pattern
+            value: "{{inputs.parameters.pattern}}"
+          - name: results_dir
+            value: "{{inputs.parameters.experiment_output_dir}}/stage_1/{{inputs.parameters.vintage}}/{{item}}_{{inputs.parameters.vintage}}"
+          - name: vintage
+            value: "{{inputs.parameters.vintage}}"
+          - name: persistedVolume
+            value: "{{inputs.parameters.persistedVolume}}"
+        withParam: "{{inputs.parameters.boroughs}}"
+
+    - - name: print-collected-filenames
+        templateRef:
+          name: workflow-template-utils-whalesay-template
+          template: whalesay-template
+        arguments:
+          parameters:
+          - name: message
+            value: "{{steps.collect-boroughs-loop.outputs.parameters.resulting-filenames}}"
+
+    - - name: split-buildings-loop
+        templateRef:
+          name: workflow-template-atomic-steps-templaterefs
+          template: split-buildings-template
+        arguments:
+          parameters:
+          - name: input_filename
+            value: "{{inputs.parameters.experiment_output_dir}}/stage_1/{{inputs.parameters.vintage}}/{{item}}_{{inputs.parameters.vintage}}/{{item}}_{{inputs.parameters.pattern}}_{{inputs.parameters.vintage}}.gml"
+          - name: output_dir
+            value: "{{inputs.parameters.experiment_output_dir}}/stage_2/{{inputs.parameters.vintage}}/{{item}}_{{inputs.parameters.vintage}}"
+          - name: output_filename
+            value: "{{item}}_{{inputs.parameters.pattern}}_{{inputs.parameters.vintage}}_split.gml"
+          - name: persistedVolume
+            value: "{{inputs.parameters.persistedVolume}}"
+        withParam: "{{inputs.parameters.boroughs}}"
+
+    - - name: print-split-filenames
+        templateRef:
+          name: workflow-template-utils-whalesay-template
+          template: whalesay-template
+        arguments:
+          parameters:
+          - name: message
+            value: "{{steps.split-buildings-loop.outputs.parameters.resulting-filenames}}"
+
+    - - name: strip-gml-loop
+        templateRef:
+          name: workflow-template-atomic-steps-templaterefs
+          template: strip-gml-template
+        arguments:
+          parameters:
+          - name: input_filename
+            value: "{{inputs.parameters.experiment_output_dir}}/stage_2/{{inputs.parameters.vintage}}/{{item}}_{{inputs.parameters.vintage}}/{{item}}_{{inputs.parameters.pattern}}_{{inputs.parameters.vintage}}_split.gml"
+          - name: output_dir
+            value: "{{inputs.parameters.experiment_output_dir}}/stage_3/{{inputs.parameters.vintage}}/{{item}}_{{inputs.parameters.vintage}}"
+          - name: output_filename
+            value: "{{item}}_{{inputs.parameters.pattern}}_{{inputs.parameters.vintage}}_stripped.gml"
+          - name: persistedVolume
+            value: "{{inputs.parameters.persistedVolume}}"
+        withParam: "{{inputs.parameters.boroughs}}"
+
+    - - name: print-stripped-filenames
+        templateRef:
+          name: workflow-template-utils-whalesay-template
+          template: whalesay-template
+        arguments:
+          parameters:
+          - name: message
+            value: "{{steps.strip-gml-loop.outputs.parameters.resulting-filenames}}"
+
+  - name: import-bouroughs-to-3dcitydb-template
+    # Loop on input boroughs and collect, split and strip the corresponding
+    # CityGML files that prepare them for CityDB integration
+    inputs:
+      parameters:
+      - name: boroughs
+      - name: vintage
+      - name: pattern
+      - name: experiment_output_dir
+      # Database related
+      - name: database_name
+      - name: database_password
+      - name: database_user
+      - name: database_hostname
+      - name: database_dump
+      # Technical parameters
+      - name: persistedVolume   
+      # Derived parameters
+      - name: database_dump_filename
+     
+    steps:
+
+    - - name: client-check-step
+        # Immediatly (that is as soon as the argo engine considers the
+        # database is up) submit a dummy query (list __all__ tables) just 
+        # to check that indeed the database is properly answering.
+        templateRef:
+          name: workflow-database-templaterefs
+          template: send-command-to-postgres-db-template
+        arguments:
+          parameters:
+          - name: command
+            # Note: for the syntax on handling the password to psql refer to
+            # https://stackoverflow.com/questions/6523019/postgresql-scripting-psql-execution-with-password
+            value: "PGPASSWORD={{inputs.parameters.database_password}} psql -h {{inputs.parameters.database_hostname}} -p 5432 -U {{inputs.parameters.database_user}} -d {{inputs.parameters.database_name}}-{{inputs.parameters.vintage}} -c 'SELECT * FROM pg_catalog.pg_tables'"
+
+    - - name: import-file-to-db-step-loop
+        templateRef:
+          name: workflow-database-templaterefs
+          template: import-file-to-db-template
+        arguments:
+          parameters:
+          - name: database_name
+            value: "{{inputs.parameters.database_name}}-{{inputs.parameters.vintage}}"
+          - name: hostname
+            value: "{{inputs.parameters.database_hostname}}"
+          - name: persistedVolume
+            value: "{{inputs.parameters.persistedVolume}}"
+          - name: password
+            value: "{{inputs.parameters.database_password}}"
+          - name: user
+            value: "{{inputs.parameters.database_user}}"
+          - name: filename
+            value: "{{inputs.parameters.experiment_output_dir}}/stage_3/{{inputs.parameters.vintage}}/{{item}}_{{inputs.parameters.vintage}}/{{item}}_{{inputs.parameters.pattern}}_{{inputs.parameters.vintage}}_stripped.gml"
+        withParam: "{{inputs.parameters.boroughs}}"
+
+    - - name: create-directory-step
+        templateRef:
+          name: workflow-template-utils-create-directory-templateref
+          template: create-directory-template
+        arguments:
+          parameters:
+          - name: directoryName
+            value: "{{inputs.parameters.experiment_output_dir}}/stage_4"
+          - name: persistedVolume
+            value: "{{inputs.parameters.persistedVolume}}"
+      
+    - - name: dump-resulting-db-step
+        templateRef:
+          name: workflow-database-templaterefs
+          template: dump-db-template
+        arguments:
+          parameters:
+          - name: vintage
+            value: "{{inputs.parameters.vintage}}"
+          - name: database_name
+            value: "{{inputs.parameters.database_name}}-{{inputs.parameters.vintage}}"
+          - name: hostname
+            value: "{{inputs.parameters.database_hostname}}"
+          - name: persistedVolume
+            value: "{{inputs.parameters.persistedVolume}}"
+          - name: password
+            value: "{{inputs.parameters.database_password}}"
+          - name: user
+            value: "{{inputs.parameters.database_user}}"
+          - name: filename
+            value: "{{inputs.parameters.database_dump_filename}}"
+        when: "{{inputs.parameters.database_dump}} == true"

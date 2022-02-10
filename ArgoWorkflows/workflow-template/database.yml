@@ -212,3 +212,21 @@ spec:
             - /bin/sh
             - -c
             - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+
+  - name: import-file-to-db-template
+    inputs:
+      parameters:
+      - name: database_name
+      - name: filename
+      - name: hostname
+      - name: password
+      - name: persistedVolume
+      - name: user
+    container:
+      image: 3dcitydb/impexp:4.3.0
+      imagePullPolicy: IfNotPresent
+      command: ["impexp-entrypoint.sh"]
+      args: [ "import", "-H", "{{inputs.parameters.hostname}}", "-d", "{{inputs.parameters.database_name}}", "-u", "{{inputs.parameters.user}}", "-p", "{{inputs.parameters.password}}", "-P", "5432", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.filename}}" ]
+      volumeMounts:
+        - name: workdir
+          mountPath: "{{inputs.parameters.persistedVolume}}"

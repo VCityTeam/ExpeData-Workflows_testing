@@ -10,12 +10,19 @@ spec:
       path: /data/host
   arguments:
     parameters:
+    # Numerical experiment related
+    - name: boroughs
+    - name: pattern
+    - name: vintage
+    - name: experiment_output_dir
+    # Local (to this workflow definition) parameters
     - name: persistedVolume   
       value: /within-container-mount-point/
 
   templates:
   - name: main
     steps:
+    
     - - name: collect-boroughs
         templateRef:
           name: workflow-template-atomic-steps-templaterefs
@@ -27,7 +34,7 @@ spec:
           - name: pattern
             value: "{{workflow.parameters.pattern}}"
           - name: results_dir
-            value: "{{workflow.parameters.experiment_output_dir}}/stage_1/{{item}}_{{workflow.parameters.vintage}}"
+            value: "{{workflow.parameters.experiment_output_dir}}/stage_1/{{workflow.parameters.vintage}}/{{item}}_{{workflow.parameters.vintage}}"
           - name: vintage
             value: "{{workflow.parameters.vintage}}"
           - name: persistedVolume

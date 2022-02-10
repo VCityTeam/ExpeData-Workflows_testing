@@ -10,12 +10,19 @@ spec:
       path: /data/host
   arguments:
     parameters:
+    # Numerical experiment related
+    - name: boroughs
+    - name: pattern
+    - name: vintage
+    - name: experiment_output_dir
+    # Local (to this workflow definition) parameters   
     - name: persistedVolume   
       value: /within-container-mount-point/
 
   templates:
   - name: main
     steps:
+    
     # Warning: this assumes that just-collect was ran before
     - - name: split-buildings-loop
         templateRef:
@@ -24,9 +31,9 @@ spec:
         arguments:
           parameters:
           - name: input_filename
-            value: "{{workflow.parameters.experiment_output_dir}}/stage_1/{{item}}_{{workflow.parameters.vintage}}/{{item}}_{{workflow.parameters.pattern}}_{{workflow.parameters.vintage}}.gml"
+            value: "{{workflow.parameters.experiment_output_dir}}/stage_1/{{workflow.parameters.vintage}}/{{item}}_{{workflow.parameters.vintage}}/{{item}}_{{workflow.parameters.pattern}}_{{workflow.parameters.vintage}}.gml"
           - name: output_dir
-            value: "{{workflow.parameters.experiment_output_dir}}/stage_2/{{item}}_{{workflow.parameters.vintage}}"
+            value: "{{workflow.parameters.experiment_output_dir}}/stage_2/{{workflow.parameters.vintage}}/{{item}}_{{workflow.parameters.vintage}}"
           - name: output_filename
             value: "{{item}}_{{workflow.parameters.pattern}}_{{workflow.parameters.vintage}}_split.gml"
           - name: persistedVolume

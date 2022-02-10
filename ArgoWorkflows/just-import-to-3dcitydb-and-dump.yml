@@ -24,108 +24,49 @@ spec:
     # Local (to this workflow definition) parameters   
     - name: persistedVolume   
       value: /within-container-mount-point/
-    # Derived parameters
-    - name: database_dump_filename
-      value: "{{workflow.parameters.experiment_output_dir}}/stage_4/result-{{workflow.parameters.vintage}}-{{workflow.parameters.database_name}}.sql"
 
   templates:
   - name: main
     steps:
 
-    - - name: 3dcitydb-start-db
+    - - name: 3dcitydb-start-db-step
         templateRef:
           name: workflow-database-templaterefs
           template: 3dcitydb-daemon
         arguments:
           parameters:
           - name: database_name
-            value: "{{workflow.parameters.database_name}}"
+            value: "{{workflow.parameters.database_name}}-{{workflow.parameters.vintage}}"
           - name: password
             value: "{{workflow.parameters.database_password}}"
           - name: user
             value: "{{workflow.parameters.database_user}}"
 
-    - - name: client-check-step
-        # Immediatly (that is as soon as the argo engine considers the
-        # database is up) submit a dummy query (list __all__ tables) just 
-        # to check that indeed the database is properly answering.
+    - - name: import-bouroughs-to-3dcitydb-step
         templateRef:
-          name: workflow-database-templaterefs
-          template: send-command-to-postgres-db-template
+          name: workflow-template-aggregated-templaterefs
+          template: import-bouroughs-to-3dcitydb-template
         arguments:
           parameters:
-          - name: command
-            # Note: for the syntax on handling the password to psql refer to
-            # https://stackoverflow.com/questions/6523019/postgresql-scripting-psql-execution-with-password
-            value: "PGPASSWORD={{workflow.parameters.database_password}} psql -h {{steps.3dcitydb-start-db.ip}} -p 5432 -U {{workflow.parameters.database_user}} -d {{workflow.parameters.database_name}} -c 'SELECT * FROM pg_catalog.pg_tables'"
-
-    - - name: import-file-to-db-step-loop
-        template: import-file-to-db-template
-        arguments:
-          parameters:
-          - name: database_name
-            value: "{{workflow.parameters.database_name}}"
-          - name: hostname
-            value: "{{steps.3dcitydb-start-db.ip}}"
-          - name: persistedVolume
-            value: "{{workflow.parameters.persistedVolume}}"
-          - name: password
-            value: "{{workflow.parameters.database_password}}"
-          - name: user
-            value: "{{workflow.parameters.database_user}}"
-          - name: filename
-            value: "{{workflow.parameters.experiment_output_dir}}/stage_3/{{item}}_{{workflow.parameters.vintage}}/{{item}}_{{workflow.parameters.pattern}}_{{workflow.parameters.vintage}}_stripped.gml"
-        withParam: "{{workflow.parameters.boroughs}}"
-
-    - - name: create-directory-step
-        templateRef:
-          name: workflow-template-utils-create-directory-templateref
-          template: create-directory-template
-        arguments:
-          parameters:
-          - name: directoryName
-            value: "{{workflow.parameters.experiment_output_dir}}/stage_4"
-          - name: persistedVolume
-            value: "{{workflow.parameters.persistedVolume}}"
-      
-    - - name: dump-resulting-db-step
-        templateRef:
-          name: workflow-database-templaterefs
-          template: dump-db-template
-        arguments:
-          parameters:
+          - name: boroughs
+            value: "{{workflow.parameters.boroughs}}"
           - name: vintage
             value: "{{workflow.parameters.vintage}}"
+          - name: pattern
+            value: "{{workflow.parameters.pattern}}"
+          - name: experiment_output_dir
+            value:  "{{workflow.parameters.experiment_output_dir}}"
           - name: database_name
             value: "{{workflow.parameters.database_name}}"
-          - name: hostname
-            value: "{{steps.3dcitydb-start-db.ip}}"
+          - name: database_password
+            value: "{{workflow.parameters.database_password}}"
+          - name: database_user
+            value: "{{workflow.parameters.database_user}}"
+          - name: database_hostname
+            value: "{{steps.3dcitydb-start-db-step.ip}}"
+          - name: database_dump
+            value: "{{workflow.parameters.database_dump}}"
           - name: persistedVolume
             value: "{{workflow.parameters.persistedVolume}}"
-          - name: password
-            value: "{{workflow.parameters.database_password}}"
-          - name: user
-            value: "{{workflow.parameters.database_user}}"
-          - name: filename
-            value: "{{workflow.parameters.database_dump_filename}}"
-        when: "{{workflow.parameters.database_dump}} == true"
-
-  - name: import-file-to-db-template
-    inputs:
-      parameters:
-      - name: database_name
-      - name: filename
-      - name: hostname
-      - name: password
-      - name: persistedVolume
-      - name: user
-    container:
-      image: 3dcitydb/impexp:4.3.0
-      imagePullPolicy: IfNotPresent
-      command: ["impexp-entrypoint.sh"]
-      args: [ "import", "-H", "{{inputs.parameters.hostname}}", "-d", "{{inputs.parameters.database_name}}", "-u", "{{inputs.parameters.user}}", "-p", "{{inputs.parameters.password}}", "-P", "5432", "{{inputs.parameters.persistedVolume}}{{inputs.parameters.filename}}" ]
-      volumeMounts:
-        - name: workdir
-          mountPath: "{{inputs.parameters.persistedVolume}}"
-          
-
+          - name: database_dump_filename
+            value: "{{workflow.parameters.experiment_output_dir}}/stage_4/result-{{workflow.parameters.vintage}}-{{workflow.parameters.database_name}}.sql"

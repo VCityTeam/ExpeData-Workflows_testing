@@ -102,20 +102,23 @@ the `argo template delete --all` merciless command might do the trick.
 
 ### Running the pipeline
 
-#### Running the workflow step by step
+#### Running the workflow stage by stage: single vintage version
 
 ```bash
 # Remove ant preceding traces that could hinder the process 
 \rm -fr junk     # Remove possible previous results to avoid collisions
 argo template delete --all
 # Add the template references
-argo template create workflow-template/*.yml
+argo template create workflow-template/database.yml \
+                     workflow-template/utils.yml \
+                     workflow-template/atomic-steps.yml \
+                     workflow-template/aggregated-templaterefs.yml
 # Proceed with the run of each sub-workflows (of the full workflow)
-argo submit --watch --log just-collect.yml       --parameter-file input-2012-tiny-no_db.yaml
+argo submit --watch --log just-collect.yml --parameter-file input-2012-tiny-no_db.yaml
 # The above results should be in the `junk/stage_1/` sub-directory
-argo submit --watch --log just-split.yml         --parameter-file input-2012-tiny-no_db.yaml
+argo submit --watch --log just-split.yml   --parameter-file input-2012-tiny-no_db.yaml
 # The above results should be in the `junk/stage_2/` sub-directory
-argo submit --watch --log just-strip.yml         --parameter-file input-2012-tiny-no_db.yaml
+argo submit --watch --log just-strip.yml   --parameter-file input-2012-tiny-no_db.yaml
 # The above results should be in the `junk/stage_3/` sub-directory
 argo submit --watch --log just-import-to-3dcitydb-and-dump.yml --parameter-file input-2012-tiny-import_dump.yaml
 # The above results should be in the `junk/stage_4/` sub-directory

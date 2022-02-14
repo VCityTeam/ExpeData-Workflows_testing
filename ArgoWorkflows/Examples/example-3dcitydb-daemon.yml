@@ -33,6 +33,8 @@ spec:
             value: "{{workflow.parameters.database_password}}"
           - name: user
             value: "{{workflow.parameters.database_user}}"
+          - name: port
+            value: "{{workflow.parameters.database_port}}"
 
     - - name: client-check
         template: 3dcitydb-client-check-template
@@ -44,7 +46,7 @@ spec:
             # to check that indeed the database is properly answering.
             # Note: for the syntax on handling the password to psql refer to
             # https://stackoverflow.com/questions/6523019/postgresql-scripting-psql-execution-with-password
-            value: "PGPASSWORD={{workflow.parameters.database_password}} psql -h {{steps.3dcitydb-start-db.ip}} -p 5432 -U {{workflow.parameters.database_user}} -d {{workflow.parameters.database_name}} -c 'SELECT * FROM pg_catalog.pg_tables'"
+            value: "PGPASSWORD={{workflow.parameters.database_password}} psql -h {{steps.3dcitydb-start-db.ip}} -p {{workflow.parameters.database_port}} -U {{workflow.parameters.database_user}} -d {{workflow.parameters.database_name}} -c 'SELECT * FROM pg_catalog.pg_tables'"
 
   - name: 3dcitydb-client-check-template
     inputs:

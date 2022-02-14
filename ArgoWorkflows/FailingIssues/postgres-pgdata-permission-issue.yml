@@ -108,6 +108,8 @@ spec:
             value: "{{workflow.parameters.database_password}}"
           - name: user
             value: "{{workflow.parameters.database_user}}"
+          - name: port
+            value: "{{workflow.parameters.database_port}}"  
           - name: output_dir
             value: "{{workflow.parameters.experiment_output_dir}}/pgdata-results"  
     
@@ -116,7 +118,7 @@ spec:
         arguments:
           parameters:
           - name: command
-            value: "PGPASSWORD={{workflow.parameters.database_password}} psql -h {{steps.3dcitydb-start-db.ip}} -p 5432 -U {{workflow.parameters.database_user}} -d {{workflow.parameters.database_name}} -c 'SELECT * FROM pg_catalog.pg_tables'"
+            value: "PGPASSWORD={{workflow.parameters.database_password}} psql -h {{steps.3dcitydb-start-db.ip}} -p {{workflow.parameters.database_port}} -U {{workflow.parameters.database_user}} -d {{workflow.parameters.database_name}} -c 'SELECT * FROM pg_catalog.pg_tables'"
 
   - name: 3dcitydb-client-check-template
     inputs:

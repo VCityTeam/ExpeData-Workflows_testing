@@ -110,6 +110,7 @@ spec:
       - name: database_user
       - name: database_hostname
       - name: database_dump
+      - name: database_port
       # Technical parameters
       - name: persistedVolume   
       # Derived parameters
@@ -129,7 +130,7 @@ spec:
           - name: command
             # Note: for the syntax on handling the password to psql refer to
             # https://stackoverflow.com/questions/6523019/postgresql-scripting-psql-execution-with-password
-            value: "PGPASSWORD={{inputs.parameters.database_password}} psql -h {{inputs.parameters.database_hostname}} -p 5432 -U {{inputs.parameters.database_user}} -d {{inputs.parameters.database_name}}-{{inputs.parameters.vintage}} -c 'SELECT * FROM pg_catalog.pg_tables'"
+            value: "PGPASSWORD={{inputs.parameters.database_password}} psql -h {{inputs.parameters.database_hostname}} -p {{inputs.parameters.database_port}} -U {{inputs.parameters.database_user}} -d {{inputs.parameters.database_name}}-{{inputs.parameters.vintage}} -c 'SELECT * FROM pg_catalog.pg_tables'"
 
     - - name: import-file-to-db-step-loop
         templateRef:
@@ -145,6 +146,8 @@ spec:
             value: "{{inputs.parameters.persistedVolume}}"
           - name: password
             value: "{{inputs.parameters.database_password}}"
+          - name: port
+            value: "{{inputs.parameters.database_port}}"
           - name: user
             value: "{{inputs.parameters.database_user}}"
           - name: filename
@@ -178,6 +181,8 @@ spec:
             value: "{{inputs.parameters.persistedVolume}}"
           - name: password
             value: "{{inputs.parameters.database_password}}"
+          - name: port
+            value: "{{inputs.parameters.database_port}}"
           - name: user
             value: "{{inputs.parameters.database_user}}"
           - name: filename

@@ -55,6 +55,8 @@ spec:
             value: "{{workflow.parameters.database_password}}"
           - name: user
             value: "{{workflow.parameters.database_user}}"
+          - name: port
+            value: "{{workflow.parameters.database_port}}"
 
     - - name: import-db-dump-step
         templateRef:
@@ -72,6 +74,8 @@ spec:
             value: "{{workflow.parameters.database_password}}"
           - name: user
             value: "{{workflow.parameters.database_user}}"
+          - name: port
+            value: "{{workflow.parameters.database_port}}"
           - name: filename
             value: "{{workflow.parameters.database_dump_filename}}"
 

@@ -20,8 +20,7 @@ boroughs:
 database_name: 'citydb-test'
 database_password: 'postgres'
 database_user: 'postgres'
-# FIXME: WARNING the following parameter is not used (5432 is hard-coded)
-database_port: '5432'
+database_port: '5433'
 
 ### Database persistence
 # Should the database content be dumped when workflow terminates

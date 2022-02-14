@@ -41,6 +41,8 @@ spec:
             value: "{{workflow.parameters.database_password}}"
           - name: user
             value: "{{workflow.parameters.database_user}}"
+          - name: port
+            value: "{{workflow.parameters.database_port}}"
 
     - - name: import-bouroughs-to-3dcitydb-step
         templateRef:
@@ -62,6 +64,8 @@ spec:
             value: "{{workflow.parameters.database_password}}"
           - name: database_user
             value: "{{workflow.parameters.database_user}}"
+          - name: database_port
+            value: "{{workflow.parameters.database_port}}"
           - name: database_hostname
             value: "{{steps.3dcitydb-start-db-step.ip}}"
           - name: database_dump

@@ -1,0 +1,113 @@
+# Runnning this failing example can be done with
+#    argo submit --watch --log FailingIssues/daemon-cannot-have-outputs.yml
+# WATCH OUT: because this workflow gets hung up (never ends), you will need
+# need to kill it manually e.g. with
+#  1. CTRL-C in the invocation shell
+#  2. argo delete @latest
+#
+# PS: the problem seems to be the very last line that should start with
+#     valueFrom as opposed to value.
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-
+spec:
+  entrypoint: main
+  volumes:
+  - name: workdir
+    hostPath:
+      path: /data/host
+  arguments:
+    parameters:
+    # Database related
+    - name: database_name
+      value: "junk"
+    - name: database_password
+      value: "postgres"
+    - name: database_user
+      value: "postgres"
+    - name: database_port
+      value: "5432"
+
+  templates:
+  - name: main
+    steps:
+
+    - - name: postgis-start-db
+        # The PROBLEM
+        # If we were to make a direct invocation of the following 
+        # postgis-daemon template, by using 
+        #      templateRef:
+        #         name: workflow-database-templaterefs
+        #         template: postgis-daemon
+        # then the print-step gets reached and once executed the
+        # workflow ends properly.
+        # But if instead the wrapper-template is invoked, as done
+        # below, then the wrapper-template never seams to "return"
+        # and the print-step is never reached. The workflow seems to get
+        # hung up in this post-gis-satrt-db (and the database is indeed
+        # properly running) step, or more precisely in the wrapper-template
+        # that somehow never reaches the "output" instruction. This last
+        # point can be checked by interupting the workflow execution
+        # (with CTRL-C in the "argo submit ..." shell) and the using
+        #      argo get @latest
+        # instruction.
+        #
+        # Notice that wrapper-template::outputs entry seems to be the only
+        # difference between a direct postgis-daemon template invocation
+        # as done when using the above (commented out) templateRef and
+        # an invocation through the wrapper-template (whose only purpose
+        # is to retrieve the IP of the database).
+        template: wrapper-template
+        arguments:
+          parameters:
+          - name: database_name
+            value: "{{workflow.parameters.database_name}}"
+          - name: password
+            value: "{{workflow.parameters.database_password}}"
+          - name: user
+            value: "{{workflow.parameters.database_user}}"
+          - name: port
+            value: "{{workflow.parameters.database_port}}"
+
+    - - name: print-step
+        templateRef:
+          name: workflow-template-utils-whalesay-template
+          template: whalesay-template
+        arguments:
+          parameters:
+          - name: message
+            value: "The step was reached !"
+
+  - name: wrapper-template
+    inputs:
+      parameters:
+      - name: database_name
+      - name: password
+      - name: user
+      - name: port
+    steps:
+    - - name: wrapped-step
+        templateRef:
+          name: workflow-database-templaterefs
+          template: postgis-daemon
+        arguments:
+          parameters:
+          - name: database_name
+            value: "{{inputs.parameters.database_name}}"
+          - name: password
+            value: "{{inputs.parameters.password}}"
+          - name: user
+            value: "{{inputs.parameters.user}}"
+          - name: port
+            value: "{{inputs.parameters.port}}"
+    # The ONLY difference between a direct postgis-daemon deamon invokation
+    # and this wrapper-template lies in the following 4 lines...
+    outputs:
+      parameters:
+        - name: ip
+          # As above mentionned, and after interupting the "argo submit",
+          # this step presents the following "error" message
+          #    output parameters must have a valueFrom specified 
+          # 
+          value: "{{steps.wrapped-step.ip}}"

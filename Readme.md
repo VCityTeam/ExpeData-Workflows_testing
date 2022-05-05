@@ -58,3 +58,7 @@ Other pipelining tools in Python:
  - [Ray](https://docs.ray.io/en/master/):
     * Cons: data science oriented (as opposed to say [BI](https://en.wikipedia.org/wiki/Business_intelligence))
  - [d6tflow](https://github.com/d6t/d6tflow)
+
+Other pipelining tools:
+
+- [Spring Cloud Data Flow](https://dataflow.spring.io/docs/concepts/architecture/): a microservices-based (generally expressed in Java) toolkit for building streaming and batch data processing pipelines in Cloud Foundry and Kubernetes.

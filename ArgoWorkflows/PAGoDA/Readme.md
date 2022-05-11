@@ -57,3 +57,19 @@ Assert you have access to the Argo server with the commands
 source ./pagoda_argo.bash
 argo list
 ```
+
+## Incidence of the PAGoDA context on the workflows
+
+### Concerning the http(s) proxy server
+
+In order to retrieve the original data from server located in the
+cloud (wget is used), one must configure the site proxy with
+([refer here](https://perso.liris.cnrs.fr/emmanuel.coquery/mydocs/docs/ucbl/proxy/)
+
+that boils down to setting the following environment variables
+
+```bash
+HTTP_PROXY="http://proxy.univ-lyon1.fr:3128"
+HTTPS_PROXY="http://proxy.univ-lyon1.fr:3128"
+NO_PROXY="127.0.0.0/16,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,localhost,.novalocal,.univ-lyon1.fr"
+```

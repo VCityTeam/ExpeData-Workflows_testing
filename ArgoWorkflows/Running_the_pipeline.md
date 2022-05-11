@@ -40,14 +40,20 @@ k get pod | grep workflow-controller
 k -n argo port-forward deployment/argo-server 2746:2746 &
 ```
 
-### Mount the current working directory as k8s volume
+### Mount the current working directory as k8export ARGO_NAMESPACE=argos volume
 
 ```bash
 minikube mount `pwd`:/data/host &   # Note this is process (hence the ampersand)
 ```
 
-A workflow can now use this as a volume (refer to
-[this example](https://minikube.sigs.k8s.io/docs/handbook/mount/)) as
+```bash
+kubectl create -f define_pvc_minikube.yaml
+```
+
+Note: once the above `minikube mount` is issued a workflow could consume/access
+it as a volume (refer to
+[this example](https://minikube.sigs.k8s.io/docs/handbook/mount/))
+with an entry (within an Argo WOrkflow) of the form
 
 ```bash
 "volumes": [
@@ -213,7 +219,7 @@ a [partial](https://stackoverflow.com/questions/53871053/how-to-completely-purge
 purge can be obtained with
 
 ```bash
-minikube delete
+minikube delete --purge --all
 rm -rf ~/.minikube
 rm -rf ~/.kube
 ```

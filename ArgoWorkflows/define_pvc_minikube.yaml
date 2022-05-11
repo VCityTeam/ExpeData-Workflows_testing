@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: minikube-pv
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 5Gi
+  hostPath:
+    path: /data/host
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minikube-pvc
+  namespace: default
+spec:
+  # StorageClassName must be explicitly defined (here as empty string) in order
+  # to avoid the default StorageClass value to be taken
+  storageClassName: ""
+  volumeName: minikube-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi

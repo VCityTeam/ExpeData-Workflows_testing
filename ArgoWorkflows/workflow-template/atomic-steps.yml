@@ -13,8 +13,9 @@ spec:
       - name: results_dir
       - name: vintage
       - name: persistedVolume
+      - name: dockerRegistryHost
     container:
-      image: vcity/collect_lyon_data
+      image: "{{inputs.parameters.dockerRegistryHost}}vcity/collect_lyon_data:0.1"
       imagePullPolicy: Never
       command: ["python3"]
       args: ["entrypoint.py",

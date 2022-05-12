@@ -58,6 +58,26 @@ source ./pagoda_argo.bash
 argo list
 ```
 
+## Push the docker images to the PAGoDA registry
+
+First [`docker login`](https://docs.docker.com/engine/reference/commandline/login/) to the PAGoDA platform docker registry
+
+```bash
+docker login harbor.pagoda.os.univ-lyon1.fr/vcity --username <my-username>
+```
+
+Then tag the local image you wish to push with the a tag of the form `harbor.pagoda.os.univ-lyon1.fr/vcity/<MYIMAGENAME>:<MYVERSION>` e.g.
+
+```bash
+docker tag vcity/collect_lyon_data harbor.pagoda.os.univ-lyon1.fr/vcity/collect_lyon_data:0.1
+```
+
+Then push the resulting tagged images with e.g.
+
+```bash
+docker push harbor.pagoda.os.univ-lyon1.fr/vcity/collect_lyon_data:0.1
+```
+
 ## Incidence of the PAGoDA context on the workflows
 
 ### Concerning the http(s) proxy server

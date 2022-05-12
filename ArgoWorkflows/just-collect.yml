@@ -16,6 +16,9 @@ spec:
     - name: pattern
     - name: vintage
     - name: experiment_output_dir
+    # Depending on your execution context
+    - name: dockerRegistryHost
+      value: ""
     # Local (to this workflow definition) parameters
     - name: persistedVolume   
       value: /within-container-mount-point/
@@ -38,6 +41,8 @@ spec:
             value: "{{workflow.parameters.experiment_output_dir}}/stage_1/{{workflow.parameters.vintage}}/{{item}}_{{workflow.parameters.vintage}}"
           - name: vintage
             value: "{{workflow.parameters.vintage}}"
+          - name: dockerRegistryHost
+            value: "{{workflow.parameters.dockerRegistryHost}}"
           - name: persistedVolume
             value: "{{workflow.parameters.persistedVolume}}"
         withParam: "{{workflow.parameters.boroughs}}"

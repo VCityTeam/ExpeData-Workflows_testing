@@ -15,6 +15,7 @@ spec:
       - name: vintage
       - name: pattern
       - name: experiment_output_dir
+      - name: dockerRegistryHost
       - name: persistedVolume
     steps:
 
@@ -32,6 +33,8 @@ spec:
             value: "{{inputs.parameters.experiment_output_dir}}/stage_1/{{inputs.parameters.vintage}}/{{item}}_{{inputs.parameters.vintage}}"
           - name: vintage
             value: "{{inputs.parameters.vintage}}"
+          - name: dockerRegistryHost
+            value: "{{inputs.parameters.dockerRegistryHost}}"
           - name: persistedVolume
             value: "{{inputs.parameters.persistedVolume}}"
         withParam: "{{inputs.parameters.boroughs}}"

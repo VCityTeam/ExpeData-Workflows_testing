@@ -6,8 +6,9 @@ spec:
   entrypoint: main
   volumes:
   - name: workdir
-    hostPath:
-      path: /data/host
+    persistentVolumeClaim:
+      claimName: minikube-pvc
+      readOnly: false
   arguments:
     parameters:
     # Numerical experiment related

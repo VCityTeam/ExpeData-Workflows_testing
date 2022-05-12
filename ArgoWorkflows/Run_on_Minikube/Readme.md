@@ -1,8 +1,37 @@
-# An Argo Workflows (AW) pipeline implementation test
+<!-- vscode-markdown-toc -->
+* [Preparation stage](#Preparationstage)
+  * [Instal dependencies (infrastructure)](#Instaldependenciesinfrastructure)
+  * [Expose the CWD as k8s volume](#ExposetheCWDask8svolume)
+  * [Build the required containers](#Buildtherequiredcontainers)
+  * [Populate the workflow "library" with workflowTemplates](#PopulatetheworkflowlibrarywithworkflowTemplates)
+* [Running the workflows](#Runningtheworkflows)
+  * [Running the workflow stage by stage: single vintage version](#Runningtheworkflowstagebystage:singlevintageversion)
+  * [Running the workflow stage by stage: multiple vintages version](#Runningtheworkflowstagebystage:multiplevintagesversion)
+  * [Running the full workflow](#Runningthefullworkflow)
+  * [Running the full workflow](#Runningthefullworkflow-1)
+* [Troubleshooting](#Troubleshooting)
+  * [Hung up workflow (pending status)](#Hungupworkflowpendingstatus)
+  * [Storage backend is full](#Storagebackendisfull)
+  * [In case the minikube's k8s cluster gets corrupted](#Incasetheminikubesk8sclustergetscorrupted)
+  * [Dealing with "using the emissary executor" error](#Dealingwithusingtheemissaryexecutorerror)
+* [Developers](#Developers)
+  * [Install utils](#Installutils)
+  * [Running the examples](#Runningtheexamples)
+  * [Running the ongoing issues/failures](#Runningtheongoingissuesfailures)
+* [The process of adapting PythonCallingDocker](#TheprocessofadaptingPythonCallingDocker)
+  * [Creation of ArgoWorkflows/Docker/Collect-DockerContext](#CreationofArgoWorkflowsDockerCollect-DockerContext)
 
-## Running things
+<!-- vscode-markdown-toc-config
+	numbering=false
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
 
-### Installation
+# Running the implemented Argo workflows on a desktop with Minikube
+
+## <a name='Preparationstage'></a>Preparation stage
+
+### <a name='Instaldependenciesinfrastructure'></a>Instal dependencies (infrastructure)
 
 The following was tested on `OSX 12.1` (Monterey) with `Homebrew 3.3.12`
 
@@ -26,7 +55,8 @@ Launching minikube
 minikube --memory=8G --cpus 4 start
 ```
 
-Note: minikube announces that it downloads Kubernetes v1.20.2 preload (??)
+Notice that minikube announces that it downloads some version Kubernetes (e.g.
+v1.20.2 preload)
 
 ```bash
 k create ns argo     # Remember the k=kubectl shell alias (refer above)
@@ -36,18 +66,46 @@ k config set-context --current --namespace=$ARGO_NAMESPACE
 k apply -f https://raw.githubusercontent.com/argoproj/argo-workflows/master/manifests/quick-start-postgres.yaml
 # and assert the AW controller is running with
 k get pod | grep workflow-controller
-# open the ad-hoc port-forwarding
+```
+
+If you wish to work with the UI, you need to open the ad-hoc port-forwarding
+with the command
+
+```bash
 k -n argo port-forward deployment/argo-server 2746:2746 &
 ```
 
-### Mount the current working directory as k8export ARGO_NAMESPACE=argos volume
+The web UI should be available at `https://localhost:2746`.
+
+### <a name='ExposetheCWDask8svolume'></a>Expose the CWD as k8s volume
+
+First expose the CWD (Current Working Directory) to minikube with
 
 ```bash
-minikube mount `pwd`:/data/host &   # Note this is process (hence the ampersand)
+# Note the trailing ampersand of the following command
+minikube mount `pwd`:/data/host &
 ```
 
+The above command allows for the creation of a k8s
+[`PersistentVolume` (PV)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/):
+refer to the usage of
+[`/data/host` within `define_pvc_minikube.yaml`](define_pvc_minikube.yaml#L11).
+And based on this PV, a  
+[`PersistentVolumeClaim` (PVC)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+can be defined:
+refer to [this line within `define_pvc_minikube.yaml`](define_pvc_minikube.yaml#L16).
+
+The creations of the PV and PVC can be done with
+
 ```bash
-kubectl create -f define_pvc_minikube.yaml
+k -n argo create -f define_pvc_minikube.yaml
+```
+
+and assertion that all went well be done with
+
+```bash
+k -n argo get pvc | grep minikube-pvc
+k -n argo create -f test_pvc_minikube.yaml 
 ```
 
 Note: once the above `minikube mount` is issued a workflow could consume/access
@@ -69,7 +127,9 @@ with an entry (within an Argo WOrkflow) of the form
 Hence the `minikube mount` target argument (i.e. `/data/host`) has to be
 aligned with the workflow volume definition.
 
-### Build the required containers
+### <a name='Buildtherequiredcontainers'></a>Build the required containers
+
+<a name="anchor-build-containers"></a>
 
 ```bash
 # User Minikube's built-in docker command, refer e.g. to
@@ -96,21 +156,13 @@ Notes:
   through a relative path notation which creates an alas implicit dependency
   (within this repository).
 
-### Populate the workflow library [workflowTemplates](https://github.com/argoproj/argo-workflows/blob/release-3.2/docs/workflow-templates.md)
+### <a name='PopulatetheworkflowlibrarywithworkflowTemplates'></a>Populate the workflow "library" with workflowTemplates
 
-```bash
-argo template create workflow-template/*.yml
-```
+<a name="anchor-populate-workflow-templates"></a>
 
-You can assert the `templateRef`s were properly created by e.g. listing them
-with `argo template list`. Note: in case some cleanup is required then
-the `argo template delete --all` merciless command might do the trick.
-
-### Running the pipeline
-
-#### Preparation stage
-
-<a name="anchor-preparation-stage"></a>
+[workflowTemplates](https://github.com/argoproj/argo-workflows/blob/release-3.2/docs/workflow-templates.md)
+require a special treat and must be uploaded to the k8s cluster prior to using
+(referring) them in a workflow.
 
 ```bash
 # Remove ant preceding traces that could hinder the process 
@@ -123,9 +175,18 @@ argo template create workflow-template/database.yml \
                      workflow-template/aggregated-templaterefs.yml
 ```
 
-#### Running the workflow stage by stage: single vintage version
+You can assert the `templateRef`s were properly created by e.g. listing them
+with `argo template list`. Note: in case some cleanup is required then
+the `argo template delete --all` merciless command might do the trick.
 
-Realize the above [preparation stage](#anchor-preparation-stage).
+## <a name='Runningtheworkflows'></a>Running the workflows
+
+### <a name='Runningtheworkflowstagebystage:singlevintageversion'></a>Running the workflow stage by stage: single vintage version
+
+First make sure that the
+[containers are build](#anchor-build-containers")
+and that the
+[workflow templates are populated](#anchor-populate-workflow-templates).
 
 ```bash
 # Proceed with the run of each sub-workflows (of the full workflow)
@@ -151,9 +212,14 @@ argo list logs | grep -i ^parameters-
 argo logs parameters-<generated_string>
 ```
 
-#### Running the workflow stage by stage: multiple vintages version
+### <a name='Runningtheworkflowstagebystage:multiplevintagesversion'></a>Running the workflow stage by stage: multiple vintages version
 
-Realize the above [preparation stage](#anchor-preparation-stage).
+First make sure that the
+[containers are build](#anchor-build-containers")
+and that the
+[workflow templates are populated](#anchor-populate-workflow-templates).
+
+Submission can now be done with
 
 ```bash
 argo submit --watch --log just-prepare-vintages-boroughs.yml \
@@ -162,7 +228,7 @@ argo submit --watch --log just-prepare-vintages-boroughs.yml \
 # junk/stage_3/ sub-directories
 ```
 
-#### Running the full workflow
+### <a name='Runningthefullworkflow'></a>Running the full workflow
 
 Notice that you can overload any of the parameters at invocation stage with
 
@@ -172,16 +238,26 @@ argo submit --watch --log full-workflow.yml \
    -p pattern=BATI
 ```
 
-#### Running the full workflow
+### <a name='Runningthefullworkflow-1'></a>Running the full workflow
 
 ```bash
 argo submit --watch --log full-workflow.yml \
             --parameter-file workflow_input.yaml
 ```
 
-### Troubleshooting
+## <a name='Troubleshooting'></a>Troubleshooting
 
-### Storage backend is full
+### <a name='Hungupworkflowpendingstatus'></a>Hung up workflow (pending status)
+
+When a workflow was launched but gets hung up (nothing happens, no output at
+the argo level, yet the corresponding pod status as retrieved with `k get pods`
+is pending) you might get some debugging information with the command
+
+```bash
+k describe pod <pod-name>
+```
+
+### <a name='Storagebackendisfull'></a>Storage backend is full
 
 When running the pipeline (with `argo submit`) you might get the following
 error message
@@ -211,7 +287,7 @@ yes | docker system prune
 yes | docker volume prune
 ```
 
-### In case the minikube's k8s cluster gets corrupted
+### <a name='Incasetheminikubesk8sclustergetscorrupted'></a>In case the minikube's k8s cluster gets corrupted
 
 When using `minikube` and the associated k8s ends up
 [SNAFU](https://en.wikipedia.org/wiki/SNAFU)
@@ -220,11 +296,11 @@ purge can be obtained with
 
 ```bash
 minikube delete --purge --all
-rm -rf ~/.minikube
+rm -rf ~/.minikube             # This sometimes really matters !
 rm -rf ~/.kube
 ```
 
-### Dealing with "using the emissary executor" error
+### <a name='Dealingwithusingtheemissaryexecutorerror'></a>Dealing with "using the emissary executor" error
 
 At runtime (i.e. when using `argo submit`) one gets an error message of the
 form
@@ -247,16 +323,16 @@ following command
 kubectl -n argo patch cm workflow-controller-configmap -p '{"data": {"containerRuntimeExecutor": "docker"}}'
 ```
 
-## Developers
+## <a name='Developers'></a>Developers
 
-### Install utils
+### <a name='Installutils'></a>Install utils
 
 ```bash
 # Install kub eval refer to https://www.kubeval.com/installation/
 brew install kubeval
 ```
 
-### Running the examples
+### <a name='Runningtheexamples'></a>Running the examples
 
 ```bash
 eval $(minikube docker-env)    # Just in case docker builds get required
@@ -277,7 +353,7 @@ argo submit --parameter-file input-just_db.yaml --parameter output_dir=junk \
 In the above example notice that using a template as entrypoint of course
 requires that all its parameter are defined (the output_dir).
 
-### Running the ongoing issues/failures
+### <a name='Runningtheongoingissuesfailures'></a>Running the ongoing issues/failures
 
 ```bash
 argo submit --watch --log FailingIssues/postgres-pgdata-permission-issue.yml --parameter-file input-just_db.yaml 
@@ -285,9 +361,9 @@ argo submit --watch --log FailingIssues/postgres-pgdata-permission-issue.yml --p
 
 that will complain about `chmod: changing permissions of [...] Operation not permitted`.
 
-## The process of adapting PythonCallingDocker
+## <a name='TheprocessofadaptingPythonCallingDocker'></a>The process of adapting PythonCallingDocker
 
-### Creation of ArgoWorkflows/Docker/Collect-DockerContext
+### <a name='CreationofArgoWorkflowsDockerCollect-DockerContext'></a>Creation of ArgoWorkflows/Docker/Collect-DockerContext
 
 Oddly enough the PythonCallingDocker version of the pipeline does not use the
 container defined by LyonTemporal/Docker/Collect-DockerContext/. Instead it

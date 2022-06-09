@@ -7,7 +7,7 @@ spec:
   volumes:
   - name: workdir
     persistentVolumeClaim:
-      claimName: minikube-pvc
+      claimName: vcity-pvc
       readOnly: false
   arguments:
     parameters:
@@ -21,7 +21,7 @@ spec:
       value: ""
     # Local (to this workflow definition) parameters
     - name: persistedVolume   
-      value: /within-container-mount-point/
+      value: /within-container-mount-point
 
   templates:
   - name: main

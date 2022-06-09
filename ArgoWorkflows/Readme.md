@@ -2,4 +2,5 @@
 * AW (Argo Workflows) [desktop installation and usage notes](Argo_Worfkows_notes_and_tricks.md)
 * [Running the build examples and full workflow](Running_the_pipeline.md)
 * [AW evaluation results](Evaluation_result.md)
+* The [process of adaptating the pipeline to Argo Workflows](Doc/AdaptationToArgoWorflows.md)
 * [TODO list](Todo.md)

@@ -12,11 +12,14 @@ spec:
       - name: pattern
       - name: results_dir
       - name: vintage
-      - name: persistedVolume
       - name: dockerRegistryHost
+      - name: persistedVolume
     container:
       image: "{{inputs.parameters.dockerRegistryHost}}vcity/collect_lyon_data:0.1"
-      imagePullPolicy: Never
+      imagePullPolicy: IfNotPresent
+      envFrom:
+        - configMapRef:
+            name: vcity-pagoda-proxy-environment
       command: ["python3"]
       args: ["entrypoint.py",
             "--borough",     "{{inputs.parameters.borough}}",
@@ -42,10 +45,11 @@ spec:
       - name: output_dir
       # Filename (relative to output_dir)
       - name: output_filename
+      - name: dockerRegistryHost
       - name: persistedVolume
     container:
-      image: vcity/3duse
-      imagePullPolicy: Never
+      image: "{{inputs.parameters.dockerRegistryHost}}vcity/3duse:0.1"
+      imagePullPolicy: IfNotPresent
       workingDir: /root/3DUSE/Build/src/utils/cmdline/
       command: ["splitCityGMLBuildings"]
       args: [
@@ -69,10 +73,11 @@ spec:
       - name: output_dir
       # Filename (relative to output_dir)
       - name: output_filename
+      - name: dockerRegistryHost
       - name: persistedVolume
     container:
-      image: vcity/citygml2stripper
-      imagePullPolicy: Never
+      image: "{{inputs.parameters.dockerRegistryHost}}vcity/citygml2stripper:0.1"
+      imagePullPolicy: IfNotPresent
       # workingDir: is not necessary in this case
       command: ["python3", "/src/CityGML2Stripper.py"] 
       args: ["--input",      "{{inputs.parameters.persistedVolume}}{{inputs.parameters.input_filename}}",
@@ -99,6 +104,7 @@ spec:
       - name: output_directory
     script:
       image: python:3.9-alpine
+      imagePullPolicy: IfNotPresent
       command: [python]
       source: |
         import os
@@ -126,10 +132,11 @@ spec:
       parameters:
       - name: configuration_filename
       - name: output_directory
+      - name: dockerRegistryHost
       - name: persistedVolume
     container:
-      image: vcity/py3dtilers
-      imagePullPolicy: Never
+      image: "{{inputs.parameters.dockerRegistryHost}}vcity/py3dtilers:0.1"
+      imagePullPolicy: IfNotPresent
       command: [ "/bin/bash", "-cv" ]
       args: [ "cd {{inputs.parameters.persistedVolume}}{{inputs.parameters.output_directory}} && citygml-tiler --type building --db_config_path {{inputs.parameters.persistedVolume}}{{inputs.parameters.configuration_filename}}" ]
       volumeMounts:

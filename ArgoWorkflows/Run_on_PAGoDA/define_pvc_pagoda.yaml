@@ -1,0 +1,16 @@
+---
+# In the PAGoDA context, there is no need to define the underlying Persistent
+# Volume of the following PVC. This is because the the PV will be automagically
+# created by the platform (FIXME: document the mechanism).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vcity-pvc
+  namespace: argo
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: ceph-filesystem

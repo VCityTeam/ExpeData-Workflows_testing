@@ -1,18 +1,4 @@
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: argotest-dynamic-pvc
-  namespace: argo
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 500Mi
-  storageClassName: ceph-filesystem
-
----
 ## Zombie pod that has no other purpose than allowing to navigate
 # within the directory-tree/files that this volume gathered after
 # being used by some argo workflow (using that PVC) execution.
@@ -20,7 +6,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: argo-cephfs-dynamic-pod
+  name: vcity-pvc-nginx-pod
   namespace: argo
 spec:
   containers:
@@ -32,27 +18,25 @@ spec:
   volumes:
     - name: mypvc
       persistentVolumeClaim:
-        claimName: argotest-dynamic-pvc
+        claimName: vcity-pvc
         readOnly: false
 
 ---
-# FIXME This looks better than the above because we can docker exec in
-# the pod and use Un*x commands to browse the resulting directory-tree/files
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app.kubernetes.io/name: data-handler
-  name: data-handler
+    app.kubernetes.io/name: vcity-handler
+  name: vcity-handler
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: data-handler
+      app.kubernetes.io/name: vcity-handler
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: data-handler
+        app.kubernetes.io/name: vcity-handler
     spec:
       containers:
       - image: ubuntu:22.04
@@ -60,13 +44,13 @@ spec:
         name:  data-container
         command: ['/bin/sh', '-c']
         args:
-          - ['tail -f /var/log/lastlog']
+          - "tail -f /var/log/lastlog"
         volumeMounts:
         - mountPath: /data
           name: data
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: vcity-data
+            claimName: vcity-pvc
             readOnly: false
       restartPolicy: Always

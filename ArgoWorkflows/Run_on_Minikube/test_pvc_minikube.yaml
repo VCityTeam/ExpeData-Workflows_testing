@@ -12,10 +12,10 @@ spec:
           command: ["perl", "-Mbignum=bpi", "-wle", "print bpi(2000)"]
           volumeMounts:
             - mountPath: /data/host
-              name: minikube-vol
+              name: vcity-vol
       volumes:
-        - name: minikube-vol
+        - name: vcity-vol
           persistentVolumeClaim:
-            claimName: minikube-pvc
+            claimName: vcity-pvc
       restartPolicy: Never
   backoffLimit: 4

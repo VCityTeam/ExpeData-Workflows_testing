@@ -13,7 +13,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: minikube-pvc
+  name: vcity-pvc
 spec:
   # StorageClassName must be explicitly defined (here as empty string) in order
   # to avoid the default StorageClass value to be taken

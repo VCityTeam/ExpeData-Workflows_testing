@@ -60,6 +60,8 @@ spec:
             value: "{{inputs.parameters.experiment_output_dir}}/stage_2/{{inputs.parameters.vintage}}/{{item}}_{{inputs.parameters.vintage}}"
           - name: output_filename
             value: "{{item}}_{{inputs.parameters.pattern}}_{{inputs.parameters.vintage}}_split.gml"
+          - name: dockerRegistryHost
+            value: "{{inputs.parameters.dockerRegistryHost}}"
           - name: persistedVolume
             value: "{{inputs.parameters.persistedVolume}}"
         withParam: "{{inputs.parameters.boroughs}}"
@@ -85,6 +87,8 @@ spec:
             value: "{{inputs.parameters.experiment_output_dir}}/stage_3/{{inputs.parameters.vintage}}/{{item}}_{{inputs.parameters.vintage}}"
           - name: output_filename
             value: "{{item}}_{{inputs.parameters.pattern}}_{{inputs.parameters.vintage}}_stripped.gml"
+          - name: dockerRegistryHost
+            value: "{{inputs.parameters.dockerRegistryHost}}"
           - name: persistedVolume
             value: "{{inputs.parameters.persistedVolume}}"
         withParam: "{{inputs.parameters.boroughs}}"

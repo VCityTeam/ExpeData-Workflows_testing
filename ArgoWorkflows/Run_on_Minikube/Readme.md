@@ -1,16 +1,15 @@
+# Running the implemented Argo workflows on a desktop with Minikube
+
+**Page index**
 <!-- vscode-markdown-toc -->
-* [Preparation stage](#Preparationstage)
+* [Cluster preparation](#Clusterpreparation)
   * [Instal dependencies (infrastructure)](#Instaldependenciesinfrastructure)
   * [Expose the CWD as k8s volume](#ExposetheCWDask8svolume)
+  * [Assert that the Argo server is operational](#AssertthattheArgoserverisoperational)
   * [Build the required containers](#Buildtherequiredcontainers)
   * [Populate the workflow "library" with workflowTemplates](#PopulatetheworkflowlibrarywithworkflowTemplates)
 * [Running the workflows](#Runningtheworkflows)
-  * [Running the workflow stage by stage: single vintage version](#Runningtheworkflowstagebystage:singlevintageversion)
-  * [Running the workflow stage by stage: multiple vintages version](#Runningtheworkflowstagebystage:multiplevintagesversion)
-  * [Running the full workflow](#Runningthefullworkflow)
-  * [Running the full workflow](#Runningthefullworkflow-1)
-* [Troubleshooting](#Troubleshooting)
-  * [Hung up workflow (pending status)](#Hungupworkflowpendingstatus)
+* [Troubleshooting on the minikube cluster](#Troubleshootingontheminikubecluster)
   * [Storage backend is full](#Storagebackendisfull)
   * [In case the minikube's k8s cluster gets corrupted](#Incasetheminikubesk8sclustergetscorrupted)
   * [Dealing with "using the emissary executor" error](#Dealingwithusingtheemissaryexecutorerror)
@@ -18,8 +17,6 @@
   * [Install utils](#Installutils)
   * [Running the examples](#Runningtheexamples)
   * [Running the ongoing issues/failures](#Runningtheongoingissuesfailures)
-* [The process of adapting PythonCallingDocker](#TheprocessofadaptingPythonCallingDocker)
-  * [Creation of ArgoWorkflows/Docker/Collect-DockerContext](#CreationofArgoWorkflowsDockerCollect-DockerContext)
 
 <!-- vscode-markdown-toc-config
 	numbering=false
@@ -27,9 +24,7 @@
 	/vscode-markdown-toc-config -->
 <!-- /vscode-markdown-toc -->
 
-# Running the implemented Argo workflows on a desktop with Minikube
-
-## <a name='Preparationstage'></a>Preparation stage
+## <a name='Clusterpreparation'></a>Cluster preparation
 
 ### <a name='Instaldependenciesinfrastructure'></a>Instal dependencies (infrastructure)
 
@@ -72,10 +67,18 @@ If you wish to work with the UI, you need to open the ad-hoc port-forwarding
 with the command
 
 ```bash
-k -n argo port-forward deployment/argo-server 2746:2746 &
+k -n argo port-forward service/argo-server 2746:2746 &
 ```
 
 The web UI should be available at `https://localhost:2746`.
+
+Note: the port forward is sometimes documented as
+
+```bash
+k -n argo port-forward deployment/argo-server 2746:2746 &
+```
+
+whose drawback is that it will fail as soon as the argo-server is respawned.
 
 ### <a name='ExposetheCWDask8svolume'></a>Expose the CWD as k8s volume
 
@@ -101,10 +104,10 @@ The creations of the PV and PVC can be done with
 k -n argo create -f define_pvc_minikube.yaml
 ```
 
-and assertion that all went well be done with
+and asserting that all went well can be done with
 
 ```bash
-k -n argo get pvc | grep minikube-pvc
+k -n argo get pvc | grep vcity-pvc
 k -n argo create -f test_pvc_minikube.yaml 
 ```
 
@@ -127,6 +130,11 @@ with an entry (within an Argo WOrkflow) of the form
 Hence the `minikube mount` target argument (i.e. `/data/host`) has to be
 aligned with the workflow volume definition.
 
+### <a name='AssertthattheArgoserverisoperational'></a>Assert that the Argo server is operational
+
+Refer to
+[those cluster independent commands](../Run_on_Generic/Readme.md#anchor-assert-argo-server-is-ready).
+
 ### <a name='Buildtherequiredcontainers'></a>Build the required containers
 
 <a name="anchor-build-containers"></a>
@@ -135,127 +143,32 @@ aligned with the workflow volume definition.
 # User Minikube's built-in docker command, refer e.g. to
 # https://stackoverflow.com/questions/42564058/how-to-use-local-docker-images-with-minikube
 eval $(minikube docker-env)
-docker build -t vcity/collect_lyon_data Docker/Collect-DockerContext/
-docker build -t vcity/3duse ../Docker/3DUse-DockerContext/
-docker build -t vcity/citygml2stripper ../Docker/CityGML2Stripper-DockerContext/
-docker build --no-cache -t vcity/py3dtilers https://github.com/VCityTeam/py3dtilers-docker.git#:Context
-docker pull refstudycentre/scratch-base:latest
 ```
 
-Notes:
-
-* In case of trouble with the docker builds (e.g. when the build failed
-  because of missing disk space) consider using the `--no-cache` flag.
-
-* `refstudycentre/scratch-base` is a really tiny container used as a trick
-  (refer to workflow e.g. `Examples/loading-json-fromValue.yml`
-
-* `docker build` can NOT use the url of sub-directory of git repository (refer
-  e.g. to [this StackOverflow](https://stackoverflow.com/questions/25509828/can-a-docker-build-use-the-url-of-a-git-branch#27295336). This is why some
-  of the above `docker build` commands designate their Dockerfile arguments
-  through a relative path notation which creates an alas implicit dependency
-  (within this repository).
+and then build the required images by applying
+[those docker commands](../Run_on_Generic/Readme.md#anchor-build-containers).
 
 ### <a name='PopulatetheworkflowlibrarywithworkflowTemplates'></a>Populate the workflow "library" with workflowTemplates
 
-<a name="anchor-populate-workflow-templates"></a>
+Run the following [cluster independent argo commands](../Run_on_Generic/Readme.md#anchor-running-the-workflows).
 
-[workflowTemplates](https://github.com/argoproj/argo-workflows/blob/release-3.2/docs/workflow-templates.md)
-require a special treat and must be uploaded to the k8s cluster prior to using
-(referring) them in a workflow.
-
-```bash
-# Remove ant preceding traces that could hinder the process 
-\rm -fr junk     # Remove possible previous results to avoid collisions
-argo template delete --all
-# Add the template references
-argo template create workflow-template/database.yml \
-                     workflow-template/utils.yml \
-                     workflow-template/atomic-steps.yml \
-                     workflow-template/aggregated-templaterefs.yml
-```
-
-You can assert the `templateRef`s were properly created by e.g. listing them
-with `argo template list`. Note: in case some cleanup is required then
-the `argo template delete --all` merciless command might do the trick.
+---
 
 ## <a name='Runningtheworkflows'></a>Running the workflows
 
-### <a name='Runningtheworkflowstagebystage:singlevintageversion'></a>Running the workflow stage by stage: single vintage version
+Hopefully workflow submission commands are cluster independent. Apply them
+by following
+[those instructions](../Run_on_Generic/Readme.md#anchor-running-the-workflows)
 
-First make sure that the
-[containers are build](#anchor-build-containers")
-and that the
-[workflow templates are populated](#anchor-populate-workflow-templates).
+---
 
-```bash
-# Proceed with the run of each sub-workflows (of the full workflow)
-argo submit --watch --log just-collect.yml --parameter-file input-2012-tiny-no_db.yaml
-# The above results should be in the `junk/stage_1/` sub-directory
-argo submit --watch --log just-split.yml   --parameter-file input-2012-tiny-no_db.yaml
-# The above results should be in the `junk/stage_2/` sub-directory
-argo submit --watch --log just-strip.yml   --parameter-file input-2012-tiny-no_db.yaml
-# The above results should be in the `junk/stage_3/` sub-directory
-argo submit --watch --log just-import-to-3dcitydb-and-dump.yml --parameter-file input-2012-tiny-import_dump.yaml
-# The above results should be in the `junk/stage_4/` sub-directory
-# The purpose of following workflow is to assert that above db dump was correct
-argo submit --watch --log just-load-dump.yml       --parameter-file input-2012-tiny-import_dump.yaml
-argo submit --watch --log just-compute-tileset.yml --parameter-file input-2012-tiny-import_dump.yaml
-# The resulting tileset should be located in the `junk/stage_5/` sub-directory
-```
+## <a name='Troubleshootingontheminikubecluster'></a>Troubleshooting on the minikube cluster
 
-In addition to the outputs printed at execution time, you can access to
-the execution logs with
+Refer to the
+[platform independent troubleshooting notes]()
 
-```bash
-argo list logs | grep -i ^parameters-
-argo logs parameters-<generated_string>
-```
-
-### <a name='Runningtheworkflowstagebystage:multiplevintagesversion'></a>Running the workflow stage by stage: multiple vintages version
-
-First make sure that the
-[containers are build](#anchor-build-containers")
-and that the
-[workflow templates are populated](#anchor-populate-workflow-templates).
-
-Submission can now be done with
-
-```bash
-argo submit --watch --log just-prepare-vintages-boroughs.yml \
-            --parameter-file input-loop-in-loop-tiny.yaml
-# The above results should be in the junk/stage_1/, junk/stage_2/ and
-# junk/stage_3/ sub-directories
-```
-
-### <a name='Runningthefullworkflow'></a>Running the full workflow
-
-Notice that you can overload any of the parameters at invocation stage with
-
-```bash
-argo submit --watch --log full-workflow.yml \
-   --parameter-file workflow_input.yaml \
-   -p pattern=BATI
-```
-
-### <a name='Runningthefullworkflow-1'></a>Running the full workflow
-
-```bash
-argo submit --watch --log full-workflow.yml \
-            --parameter-file workflow_input.yaml
-```
-
-## <a name='Troubleshooting'></a>Troubleshooting
-
-### <a name='Hungupworkflowpendingstatus'></a>Hung up workflow (pending status)
-
-When a workflow was launched but gets hung up (nothing happens, no output at
-the argo level, yet the corresponding pod status as retrieved with `k get pods`
-is pending) you might get some debugging information with the command
-
-```bash
-k describe pod <pod-name>
-```
+In addition, you might want to check the following Minikube specific
+troubleshooting nodes.
 
 ### <a name='Storagebackendisfull'></a>Storage backend is full
 
@@ -323,6 +236,8 @@ following command
 kubectl -n argo patch cm workflow-controller-configmap -p '{"data": {"containerRuntimeExecutor": "docker"}}'
 ```
 
+---
+
 ## <a name='Developers'></a>Developers
 
 ### <a name='Installutils'></a>Install utils
@@ -334,41 +249,10 @@ brew install kubeval
 
 ### <a name='Runningtheexamples'></a>Running the examples
 
-```bash
-eval $(minikube docker-env)    # Just in case docker builds get required
-argo template create workflow-template/*.yml
-argo submit --watch --log Examples/example-3dcitydb-daemon.yml  --parameter-file input-just_db.yaml
-argo submit --watch --log  Examples/example-loop-in-loop-through-template-call.yml
-...
-```
-
-The entrypoint template can be overridden at runtime e.g.
-
-```bash
-argo submit --parameter-file input-just_db.yaml --parameter output_dir=junk \
-            --watch --log FailingIssues/postgres-pgdata-permission-issue.yml \
-            --entrypoint psql-data-permission-fix
-```
-
-In the above example notice that using a template as entrypoint of course
-requires that all its parameter are defined (the output_dir).
+Refer to the
+[cluster independent running instructions](../Run_on_Generic/Readme.md#anchor-running-the-examples)
 
 ### <a name='Runningtheongoingissuesfailures'></a>Running the ongoing issues/failures
 
-```bash
-argo submit --watch --log FailingIssues/postgres-pgdata-permission-issue.yml --parameter-file input-just_db.yaml 
-```
-
-that will complain about `chmod: changing permissions of [...] Operation not permitted`.
-
-## <a name='TheprocessofadaptingPythonCallingDocker'></a>The process of adapting PythonCallingDocker
-
-### <a name='CreationofArgoWorkflowsDockerCollect-DockerContext'></a>Creation of ArgoWorkflows/Docker/Collect-DockerContext
-
-Oddly enough the PythonCallingDocker version of the pipeline does not use the
-container defined by LyonTemporal/Docker/Collect-DockerContext/. Instead it
-choses to re-implement, in Python, the downloading process. The reason for
-doing so was to be able to extend the downloading process feature with the
-application of patches as well as being able to handle the directory tree
-that this Python based version of the pipeline is able to propagate (or deal
-with) along the different stages of the pipeline.
+Refer to the
+[cluster independent running instructions](../Run_on_Generic/Readme.md#anchor-running-the-failures)

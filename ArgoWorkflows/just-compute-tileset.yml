@@ -8,8 +8,9 @@ spec:
   entrypoint: main
   volumes:
   - name: workdir
-    hostPath:
-      path: /data/host
+    persistentVolumeClaim:
+      claimName: vcity-pvc
+      readOnly: false
   arguments:
     parameters:
     # Numerical experiment related
@@ -22,6 +23,8 @@ spec:
     - name: database_password
     - name: database_user
     - name: database_port
+    # Depending on your execution context
+    - name: dockerRegistryHost
     # Local (to this workflow definition) parameters   
     - name: persistedVolume   
       value: /within-container-mount-point/
@@ -122,5 +125,7 @@ spec:
             value: "{{workflow.parameters.experiment_output_dir}}/stage_5/CityTilerDBConfigStatic{{workflow.parameters.vintage}}.yml"
           - name: output_directory
             value: "{{workflow.parameters.experiment_output_dir}}/stage_5"
+          - name: dockerRegistryHost
+            value: "{{workflow.parameters.dockerRegistryHost}}"
           - name: persistedVolume   
             value: "{{workflow.parameters.persistedVolume}}"

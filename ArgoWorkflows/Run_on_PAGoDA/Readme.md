@@ -68,6 +68,9 @@ Once logged in, select the `User` Tab within the left icon bar and within the
 `Using Your Login With The CLI` section of the page use the `Copy to clipboard`
 button to retrieve your credentials and place the content e.g. in a
 `pagoda_argo.bash` file.
+For your convenience `pagoda_argo.bash.templ` template file is provided (in this
+directory): it defines all the required environment variables to run the
+workflows except for the access token values.
 
 Optionally, within that `pagoda_argo.bash` you might consider overwriting the
 definition of the `KUBECONFIG` (shell) environment variable (that is defaulted
@@ -78,7 +81,9 @@ Additionally, if your argo workflow project uses a namespace that is not default
 `argo` namespace you should probably overwrite the `ARGO_NAMESPACE` entry
 (of the `pagoda_argo.bash` file) with the name of of your specific argo project.
 
-Define the environment variables designating your argo server with the command
+Once the environment variables designating/configuring your argo server are
+properly defined within your `pagoda_argo.bash` shell script, then activate them
+with the command
 
 ```bash
 source ./pagoda_argo.bash
@@ -185,22 +190,31 @@ FIXME: documentent that we cannot use a `--parameter-file context.yaml` because
 input parameters. Also document that the registry host-name can not be passed
 through a Configmap (and why this cannot be).
 
-For the time being Eventually you can proceed with the submissions
+### Running the workflow stage by stage: single vintage version
+
+Alas (refer to the above FIXME) the
+[generic stage by stage instruction](../Run_on_Generic/Readme.md#anchor-running-the-workflows-stage-by-stage)
+do not work as is on PAGoDA.
+
+For the time the following submissions should be effective
 
 ```bash
 cd $(git rev-parse --show-cdup)/ArgoWorkflows
+# Following environment variable already defined in Run_on_PAGoDA/pagoda_argo.bash
+export KUBE_DOCKER_REGISTRY=dockerRegistryHost=harbor.pagoda.os.univ-lyon1.fr/
+
 # Proceed with the run of each sub-workflows (of the full workflow)
-argo submit --watch --log just-collect.yml --parameter-file input-2012-tiny-no_db.yaml -p dockerRegistryHost=harbor.pagoda.os.univ-lyon1.fr/
+argo submit --watch --log just-collect.yml --parameter-file input-2012-tiny-no_db.yaml -p ${KUBE_DOCKER_REGISTRY}
 # The above results should be in the `junk/stage_1/` sub-directory
-argo submit --watch --log just-split.yml   --parameter-file input-2012-tiny-no_db.yaml -p dockerRegistryHost=harbor.pagoda.os.univ-lyon1.fr/
+argo submit --watch --log just-split.yml   --parameter-file input-2012-tiny-no_db.yaml -p ${KUBE_DOCKER_REGISTRY}
 # The above results should be in the `junk/stage_2/` sub-directory
-argo submit --watch --log just-strip.yml   --parameter-file input-2012-tiny-no_db.yaml
+argo submit --watch --log just-strip.yml   --parameter-file input-2012-tiny-no_db.yaml -p ${KUBE_DOCKER_REGISTRY}
 # The above results should be in the `junk/stage_3/` sub-directory
 argo submit --watch --log just-import-to-3dcitydb-and-dump.yml --parameter-file input-2012-tiny-import_dump.yaml
 # The above results should be in the `junk/stage_4/` sub-directory
 # The purpose of following workflow is to assert that above db dump was correct
 argo submit --watch --log just-load-dump.yml       --parameter-file input-2012-tiny-import_dump.yaml
-argo submit --watch --log just-compute-tileset.yml --parameter-file input-2012-tiny-import_dump.yaml
+argo submit --watch --log just-compute-tileset.yml --parameter-file input-2012-tiny-import_dump.yaml  -p ${KUBE_DOCKER_REGISTRY}
 # The resulting tileset should be located in the `junk/stage_5/` sub-directory
 ```
 

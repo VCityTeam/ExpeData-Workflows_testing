@@ -106,6 +106,8 @@ with `argo template list`.
 
 ### <a name='Runningtheworkflowstagebystage:singlevintageversion'></a>Running the workflow stage by stage: single vintage version
 
+<a name="anchor-running-the-workflows-stage-by-stage"></a>
+
 First make sure that
 
 * the [containers are properly build](#anchor-build-containers"),
@@ -115,6 +117,9 @@ First make sure that
   ```bash
   \rm -fr junk     # Leading backslash is for inhibiting a possible alias
   ```
+
+  or alternatively modify the `experiment_output_dir` entries of the parameter
+  files to point to an empty directory.
 
 Eventually you can proceed with the submissions
 
@@ -164,9 +169,7 @@ argo submit --watch --log just-prepare-vintages-boroughs.yml \
 Notice that you can overload any of the parameters at invocation stage with
 
 ```bash
-argo submit --watch --log full-workflow.yml \
-   --parameter-file workflow_input.yaml \
-   -p pattern=BATI
+argo submit --watch --log full-workflow.yml --parameter-file input-2012-tiny-import_dump.yaml
 ```
 
 ### <a name='Runningthefullworkflow-1'></a>Running the full workflow

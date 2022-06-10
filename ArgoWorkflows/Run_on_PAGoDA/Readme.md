@@ -10,6 +10,8 @@
   * [Define an argo server namespace](#Defineanargoservernamespace)
   * [Volumes and context creation](#Volumesandcontextcreation)
 * [Running the workflows](#Runningtheworkflows)
+  * [Running the workflow stage by stage: single vintage version](#Runningtheworkflowstagebystage:singlevintageversion)
+  * [Running the full workflow](#Runningthefullworkflow)
 * [Accessing the results](#Accessingtheresults)
 
 <!-- vscode-markdown-toc-config
@@ -158,7 +160,11 @@ Refer to the platform independent commands in order to
 
 FIXME: when minikube is running on the desktop (for having a docker server) then
 setting the context with
-`kubectl config set-context --current --namespace=$ARGO_NAMESPACE`
+
+```bash
+kubectl config set-context --current --namespace=$ARGO_NAMESPACE
+```
+
 returns
 `Context "minikube" modified`.
 
@@ -190,7 +196,7 @@ FIXME: documentent that we cannot use a `--parameter-file context.yaml` because
 input parameters. Also document that the registry host-name can not be passed
 through a Configmap (and why this cannot be).
 
-### Running the workflow stage by stage: single vintage version
+### <a name='Runningtheworkflowstagebystage:singlevintageversion'></a>Running the workflow stage by stage: single vintage version
 
 Alas (refer to the above FIXME) the
 [generic stage by stage instruction](../Run_on_Generic/Readme.md#anchor-running-the-workflows-stage-by-stage)
@@ -216,6 +222,18 @@ argo submit --watch --log just-import-to-3dcitydb-and-dump.yml --parameter-file 
 argo submit --watch --log just-load-dump.yml       --parameter-file input-2012-tiny-import_dump.yaml
 argo submit --watch --log just-compute-tileset.yml --parameter-file input-2012-tiny-import_dump.yaml  -p ${KUBE_DOCKER_REGISTRY}
 # The resulting tileset should be located in the `junk/stage_5/` sub-directory
+```
+
+### <a name='Runningthefullworkflow'></a>Running the full workflow
+
+```bash
+argo submit --watch --log full-workflow.yml --parameter-file input-2012-tiny-import_no_dump.yaml -p ${KUBE_DOCKER_REGISTRY}
+```
+
+An example with parallel steps
+
+```bash
+argo submit --watch --log full-workflow.yml --parameter-file input-2012-small-import_dump.yaml -p ${KUBE_DOCKER_REGISTRY}
 ```
 
 ---

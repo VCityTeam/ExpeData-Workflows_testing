@@ -8,8 +8,9 @@ spec:
   entrypoint: main
   volumes:
   - name: workdir
-    hostPath:
-      path: /data/host
+    persistentVolumeClaim:
+      claimName: vcity-pvc
+      readOnly: false
   arguments:
     parameters:
     # Numerical experiment related

@@ -6,8 +6,9 @@ spec:
   entrypoint: main
   volumes:
   - name: workdir
-    hostPath:
-      path: /data/host
+    persistentVolumeClaim:
+      claimName: vcity-pvc
+      readOnly: false
   arguments:
     parameters:
     # Numerical experiment related
@@ -15,6 +16,8 @@ spec:
     - name: pattern
     - name: vintage
     - name: experiment_output_dir
+    # Depending on your execution context
+    - name: dockerRegistryHost
     # Local (to this workflow definition) parameters   
     - name: persistedVolume   
       value: /within-container-mount-point/
@@ -36,6 +39,8 @@ spec:
             value: "{{workflow.parameters.experiment_output_dir}}/stage_3/{{workflow.parameters.vintage}}/{{item}}_{{workflow.parameters.vintage}}"
           - name: output_filename
             value: "{{item}}_{{workflow.parameters.pattern}}_{{workflow.parameters.vintage}}_stripped.gml"
+          - name: dockerRegistryHost
+            value: "{{workflow.parameters.dockerRegistryHost}}"
           - name: persistedVolume
             value: "{{workflow.parameters.persistedVolume}}"
         withParam: "{{workflow.parameters.boroughs}}"

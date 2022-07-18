@@ -7,11 +7,16 @@ pattern: 'BATI'
 
 # The list of considered vintages
 vintages:
+  - 2009
   - 2012
+  - 2015
 
 # The list of boroughs that should be extracted
 boroughs:
-  - 'LYON_8EME'     # Require the application of a patch
+  - 'PIERRE_BENITE' # Regular case
+  - 'LYON_4EME'     # Requires the renaming of extracted file
+  - 'LYON_7EME'     # Requires the application of a patches
+  - 'LYON_8EME'
 
 # At some stage the computational pipeline will make use of a 3DCityDB database
 # requiring the following "credentials" that will be used both for
@@ -22,12 +27,8 @@ database_name: 'citydb-test'
 database_password: 'postgres'
 database_user: 'postgres'
 # FIXME: WARNING the following parameter is not used (5432 is hard-coded)
-database_port: '5432'
+database_port: '5433'
 
-### Database persistence
-# Should the database content be dumped when workflow terminates
-database_dump: true
+# Should the database content be dumped when importation is realised
+database_dump: false
 
-# Should a database dump be imported
-database_import_dump: false
-database_import_dump_filename: 'database_dump_to_import.sql'

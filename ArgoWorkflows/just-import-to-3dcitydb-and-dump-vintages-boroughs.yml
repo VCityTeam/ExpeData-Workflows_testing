@@ -8,8 +8,9 @@ spec:
   entrypoint: main
   volumes:
   - name: workdir
-    hostPath:
-      path: /data/host
+    persistentVolumeClaim:
+      claimName: vcity-pvc
+      readOnly: false
   arguments:
     parameters:
     # Numerical experiment related
@@ -33,7 +34,7 @@ spec:
   - name: main
     steps:
 
-    ### Looping to start databases as DAEMON
+    ### Looping to start databases as DAEMON/services
     - - name: 3dcitydb-start-db-loop
         template: 3dcitydb-daemon-vintaged
         arguments:

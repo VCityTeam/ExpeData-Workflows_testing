@@ -12,6 +12,7 @@
 * [Running the workflows](#Runningtheworkflows)
   * [Running the workflow stage by stage: single vintage version](#Runningtheworkflowstagebystage:singlevintageversion)
   * [Running the full workflow](#Runningthefullworkflow)
+  * [Running the full workflow with loop in loop](#Runningthefullworkflowwithloopinloop)
 * [Accessing the results](#Accessingtheresults)
 
 <!-- vscode-markdown-toc-config
@@ -233,7 +234,17 @@ argo submit --watch --log full-workflow.yml --parameter-file input-2012-tiny-imp
 An example with parallel steps
 
 ```bash
-argo submit --watch --log full-workflow.yml --parameter-file input-2012-small-import_dump.yaml -p ${KUBE_DOCKER_REGISTRY}
+argo submit --watch --log full-workflow.yml --parameter-file input-2012-small-import_no_dump.yaml -p ${KUBE_DOCKER_REGISTRY}
+```
+
+### <a name='Runningthefullworkflowwithloopinloop'></a>Running the full workflow with loop in loop
+
+The above workflows (depending on their input) are looping on their `boroughs`
+input. The following ones are loop-in-looping on their vintages (outside loop)
+and their boroughs (inside loop).
+
+```bash
+argo submit --watch --log just-prepare-vintages-boroughs.yml --parameter-file input-loop-in-loop-tiny.yaml -p ${KUBE_DOCKER_REGISTRY}
 ```
 
 ---

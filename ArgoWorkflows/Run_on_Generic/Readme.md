@@ -19,6 +19,7 @@
 * [Developers](#Developers)
   * [Running the examples](#Runningtheexamples)
   * [Running the ongoing issues/failures](#Runningtheongoingissuesfailures)
+  * [Tools](#Tools)
 
 <!-- vscode-markdown-toc-config
 	numbering=false
@@ -276,3 +277,16 @@ argo submit --watch --log FailingIssues/postgres-pgdata-permission-issue.yml --p
 ```
 
 that will complain about `chmod: changing permissions of [...] Operation not permitted`.
+
+### <a name='Tools'></a>Tools
+
+**On OSX**
+
+```bash
+brew install lens
+```
+
+Launch it as an app. Authenticate (SSO) either with github or google.
+Declare the cluster with the "+" button that offers the `sync with files`
+sub-button and point it to your `ArgoWorkflows/Run_on_PAGoDA/pagoda_kubeconfig.yaml`
+cluster configuration file.

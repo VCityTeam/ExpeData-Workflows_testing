@@ -47,12 +47,13 @@ menu and selecting the ad-hoc entry within the `Explore Cluster` tab.
 Once in the pagoda cluster page, download the `KubeConfig` file associated
 to this pagoda cluster. For this use one of the buttons in the right section
 of the upper row of the page and place the content e.g. in a
-`pagoda_kubeconfig.yaml` file.
+`pagoda_kubeconfig.yaml` file (in this `$(git rev-parse --show-cdup)/ArgoWorkflows/Run_on_PAGoDA` current directory).
 
 Assert you have access to the pagoda (Kubernetes) cluster with the commands
 
 ```bash
-export KUBECONFIG=pagoda_kubeconfig.yaml
+cd $(git rev-parse --show-cdup)/ArgoWorkflows/Run_on_PAGoDA
+export KUBECONFIG=`pwd`/pagoda_kubeconfig.yaml     # Make it an absolute path
 kubectl get nodes
 ```
 
@@ -60,7 +61,7 @@ kubectl get nodes
 
 The credentials of the Argo server of the PAGoDA platform must also be retrieved
 through the UI of the Argo server of the PAGoDA platform.
-For this web browse to <https://argoworkflows.pagoda.os.univ-lyon1.fr/> and use
+For this web browse to <https://argowf.pagoda.os.univ-lyon1.fr/> and use
 the `Single Sign ON` login mode to provide your LIRIS lab credentials (just as
 for the Kubernetes cluster credential, these credentials are the ones defined
 in LIRIS'
@@ -77,8 +78,10 @@ workflows except for the access token values.
 
 Optionally, within that `pagoda_argo.bash` you might consider overwriting the
 definition of the `KUBECONFIG` (shell) environment variable (that is defaulted
-to `/dev/null`) with the path to the above retrieved `pagoda_kubeconfig.yaml`
-file.
+to `/dev/null`) with the **absolute** path to the above retrieved
+`pagoda_kubeconfig.yaml` file. The path needs to be absolute for `argo` based
+commands to be effective even when changing directory which you can assert by
+doing
 
 Additionally, if your argo workflow project uses a namespace that is not default
 `argo` namespace you should probably overwrite the `ARGO_NAMESPACE` entry
@@ -116,7 +119,7 @@ For this you can
   command then notice that `minikube` will modify the kubernetes configuration
   file (pointed by the `KUBECONFIG` environment variable) in order to add its
   own entry that will become the new default.
-  After installing `minikube`, you might thus assert
+  After installing `minikube`, you might thus assert that
   [you are using the proper kubernetes cluster](../Run_on_Generic/Readme.md#anchor-generic-troubleshooting-check-cluster-used)
 
 Once the docker command is available (try using `docker ps`), you can first
@@ -172,6 +175,7 @@ returns
 ### <a name='Volumesandcontextcreation'></a>Volumes and context creation
 
 ```bash
+cd $(git rev-parse --show-cdup)/ArgoWorkflows/Run_on_PAGoDA
 # Creation of the workflow I/O placeholder (including results)
 kubectl -n argo create -f define_pvc_pagoda.yaml
 # Define cluster specific variables
@@ -188,26 +192,41 @@ allowing for the http retrieval of out-of-cluster data (e.g. with wget).
 
 ## <a name='Runningtheworkflows'></a>Running the workflows
 
+<a name="anchor-pagoda-running-the-workflows"></a>
+
 Alas workflow submission commands are not cluster independent (they should be
 [those instructions](../Run_on_Generic/Readme.md#anchor-running-the-workflows)).
 This is because (for some type of information) the cluster context needs to
 be handled over through CLI parameters.
-FIXME: documentent that we cannot use a `--parameter-file context.yaml` because
-`argo submit` only accepts a single parameter file and we already provide the
-input parameters. Also document that the registry host-name can not be passed
-through a Configmap (and why this cannot be).
+
+FIXME: document the fact that we cannot use a `--parameter-file context.yaml`
+because `argo submit` only accepts a single parameter file and we already
+provide the input parameters. Also document that the registry host-name cannot
+be passed through a `Configmap` (and why this cannot be).
 
 ### <a name='Runningtheworkflowstagebystage:singlevintageversion'></a>Running the workflow stage by stage: single vintage version
 
-Alas (refer to the above FIXME) the
-[generic stage by stage instruction](../Run_on_Generic/Readme.md#anchor-running-the-workflows-stage-by-stage)
-do not work as is on PAGoDA.
+<a name="anchor-pagoda-running-the-workflows-stage-by-stage"></a>
 
-For the time the following submissions should be effective
+First make sure that
+
+* the [containers are properly build](#anchor-pagoda-building-containers),
+* the [workflow templates are populated](#anchor-populate-workflow-templates),
+* no preceding running traces will conflict with this new submission by running
+  
+  ```bash
+  \rm -fr junk     # Leading backslash is for inhibiting a possible alias
+  ```
+
+  or alternatively modify the `experiment_output_dir` entries of the parameter
+  files to point to an empty directory.
+
+Eventually you can proceed with the following submissions
 
 ```bash
 cd $(git rev-parse --show-cdup)/ArgoWorkflows
-# Following environment variable already defined in Run_on_PAGoDA/pagoda_argo.bash
+# The following environment variable should already be defined within the 
+# "Run_on_PAGoDA/pagoda_argo.bash" shell file
 export KUBE_DOCKER_REGISTRY=dockerRegistryHost=harbor.pagoda.os.univ-lyon1.fr/
 
 # Proceed with the run of each sub-workflows (of the full workflow)

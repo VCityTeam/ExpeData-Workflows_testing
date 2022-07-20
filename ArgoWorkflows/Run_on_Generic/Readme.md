@@ -34,9 +34,20 @@
 <a name="anchor-assert-argo-server-is-ready"></a>
 
 ```bash
-kubectl get nodes      # Assert that the underlying kubernetes server is ready
-kubectl get pod | grep workflow-controller   # Check argo server at k8s level
-argo list                                    # Check at argo level
+# Change to any arbitrary Curent Working Directory (CWD) in order to assert that
+# underlying environment variables (e.g. `KUBECONFIG`) do not use relative
+# paths: this particularly matters for the PAGoDA execution context
+pushd /tmp
+# Assert that the underlying kubernetes server is ready
+kubectl get nodes      
+# Assert that the argo server is present at k8s level (the specified 
+# namespace is deployment specific). Notice that this command might
+# require some extended access rights
+kubectl get pods -n argoworkflows | grep workflow-controller
+# Check at argo level
+argo list
+# Retrieve original CWD
+popd
 ```
 
 ### <a name='Defininganargoservernamespace'></a>Defining an argo server namespace
@@ -46,11 +57,6 @@ argo list                                    # Check at argo level
 ```bash
 kubectl create ns argo
 export ARGO_NAMESPACE=argo
-
-
-FIXME FIXME FIXME
-
-
 kubectl config use-context --current --namespace=$ARGO_NAMESPACE
 ```
 
@@ -111,7 +117,7 @@ with `argo template list`.
 
 First make sure that
 
-* the [containers are properly build](#anchor-build-containers"),
+* the [containers are properly build](#anchor-build-containers),
 * the [workflow templates are populated](#anchor-populate-workflow-templates),
 * no preceding running traces will conflict with this new submission by running
   
@@ -152,7 +158,7 @@ argo logs parameters-<generated_string>
 ### <a name='Runningtheworkflowstagebystage:multiplevintagesversion'></a>Running the workflow stage by stage: multiple vintages version
 
 First make sure that the
-[containers are build](#anchor-build-containers")
+[containers are build](#anchor-build-containers)
 and that the
 [workflow templates are populated](#anchor-populate-workflow-templates).
 

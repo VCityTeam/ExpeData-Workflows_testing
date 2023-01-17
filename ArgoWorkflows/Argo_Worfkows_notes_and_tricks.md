@@ -82,7 +82,7 @@ k config set-context --current --namespace=$ARGO_NAMESPACE
 Apply [a manifest](https://stackoverflow.com/questions/55130795/what-is-a-kubernetes-manifest) to set up an argo server
 
 ```bash
-k apply -f kubectl apply -n argo -f https://github.com/argoproj/argo-workflows/releases/download/v3.4.4/install.yaml
+k apply -n argo -f https://github.com/argoproj/argo-workflows/releases/download/v3.4.4/install.yaml
 ```
 
 assert the AW controller is running with

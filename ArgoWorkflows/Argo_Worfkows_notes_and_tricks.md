@@ -45,16 +45,16 @@ Start Kubernetes (4G is apparently _not_ sufficient for deploying Argo Workflow 
 minikube --memory=8G --cpus 4 start
 ```
 
-Make sure that k8 is up and running
+Make sure that k8s (server) is up and running
 
 ```bash
 kubectl version --short       # Should now provide a Server Version (was `v1.25.3` when these notes where written) 
 ```
 
-Note: when the k8 server was not properly launched (because `minikube start` failed for some reason)
+Note: when the k8s server was not properly launched (because `minikube start` failed for some reason)
 the above command yield an error message of the form `The connection to the server localhost:8080 was refused - did you specify the right host or port?`.
 
-You can now get some k8 syntactic comfort ([kubectl cheat sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)) with
+You can now get some k8s syntactic comfort ([kubectl cheat sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)) with
 
 ```bash
 alias k=kubectl

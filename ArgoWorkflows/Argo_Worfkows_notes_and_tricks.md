@@ -16,33 +16,28 @@ We here follow the [quick start guide](https://argoproj.github.io/argo-workflows
 - Install `minikube` (refer e.g. to [this guide](https://www.serverlab.ca/tutorials/containers/kubernetes/learning-kubernetes-with-minikube-on-osx/))
   
   ```bash
+  brew install minikube
+  minikube version             # Gave v1.28.0 when these notes where written
+  ```
+
+- Install kubernetes CLI command (`kubectl`)
+  ```bash
   brew install kubernetes-cli
-  kubectl version
-  brew cask install minikube
+  kubectl version --short      # Gave v1.26.0 as client version when these notes where written
   ```
 
 - Install [argo CLI](https://github.com/argoproj/argo-workflows/releases/tag/v3.1.11)
   
-  either
-
   ```bash
   brew install argo
   # or when "no bottle is available"
   brew install --build-from-source argo
+  argo version                # Gave v3.4.4+3b2626f.dirty when these notes where written
   ```
+  
+  This is only the argo CLI install: refer below for the installation of the server(s) part. 
 
-  or
-
-  ```bash
-  curl -sLO https://github.com/argoproj/argo-workflows/releases/download/v3.1.11/argo-darwin-amd64.gz
-  gunzip argo-darwin-amd64.gz
-  chmod +x argo-darwin-amd64
-  mv ./argo-darwin-amd64 /usr/local/bin/argo
-  argo version
-  argo --help
-  ```
-
-### Starting an argo server and an associated web based UI
+### Starting Kubernetes with minikube
 
 Start Kubernetes (4G is apparently _not_ sufficient for deploying Argo Workflow son minikube and on a desktop think of turning docker-desktop off in order to avoid "collisions")
 
@@ -50,7 +45,16 @@ Start Kubernetes (4G is apparently _not_ sufficient for deploying Argo Workflow 
 minikube --memory=8G --cpus 4 start
 ```
 
-and get some k8 syntactic comfort ([kubectl cheat sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)) with
+Make sure that k8 is up and running
+
+```bash
+kubectl version --short       # Should now provide a Server Version (was `v1.25.3` when these notes where written) 
+```
+
+Note: when the k8 server was not properly launched (because `minikube start` failed for some reason)
+the above command yield an error message of the form `The connection to the server localhost:8080 was refused - did you specify the right host or port?`.
+
+You can now get some k8 syntactic comfort ([kubectl cheat sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)) with
 
 ```bash
 alias k=kubectl
@@ -61,6 +65,7 @@ complete -F __start_kubectl k
 # echo "source <(kubectl completion bash)" >> ~/.bashrc 
 ```
 
+## Install an argo server and an associated web based UI
 Define a namespace and use it systematically
 
 ```bash

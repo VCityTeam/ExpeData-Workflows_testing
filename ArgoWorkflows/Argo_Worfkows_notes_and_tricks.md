@@ -89,7 +89,7 @@ k get pod | grep workflow-controller
 and open the ad-hoc port-forwarding
 
 ```bash
-k -n argo port-forward deployment/argo-server 2746:2746 &
+k -n argo port-forward service/argo-server 2746:2746 &
 ```
 
 in order to access argo UI by opening `https://localhost:2746` (with a web browser for which you might need to accept a "lack of https certificate" exception).

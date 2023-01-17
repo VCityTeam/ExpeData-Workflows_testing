@@ -139,9 +139,22 @@ k get sa | grep jenkins    # Just to make sure
 k get sa jenkins -o yaml   # Ditto
 # Bind service account with the role 
 k create rolebinding jenkins --role=jenkins --serviceaccount=argo:jenkins
-# Retrieve a token
+
+# Create the token
+    kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jenkins.service-account-token
+  annotations:
+    kubernetes.io/service-account.name: jenkins
+type: kubernetes.io/service-account-token
+EOF
+
+# Retrieve the token
 SECRET=$(kubectl get sa jenkins -o=jsonpath='{.secrets[0].name}')
 ARGO_TOKEN="Bearer $(kubectl get secret $SECRET -o=jsonpath='{.data.token}' | base64 --decode)"
+
 # Just to make sure the token is indeed there
 echo $ARGO_TOKEN
 ```

@@ -133,31 +133,32 @@ argo logs @latest   # Provide its logs
 
 ### Using Argo's REST API to access the argo server
 
-This requires an [access token](https://argoproj.github.io/argo-workflows/access-token/), which you create with
+This requires an access token. If we follow the [AW access token doc](https://argoproj.github.io/argo-workflows/access-token/),
+create a role with
 
 ```bash
 # A role is authorized to access some (limited) verbs and ressources 
-k create role jenkins --verb=list,update --resource=workflows.argoproj.io 
-# sa =service account
-k create sa jenkins
-k get sa | grep jenkins    # Just to make sure
-k get sa jenkins -o yaml   # Ditto
+k create role argo-user --verb=list,update --resource=workflows.argoproj.io 
+k create sa argo-user        # Note: sa =service account
+k get sa | grep argo-user    # Just to make sure
+k get sa argo-user -o yaml   # Ditto
+
 # Bind service account with the role 
-k create rolebinding jenkins --role=jenkins --serviceaccount=argo:jenkins
+k create rolebinding argo-user --role=argo-user --serviceaccount=argo:argo-user
 
 # Create the token
-    kubectl apply -f - <<EOF
+kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
-  name: jenkins.service-account-token
+  name: argo-user.service-account-token
   annotations:
-    kubernetes.io/service-account.name: jenkins
+    kubernetes.io/service-account.name: argo-user
 type: kubernetes.io/service-account-token
 EOF
 
 # Retrieve the token
-SECRET=$(kubectl get sa jenkins -o=jsonpath='{.secrets[0].name}')
+SECRET=$(kubectl get sa argo-user -o=jsonpath='{.secrets[0].name}')
 ARGO_TOKEN="Bearer $(kubectl get secret $SECRET -o=jsonpath='{.data.token}' | base64 --decode)"
 
 # Just to make sure the token is indeed there

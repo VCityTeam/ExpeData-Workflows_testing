@@ -147,22 +147,14 @@ k get sa argo-user -o yaml   # Ditto
 k create rolebinding argo-user --role=argo-user --serviceaccount=argo:argo-user
 
 # Create the token
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: argo-user.service-account-token
-  annotations:
-    kubernetes.io/service-account.name: argo-user
-type: kubernetes.io/service-account-token
-EOF
+kubectl apply -f argo-secret.yml
+kubectl get secret argo-user.service-account-token   # Should display the existing token name
 
 # Retrieve the token
-SECRET=$(kubectl get sa argo-user -o=jsonpath='{.secrets[0].name}')
-ARGO_TOKEN="Bearer $(kubectl get secret $SECRET -o=jsonpath='{.data.token}' | base64 --decode)"
-
-# Just to make sure the token is indeed there
-echo $ARGO_TOKEN
+DECODED_TOKEN=$(kubectl get secret argo-user.service-account-token -o=jsonpath='{.data.token}' | base64 --decode)
+echo $DECODED_TOKEN                    # Assert this variable is not empty
+ARGO_TOKEN="Bearer $DECODED_TOKEN"
+echo $ARGO_TOKEN                       # Just to make sure the token is indeed there
 ```
 
 Now designate the API access point and use the token

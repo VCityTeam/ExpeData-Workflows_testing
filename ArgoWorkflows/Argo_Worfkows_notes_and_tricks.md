@@ -138,7 +138,7 @@ create a role with
 
 ```bash
 # A role is authorized to access some (limited) verbs and ressources 
-k create role argo-user --verb=list,update --resource=workflows.argoproj.io 
+k create role argo-user --verb=create,get,list,patch,update,watch --resource=workflows.argoproj.io 
 k create sa argo-user        # Note: sa =service account
 k get sa | grep argo-user    # Just to make sure
 k get sa argo-user -o yaml   # Ditto

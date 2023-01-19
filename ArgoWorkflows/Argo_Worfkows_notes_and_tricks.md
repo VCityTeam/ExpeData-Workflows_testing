@@ -131,6 +131,17 @@ argo get @latest    # Provide more info about the last run workflow
 argo logs @latest   # Provide its logs
 ```
 
+Some possibly usefull environment variables
+```bash
+# In the unlikely event of using many instances
+export ARGO_INSTANCEID=...
+export ARGO_SERVER=localhost:2746      # Do not prefix with http or https
+export ARGO_SECURE=true                # Require TLS i.e. https
+export ARGO_INSECURE_SKIP_VERIFY=true  # For self signed certificates
+export KUBECONFIG=/dev/null            # Just to prevent any fold-back to k8s API
+export ARGO_NAMESPACE=argo
+```
+
 ### Using Argo's REST API to access the argo server
 
 This requires an access token. If we follow the [AW access token doc](https://argoproj.github.io/argo-workflows/access-token/),
@@ -157,39 +168,18 @@ ARGO_TOKEN="Bearer $DECODED_TOKEN"
 echo $ARGO_TOKEN                       # Just to make sure the token is indeed there
 ```
 
-Now designate the API access point and use the token
+Make sure that access port fowarding was set (refer above) and assert that the
+generated token is properly recognised by using the REST API with e.g.
 
 ```bash
-export ARGO_SERVER=localhost:2746   # Requires the above port forwarding
-argo list
+curl --insecure https://localhost:2746/api/v1/workflows/argo -H "Authorization: $ARGO_TOKEN"
 ```
 
-Note: according to [this tutorial](https://youtu.be/gqfDJi7m7ng?list=PLGHfqDpnXFXLHfeapfvtt9URtUF1geuBo&t=745) it suffice to do
+In order to try out other request, you can also use the token to login through the UI
+(browse `https://localhost:2746/login`) and then browse the (swagger generated) API docs 
+(browse `https://localhost:2746/apidocs`) e.g. to retrieve some requests and resubmit 
+them with curl (and then modify/extend such request in order to suit one's need).
 
-```bash
-export ARGO_TOKEN=no
-```
-
-but this fails (and [this stackoverflow](https://stackoverflow.com/questions/66178222/accessing-argo-workflow-archive-via-http-leads-to-permission-denied-error) didn't help much).
-
-Some REST API access related environment variables
-
-```bash
-# In the unlikely event of using many instances
-export ARGO_INSTANCEID=...
-export ARGO_SERVER=localhost:2746      # Do not prefix with http or https
-export ARGO_SECURE=true                # Require TLS i.e. https
-export ARGO_INSECURE_SKIP_VERIFY=true  # For self signed certificates
-export KUBECONFIG=/dev/null            # Just to prevent any fold-back to k8s API
-export ARGO_NAMESPACE=argo
-export ARGO_TOKEN=...                  # Refer above
-```
-
-### Using curl to access the API
-
-Use the UI in order to generate some demands and open your browser development tool then you can obtain the (http) requests to which the UI demand gets mapped to. Then one can retrieve such request and resubmit them with curl, and then modify/extend such request in order to suit one's need.
-
-The (swagger generated) API docs can be retrieved on the server through https://localhost:2746/apidocs
 
 ### Using the Python wrappers
 

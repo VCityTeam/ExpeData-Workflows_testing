@@ -1,17 +1,27 @@
+# Hera framework quick evaluation
+
+[Hera is a Python framework](https://github.com/argoproj-labs/hera-workflows)
+for constructing and submitting Argo Workflows.
+
+For other python wrappers refer
+[here](../ArgoWorkflows/ArgoWorkflowsPythonWrappers.md).
 
 ## References
 
 * [Hera testing notes as done in the Pagoda project](https://gitlab.liris.cnrs.fr/pagoda/pagoda-charts-management/argo-workflows/-/blob/develop/argodocs/docs/heraworkflows.md)
 * [Pagoda project Hera examples](https://gitlab.liris.cnrs.fr/pagoda/pagoda-charts-management/argo-workflows/-/tree/develop/hera-script)
 
-## Testing with Minikube
+## Running Hera on minikube
 
-Install minikube and argo server as e.g. [explained here](../Argo_Worfkows_notes_and_tricks.md#starting-an-argo-server-and-an-associated-web-based-ui).
-The following assumes that so-called `port forwarding` was configured which can
-be asserted with
+### Pre-requisites
+
+Install minikube and argo server as e.g.
+[explained here](../ArgoWorkflows/Installation.md#install-dependencies).
+
+Because Hera uses the argo API you then need to
+[create and define your argo API environment variables](../ArgoWorkflows/Installation.md#rest-api-setup) and make sure the argo API is accessible with e.g.
 
 ```bash
-export ARGO_SERVER=localhost:2746   # Requires the above port forwarding
 argo list
 ```
 

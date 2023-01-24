@@ -21,6 +21,7 @@ We here follow the [quick start guide](https://argoproj.github.io/argo-workflows
   ```
 
 - Install kubernetes CLI command (`kubectl`)
+
   ```bash
   brew install kubernetes-cli
   kubectl version --short      # Gave v1.26.0 as client version when these notes where written
@@ -35,7 +36,7 @@ We here follow the [quick start guide](https://argoproj.github.io/argo-workflows
   argo version                # Gave v3.4.4+3b2626f.dirty when these notes where written
   ```
   
-  This is only the argo CLI install: refer below for the installation of the server(s) part. 
+  This is only the argo CLI install: refer below for the installation of the server(s) part.
 
 ### Starting Kubernetes with minikube
 
@@ -66,6 +67,7 @@ complete -F __start_kubectl k
 ```
 
 ## Install an argo server and an associated web based UI
+
 Define a namespace and use it systematically
 
 ```bash
@@ -103,9 +105,15 @@ in order to access argo UI by opening `https://localhost:2746` (with a web brows
 
 ## Using Argo through different API
 
-Argo can be used at different levels of API: k8s, curl, a dedicated REST API... 
+Argo can be used at different levels of API: k8s, curl or a dedicated REST API.
 
-### Using ArgoCLI to run an AW example workflow
+### Using ArgoCLI through/over k8s run an AW example workflow
+
+For this mode of usage, the implicit assumption is that there are no access
+rights limitations to use k8s (so that argoCLI can simply "translate" its
+commands to k8s without any access rights restrictions).
+This generally means you are acting as admin on a k8s server or running on your
+desktop.
 
 Submit the workflow and watch (observe) it progress
 
@@ -119,9 +127,10 @@ or submit the workflow and watch the logs on the fly
 argo submit --log https://raw.githubusercontent.com/argoproj/argo-workflows/master/examples/hello-world.yaml
 ```
 
-Also fool around with the UI to observe the workflow execution and the associated info.
+Once the workflows were submitted, don't hesitate to explore the UI in order to
+observe the workflow execution and the associated info (e.g. logs).
 
-Access to the workflow related information through the CLI
+Also explore some workflow execution related information with argo CLI
 
 ```bash
 argo list           # Similar to `kubectl get wf`
@@ -131,57 +140,95 @@ argo get @latest    # Provide more info about the last run workflow
 argo logs @latest   # Provide its logs
 ```
 
-Some possibly usefull environment variables
+Some possibly useful environment variables
+
 ```bash
-# In the unlikely event of using many instances
-export ARGO_INSTANCEID=...
+export ARGO_NAMESPACE=argo             # When using a namespace (refer below)
 export ARGO_SERVER=localhost:2746      # Do not prefix with http or https
 export ARGO_SECURE=true                # Require TLS i.e. https
 export ARGO_INSECURE_SKIP_VERIFY=true  # For self signed certificates
-export KUBECONFIG=/dev/null            # Just to prevent any fold-back to k8s API
-export ARGO_NAMESPACE=argo
+# In the unlikely event of using many instances
+export ARGO_INSTANCEID=...
 ```
 
 ### Using Argo's REST API to access the argo server
 
-This requires an access token. If we follow the [AW access token doc](https://argoproj.github.io/argo-workflows/access-token/),
-create a role with
+This argoCLI usage mode most often requires an access token. If we follow the
+[AW access token documentation](https://argoproj.github.io/argo-workflows/access-token/),
+the creation of such an access tokena role with
 
 ```bash
 # A role is authorized to access some (limited) verbs and ressources 
 k create role argo-user --verb=create,get,list,patch,update,watch --resource=workflows.argoproj.io 
-k create sa argo-user        # Note: sa =service account
-k get sa | grep argo-user    # Just to make sure
-k get sa argo-user -o yaml   # Ditto
+k create sa argo-user        # Note: SA=Service Account
+k get sa | grep argo-user    # Asserting the SA was properly created
+k get sa argo-user -o yaml   # Ditto but with the associated yaml output
 
 # Bind service account with the role 
 k create rolebinding argo-user --role=argo-user --serviceaccount=argo:argo-user
 
-# Create the token
-kubectl apply -f argo-secret.yml
-kubectl get secret argo-user.service-account-token   # Should display the existing token name
-
-# Retrieve the token
-DECODED_TOKEN=$(kubectl get secret argo-user.service-account-token -o=jsonpath='{.data.token}' | base64 --decode)
-echo $DECODED_TOKEN                    # Assert this variable is not empty
-ARGO_TOKEN="Bearer $DECODED_TOKEN"
-echo $ARGO_TOKEN                       # Just to make sure the token is indeed there
+# Eventually we can create the token
+k apply -f argo-secret.yml
+k get secret argo-user.service-account-token   # Should display the existing token name
 ```
 
-Make sure that access port fowarding was set (refer above) and assert that the
-generated token is properly recognised by using the REST API with e.g.
+The created token must be retrieved and stored in the ad-hoc environment
+variable for proper usage
 
 ```bash
+# Retrieve the token
+DECODED_TOKEN=$(kubectl get secret argo-user.service-account-token -o=jsonpath='{.data.token}' | base64 --decode)
+echo $DECODED_TOKEN                  # Assert this variable is not empty
+ARGO_TOKEN="Bearer $DECODED_TOKEN"
+echo $ARGO_TOKEN                     # Make sure the token was indeed defined
+```
+
+Make sure that access port forwarding was set (refer above) and assert that the
+generated token is properly recognized by using the REST API with e.g.
+
+```bash
+export ARGO_SERVER='localhost:2746'     # Designate the port forwarded port
 curl --insecure https://localhost:2746/api/v1/workflows/argo -H "Authorization: $ARGO_TOKEN"
 ```
 
-In order to try out other request, you can also use the token to login through the UI
-(browse `https://localhost:2746/login`) and then browse the (swagger generated) API docs 
-(browse `https://localhost:2746/apidocs`) e.g. to retrieve some requests and resubmit 
-them with curl (and then modify/extend such request in order to suit one's need).
+You can also use the created token to
+[login through the UI](https://localhost:2746/login) (browse to
+`https://localhost:2746/login`). Once authenticated you can browse the
+(swagger generated) [argo API documentation](https://localhost:2746/apidocs)
+(browse `https://localhost:2746/apidocs`).
 
+In order to use argo CLI (and besides the `ARGO_TOKEN` variable) you will need
+to define a bunch of environment variables that you can copy/paste from the
+[`Using Your Login With The CLI`](https://localhost:2746/userinfo) section of
+the `user` tab of the UI (`https://localhost:2746/userinfo`).Such definitions
+usually boil down to
 
-### Using the Python wrappers
+```bash
+export ARGO_SERVER='localhost:2746' 
+export ARGO_HTTP1=true  
+export ARGO_SECURE=true
+export ARGO_BASE_HREF=
+export ARGO_TOKEN='[REDACTED]'  # Already defined above
+export ARGO_NAMESPACE=argo ;    # or whatever your namespace is 
+export KUBECONFIG=/dev/null ;   # Just to prevent any fold-back to the k8s API
+```
+
+When deploying on a desktop (where) you will also need to define
+
+```bash
+export ARGO_INSECURE_SKIP_VERIFY=true   # MUST HAVE : NOT GIVEN WITHIN THE UI LIST 
+```
+
+Place those variables in e.g. a `argo_env_vars.bash` file and source it when
+needed.
+
+Eventually test that the API is accessible e.g. with
+
+```bash
+argo list
+```
+
+## Using the Python wrappers
 
 There seems to confusingly exist many sources e.g. (note that [CermakM](https://github.com/CermakM) does not seem to be contributor of the [Argo Project](https://github.com/orgs/argoproj/people) neither of [argoproj-labs](https://github.com/orgs/argoproj-labs/people) and the relationship between the [Argo Project](https://argoproj.github.io/) and [the argoproj-labs organisation](https://github.com/argoproj-labs) does not seem to be documented)
 
@@ -210,9 +257,10 @@ minikube ssh 'df /data/host'  # Will display the filesystem as an IP number
 ```
 
 References:
-- https://minikube.sigs.k8s.io/docs/handbook/persistent_volumes/
-- https://minikube.sigs.k8s.io/docs/handbook/mount/
-- https://stackoverflow.com/questions/54993532/how-to-use-kubernetes-persistent-local-volumes-with-minikube-on-osx
+
+- <https://minikube.sigs.k8s.io/docs/handbook/persistent_volumes/>
+- <https://minikube.sigs.k8s.io/docs/handbook/mount/>
+- <https://stackoverflow.com/questions/54993532/how-to-use-kubernetes-persistent-local-volumes-with-minikube-on-osx>
 
 ---
 
@@ -281,7 +329,7 @@ IP number. The distinction between the two postgres instances can thus be done
 at the IP level has opposed to the port level (on condition that such container
 do not run on the same pod ?).
 This might explain why AW documentation doesn't seem to offer a syntax for
-redirection 
+redirection
 ([`containerPort`](https://argoproj.github.io/argo-workflows/fields/#containerport)
 look like a simple exposure of a port as opposed to redirection).
 
@@ -294,7 +342,7 @@ The Tasks term is here used with its
 
 ### Task: data persistence, mounting a host directory into the guest with Minikube
 
-When developing docker containers on a desktop host, and in order to offer 
+When developing docker containers on a desktop host, and in order to offer
 persistence (for data generated by the container), docker offers to mount a
 host directory into the container through
 [docker "bind mounts"](https://docs.docker.com/storage/bind-mounts/).
@@ -302,10 +350,10 @@ host directory into the container through
 k8s mechanism for persistence uses the notion of
 [persistent volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/).
 When developing on a Minikube host (e.g. using a VM on desktop host),
-[minikube is configured to persist files stored under a limited set of host directories](https://minikube.sigs.k8s.io/docs/handbook/persistent_volumes/) (e.g `/data`, `/tmp/hostpath_pv` ...). 
+[minikube is configured to persist files stored under a limited set of host directories](https://minikube.sigs.k8s.io/docs/handbook/persistent_volumes/) (e.g `/data`, `/tmp/hostpath_pv` ...).
 On OSX, and by default, a native (that is _not_ within the VM) user home
 directory cannot be used to persist pod data.
 But Minikube offers the
 [`minikube mount <>`](https://minikube.sigs.k8s.io/docs/handbook/mount/)
 to allow for a user home sub-directory (on the host native system) to be
-mounted as k8s volume that pods can use to persist their data. 
+mounted as k8s volume that pods can use to persist their data.

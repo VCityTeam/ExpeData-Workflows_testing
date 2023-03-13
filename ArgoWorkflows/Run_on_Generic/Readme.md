@@ -43,7 +43,7 @@ kubectl get nodes
 # Assert that the argo server is present at k8s level (the specified 
 # namespace is deployment specific). Notice that this command might
 # require some extended access rights
-kubectl get pods -n argoworkflows | grep workflow-controller
+kubectl get pods -n argo | grep workflow-controller
 # Check at argo level
 argo list
 # Retrieve original CWD

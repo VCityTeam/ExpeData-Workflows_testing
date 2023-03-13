@@ -34,7 +34,7 @@ the numerical experiment on the PAGoDA cluster should be located in the
 The credentials of the Kubernetes cluster of PAGoDA platform must be retrieved
 through the rancher server of the PAGoDA platform.
 In order to do so, open a web browse to
-<https://rancher.pagoda.os.univ-lyon1.fr/>
+<https://rancher2.pagoda.os.univ-lyon1.fr/>
 and use the `Keycloak` login mode to provide your LIRIS lab credentials (the
 ones defined in LIRIS'
 [ldap](https://en.wikipedia.org/wiki/Lightweight_Directory_Access_Protocol)

@@ -95,7 +95,7 @@ with the command
 source ./pagoda_argo.bash
 ```
 
-and [assert that the argo server is ready](../Run_on_Generic/Readme.md#anchor-assert-argo-server-is-ready)
+and [assert that the argo server is ready](../Run_on_Generic/Readme.md#asserting-argo-server-is-ready)
 
 ### <a name='BuildthecontainerimagesandpushthemtothePAGoDAregistry'></a>Build the container images and push them to the PAGoDA registry
 

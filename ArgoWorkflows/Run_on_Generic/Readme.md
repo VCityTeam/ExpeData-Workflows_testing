@@ -29,8 +29,7 @@
 
 ## <a name='Preparationstage'></a>Preparation stage
 
-### <a name='Assertingargoserverisready'></a>Asserting argo server is ready
-
+### Asserting argo server is ready
 <a name="anchor-assert-argo-server-is-ready"></a>
 
 ```bash

@@ -1,0 +1,56 @@
+# This is a copy of FailingIssues/daemon-cannot-have-outputs.yml
+# that must be debugged ! The problem arises on the last-line that
+# should start with valueFrom (as opposed to value).
+# Hence we must find a alternate way to output the IP of the database...
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-
+spec:
+  entrypoint: main
+  volumes:
+  - name: workdir
+    persistentVolumeClaim:
+      claimName: vcity-pvc
+      readOnly: false
+  arguments:
+    parameters:
+    # Database related
+    - name: database_name
+      value: "junk"
+    - name: database_password
+      value: "postgres"
+    - name: database_user
+      value: "postgres"
+    - name: database_port
+      value: "5432"
+
+  templates:
+  - name: main
+    steps:
+
+    - - name: postgis-start-db-loop
+        templateRef:
+          name: workflow-database-templaterefs
+          template: postgis-daemon
+        arguments:
+          parameters:
+          - name: database_name
+            value: "{{workflow.parameters.database_name}}"
+          - name: password
+            value: "{{workflow.parameters.database_password}}"
+          - name: user
+            value: "{{workflow.parameters.database_user}}"
+          - name: port
+            value: "{{workflow.parameters.database_port}}"
+        withParam: "{{workflow.parameters.vintages}}"
+
+    - - name: print-step
+        templateRef:
+          name: workflow-template-utils-whalesay-template
+          template: whalesay-template
+        arguments:
+          parameters:
+          - name: message
+            value: "{{steps.postgis-start-db-loop.ip}}"
+

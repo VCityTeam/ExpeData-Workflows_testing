@@ -1,36 +1,29 @@
 # Running the implemented Argo workflows: platform independent commands
 
-**Page index**
-<!-- vscode-markdown-toc -->
-* [Preparation stage](#Preparationstage)
-  * [Asserting argo server is ready](#Assertingargoserverisready)
-  * [Defining an argo server namespace](#Defininganargoservernamespace)
-  * [Build the required containers](#Buildtherequiredcontainers)
-  * [Populate the workflow "library" with workflowTemplates](#PopulatetheworkflowlibrarywithworkflowTemplates)
-* [Running the workflows](#Runningtheworkflows)
-  * [Running the workflow stage by stage: single vintage version](#Runningtheworkflowstagebystage:singlevintageversion)
-  * [Running the workflow stage by stage: multiple vintages version](#Runningtheworkflowstagebystage:multiplevintagesversion)
-  * [Running the full workflow](#Runningthefullworkflow)
-  * [Running the full workflow](#Runningthefullworkflow-1)
-* [Troubleshooting](#Troubleshooting)
-  * [Basic troubleshooting](#Basictroubleshooting)
-  * [Hung-up/Failing workflow](#Hung-upFailingworkflow)
-  * [Dealing with "using the emissary executor" error](#Dealingwithusingtheemissaryexecutorerror)
-* [Developers](#Developers)
-  * [Running the examples](#Runningtheexamples)
-  * [Running the ongoing issues/failures](#Runningtheongoingissuesfailures)
-  * [Tools](#Tools)
+<!-- TOC -->
 
-<!-- vscode-markdown-toc-config
-	numbering=false
-	autoSave=true
-	/vscode-markdown-toc-config -->
-<!-- /vscode-markdown-toc -->
+- [Preparation stage](#preparation-stage)
+  - [Asserting argo server is ready](#asserting-argo-server-is-ready)
+  - [Defining an argo server namespace](#defining-an-argo-server-namespace)
+  - [Build the required containers](#build-the-required-containers)
+  - [Populate the workflow "library" with workflowTemplates](#populate-the-workflow-library-with-workflowtemplates)
+- [Running the workflows](#running-the-workflows)
+  - [Running the workflow stage by stage: single vintage version](#running-the-workflow-stage-by-stage-single-vintage-version)
+  - [Running the workflow stage by stage: multiple vintages version](#running-the-workflow-stage-by-stage-multiple-vintages-version)
+  - [Running the full workflow](#running-the-full-workflow)
+- [Troubleshooting](#troubleshooting)
+  - [Basic troubleshooting](#basic-troubleshooting)
+  - [Retrieving logs of failing workflow](#retrieving-logs-of-failing-workflow)
+  - [Dealing with "using the emissary executor" error](#dealing-with-using-the-emissary-executor-error)
+- [Developers](#developers)
+  - [Running the examples](#running-the-examples)
+  - [Running the ongoing issues/failures](#running-the-ongoing-issuesfailures)
 
-## <a name='Preparationstage'></a>Preparation stage
+<!-- /TOC -->
+
+## Preparation stage
 
 ### Asserting argo server is ready
-<a name="anchor-assert-argo-server-is-ready"></a>
 
 ```bash
 # Change to any arbitrary Curent Working Directory (CWD) in order to assert that
@@ -49,9 +42,7 @@ argo list
 popd
 ```
 
-### <a name='Defininganargoservernamespace'></a>Defining an argo server namespace
-
-<a name="anchor-define-argo-namespace"></a>
+### Defining an argo server namespace
 
 ```bash
 kubectl create ns argo
@@ -59,9 +50,7 @@ export ARGO_NAMESPACE=argo
 kubectl config use-context --current --namespace=$ARGO_NAMESPACE
 ```
 
-### <a name='Buildtherequiredcontainers'></a>Build the required containers
-
-<a name="anchor-build-containers"></a>
+### Build the required containers
 
 ```bash
 docker build -t vcity/collect_lyon_data ../Docker/Collect-DockerContext/
@@ -73,27 +62,26 @@ docker pull refstudycentre/scratch-base:latest
 
 Notes:
 
-* In case of trouble with the docker builds (e.g. when the build failed
+- In case of trouble with the docker builds (e.g. when the build failed
   because of missing disk space) consider using the `--no-cache` flag.
 
-* `refstudycentre/scratch-base` is a really tiny container used as a trick
+- `refstudycentre/scratch-base` is a really tiny container used as a trick
   (refer to workflow e.g. `Examples/loading-json-fromValue.yml`
 
-* `docker build` can NOT use the url of sub-directory of git repository (refer
+- `docker build` can NOT use the url of sub-directory of git repository (refer
   e.g. to [this StackOverflow](https://stackoverflow.com/questions/25509828/can-a-docker-build-use-the-url-of-a-git-branch#27295336). This is why some
   of the above `docker build` commands designate their Dockerfile arguments
   through a relative path notation which creates an alas implicit dependency
   (within this repository).
 
-### <a name='PopulatetheworkflowlibrarywithworkflowTemplates'></a>Populate the workflow "library" with workflowTemplates
-
-<a name="anchor-populate-workflow-templates"></a>
+### Populate the workflow "library" with workflowTemplates
 
 [workflowTemplates](https://github.com/argoproj/argo-workflows/blob/release-3.2/docs/workflow-templates.md)
 require a special treat and must be uploaded to the k8s cluster prior to using
 (referring) them in a workflow.
 
 ```bash
+cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflow_CityGMLto3DTiles_Example/
 # Merciless clean-up of possible previous definitions
 argo template delete --all
 # Add the template references
@@ -106,19 +94,15 @@ argo template create workflow-template/database.yml \
 You can assert the `templateRef`s were properly created by e.g. listing them
 with `argo template list`.
 
-## <a name='Runningtheworkflows'></a>Running the workflows
+## Running the workflows
 
-<a name="anchor-running-the-workflows"></a>
-
-### <a name='Runningtheworkflowstagebystage:singlevintageversion'></a>Running the workflow stage by stage: single vintage version
-
-<a name="anchor-running-the-workflows-stage-by-stage"></a>
+### Running the workflow stage by stage: single vintage version
 
 First make sure that
 
-* the [containers are properly build](#anchor-build-containers),
-* the [workflow templates are populated](#anchor-populate-workflow-templates),
-* no preceding running traces will conflict with this new submission by running
+- the [containers are properly build](#build-the-required-containers),
+- the [workflow templates are populated](#populate-the-workflow-library-with-workflowtemplates),
+- no preceding running traces will conflict with this new submission by running
   
   ```bash
   \rm -fr junk     # Leading backslash is for inhibiting a possible alias
@@ -130,7 +114,7 @@ First make sure that
 Eventually you can proceed with the submissions
 
 ```bash
-cd $(git rev-parse --show-cdup)/ArgoWorkflows
+cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflow_CityGMLto3DTiles_Example/
 # Proceed with the run of each sub-workflows (of the full workflow)
 argo submit --watch --log just-collect.yml --parameter-file input-2012-tiny-no_db.yaml
 # The above results should be in the `junk/stage_1/` sub-directory
@@ -154,12 +138,12 @@ argo list logs | grep -i ^parameters-
 argo logs parameters-<generated_string>
 ```
 
-### <a name='Runningtheworkflowstagebystage:multiplevintagesversion'></a>Running the workflow stage by stage: multiple vintages version
+### Running the workflow stage by stage: multiple vintages version
 
 First make sure that the
-[containers are build](#anchor-build-containers)
+[containers are build](#build-the-required-containers)
 and that the
-[workflow templates are populated](#anchor-populate-workflow-templates).
+[workflow templates are populated](#populate-the-workflow-library-with-workflowtemplates).
 
 Submission can now be done with
 
@@ -170,7 +154,7 @@ argo submit --watch --log just-prepare-vintages-boroughs.yml \
 # junk/stage_3/ sub-directories
 ```
 
-### <a name='Runningthefullworkflow'></a>Running the full workflow
+### Running the full workflow
 
 Notice that you can overload any of the parameters at invocation stage with
 
@@ -178,40 +162,29 @@ Notice that you can overload any of the parameters at invocation stage with
 argo submit --watch --log full-workflow.yml --parameter-file input-2012-tiny-import_dump.yaml
 ```
 
-### <a name='Runningthefullworkflow-1'></a>Running the full workflow
-
 ```bash
-argo submit --watch --log full-workflow.yml \
-            --parameter-file workflow_input.yaml
+argo submit --watch --log full-workflow.yml  --parameter-file workflow_input.yaml
 ```
 
-## <a name='Troubleshooting'></a>Troubleshooting
+## Troubleshooting
 
-<a name="anchor-troubleshooting"></a>
+### Basic troubleshooting
 
-### <a name='Basictroubleshooting'></a>Basic troubleshooting
-
-* Assert you are working on the proper cluster (should be `pagoda-test` if you
+- Assert you are working on the proper cluster (should be `pagoda-test` if you
   stuck to this doc example)
-
-  <a name="anchor-generic-troubleshooting-check-cluster-used"></a>
 
   ```bash
   kubectl config get-contexts
   ```
 
-* Assert you are working in the proper namespace (should be `argo` if you
+- Assert you are working in the proper namespace (should be `argo` if you
   stuck to this doc example)
-
-  <a name="anchor-generic-troubleshooting-check-cluster-used"></a>
 
   ```bash
   kubectl config view --minify --output 'jsonpath={..namespace}'
   ```
 
-### <a name='Hung-upFailingworkflow'></a>Hung-up/Failing workflow
-
-<a name="anchor-generic-troubleshooting-retrieve-logs"></a>
+### Retrieving logs of failing workflow
 
 When a workflow was launched but didn't succeed (nothing happens, no output at
 the argo level, yet the corresponding pod status as retrieved with `k get pods`
@@ -226,7 +199,7 @@ kubectl -n argo logs <the-full-pod-name>           # Logs a k8s level
 kubectl -n argo logs <the-full-pod-name> -c main   # Log of the `main` pod
 ```
 
-### <a name='Dealingwithusingtheemissaryexecutorerror'></a>Dealing with "using the emissary executor" error
+### Dealing with "using the emissary executor" error
 
 At runtime (i.e. when using `argo submit`) one gets an error message of the
 form
@@ -249,13 +222,12 @@ following command
 kubectl -n argo patch cm workflow-controller-configmap -p '{"data": {"containerRuntimeExecutor": "docker"}}'
 ```
 
-## <a name='Developers'></a>Developers
+## Developers
 
-### <a name='Runningtheexamples'></a>Running the examples
-
-<a name="anchor-running-the-examples"></a>
+### Running the examples
 
 ```bash
+cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflow_CityGMLto3DTiles_Example/
 argo template create workflow-template/*.yml
 argo submit --watch --log Examples/example-3dcitydb-daemon.yml  --parameter-file input-just_db.yaml
 argo submit --watch --log  Examples/example-loop-in-loop-through-template-call.yml
@@ -273,25 +245,10 @@ argo submit --parameter-file input-just_db.yaml --parameter output_dir=junk \
 In the above example notice that using a template as entrypoint of course
 requires that all its parameter are defined (the output_dir).
 
-### <a name='Runningtheongoingissuesfailures'></a>Running the ongoing issues/failures
-
-<a name="anchor-running-the-failures"></a>
+### Running the ongoing issues/failures
 
 ```bash
 argo submit --watch --log FailingIssues/postgres-pgdata-permission-issue.yml --parameter-file input-just_db.yaml 
 ```
 
 that will complain about `chmod: changing permissions of [...] Operation not permitted`.
-
-### <a name='Tools'></a>Tools
-
-**On OSX**
-
-```bash
-brew install lens
-```
-
-Launch it as an app. Authenticate (SSO) either with github or google.
-Declare the cluster with the "+" button that offers the `sync with files`
-sub-button and point it to your `ArgoWorkflows/Run_on_PAGoDA/pagoda_kubeconfig.yaml`
-cluster configuration file.

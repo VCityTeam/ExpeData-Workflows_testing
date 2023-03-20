@@ -1,3 +1,8 @@
+WARNING: le nom du namespace ou argo est déployé ne peut pas être retrouvé
+L'admin doit donner le namespace argo ET le name du service account argo-pagoda-user
+
+Attention le jetton retrouvé par le script python n'est le meme que celui de l'UI argo !
+
 # Hera framework quick evaluation
 
 [Hera is a Python framework](https://github.com/argoproj-labs/hera-workflows)

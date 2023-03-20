@@ -1,1 +1,1 @@
-Refer to [this documentation](../Readme.md#anchor-running-the-static-tiler-workflow)
+# Refer to [this documentation](../Readme.md#running-the-static-tiler-workflow)

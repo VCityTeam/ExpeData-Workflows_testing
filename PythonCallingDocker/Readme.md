@@ -1,5 +1,6 @@
 ## Pre-requisites
- - [install Python3.7](https://www.python.org/)
+
+- [install Python3.7](https://www.python.org/)
 
 ## Installing dependencies
 
@@ -41,7 +42,7 @@ $ . venv/bin/activate
 ### Static case configuration step
 
 First edit the `DemoStatic/demo_configuration_static.py` configuration file and
-follow the documentation provided in that file to specify every required 
+follow the documentation provided in that file to specify every required
 parameter.
 
 ### Note on the location of the (static) results
@@ -87,7 +88,7 @@ i.e. `DemoStatic/demo_configuration_static.py` and
 
 ### Note on the location of the (temporal) results
 
-Be it with the single run of the full workflow or with the manual 
+Be it with the single run of the full workflow or with the manual
 steps (refer bellow) the resulting file hierarchies will be located
 in the `junk` sub-directory (as configured by the `output_dir` variable
 of `demo_configuration.py`, refer above).
@@ -131,7 +132,7 @@ $ cd Computations/3DTiles/LyonTemporal/PythonCallingDocker
 (venv)$ pytest
 ```
 
-### Debugging of a docker container notes:
+### Debugging of a docker container notes
 
 Step in a container (i.e. activate a launch a shill within) with e.g.
 
@@ -139,7 +140,7 @@ Step in a container (i.e. activate a launch a shill within) with e.g.
 docker run -v `pwd`/junk/LYON_1ER_2009/:/Input -v `pwd`/junk_split/:/Output -it liris:3DUse /bin/bash
 ```
 
-Then at the shell prompt (i.e. the `/bin/bash` shell running within the 
+Then at the shell prompt (i.e. the `/bin/bash` shell running within the
 container) launch e.g.
 
 ```bash
@@ -252,10 +253,11 @@ ERROR 1: TopologyException: found non-noded intersection between LINESTRING (1.8
 ```
 
 This error seems related with postgis or gdal according to threads like:
+
 - [R wrapping of gdal](https://stackoverflow.com/questions/13662448/what-does-the-following-error-mean-topologyexception-found-non-nonded-intersec)
 - [r-spatial/sf issue](https://github.com/r-spatial/sf/issues/860)
 
-### Running the workflow on Ubuntu with sudo docker 
+### Running the workflow on Ubuntu with sudo docker
 
 <a name="UbuntuWithSudo"></a>
 
@@ -300,8 +302,8 @@ sudo venv/bin/python3 run_strip_attributes_static.py
 
 ### Working around Ubuntu docker access without sudo
 
-On an **Ubuntu platform** the running of the workflow, or any of its steps, 
-fails due to docker access rights limitations. For example when running 
+On an **Ubuntu platform** the running of the workflow, or any of its steps,
+fails due to docker access rights limitations. For example when running
 (refer above)
 
 ```bash
@@ -328,7 +330,7 @@ insufficient permissions (access rights).
 You can asses this is the right diagnostic, by running
 
 ```bash
-$ docker version
+docker version
 ```
 
 that should yield something similar to
@@ -338,8 +340,8 @@ that should yield something similar to
 Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get http://%2Fvar%2Frun%2Fdocker.sock/v1.24/version: dial unix /var/run/docker.sock: connect: permission denied
 ```
 
-A straightforward workaround, that we do NOT recommend, would be to pre-prend 
-the running script command with a `sudo` i.e. to use 
+A straightforward workaround, that we do NOT recommend, would be to pre-prend
+the running script command with a `sudo` i.e. to use
 
 ```bash
 sudo python3 run_strip_attributes_static.py
@@ -347,7 +349,7 @@ sudo python3 run_strip_attributes_static.py
 
 Yet this cannot be recommend for two reasons
 
-- using `sudo python3 ...` does 
+- using `sudo python3 ...` does
   [NOT use the python interpreter that you would would think of](#running-the-workflow-on-ubuntu-with-sudo-docker)
 
 - some portions of the resulting data directory will belong to root, and
@@ -357,9 +359,9 @@ Instead what we advise is to configure your Ubuntu to allow for `docker` usage
 without having to `sudo`, [that boils down to](https://askubuntu.com/questions/477551/how-can-i-use-docker-without-sudo) e.g.
 
 ```bash
-$ sudo groupadd docker 
-$ sudo gpasswd -a $USER docker
-$ newgrp docker
+sudo groupadd docker 
+sudo gpasswd -a $USER docker
+newgrp docker
 ```
 
 ### Concerning the "slow starting postgresql startup"

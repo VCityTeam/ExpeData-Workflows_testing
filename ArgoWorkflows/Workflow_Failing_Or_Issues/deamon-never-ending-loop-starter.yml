@@ -1,0 +1,94 @@
+# References:
+# - https://github.com/argoproj/argo-workflows/tree/master/examples#daemon-containers
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: parameters-
+spec:
+  entrypoint: main
+  volumes:
+  - name: workdir
+    hostPath:
+      path: /data/host
+  arguments:
+    parameters:
+    # Numerical experiment related
+    - name: boroughs
+    - name: pattern
+    - name: vintages
+    # Database related
+    - name: database_name
+    - name: database_password
+    - name: database_user
+    - name: database_port
+    - name: experiment_output_dir
+    # Local (to this workflow definition) parameters   
+    - name: persistedVolume   
+      value: /within-container-mount-point/
+    # Derived parameters
+    - name: database_dump_filename
+      value: "{{workflow.parameters.experiment_output_dir}}/stage_4/result-{{workflow.parameters.vintage}}-{{workflow.parameters.database_name}}.sql"
+
+  templates:
+  - name: main
+    steps:
+
+    ### Looping to start databases as DAEMON
+    - - name: 3dcitydb-start-db-loop
+        template: 3dcitydb-daemon-vintaged
+        arguments:
+          parameters:
+          - name: vintage
+            value: "{{item}}"
+          - name: database_name
+            value: "{{workflow.parameters.database_name}}-{{item}}"
+          - name: password
+            value: "{{workflow.parameters.database_password}}"
+          - name: user
+            value: "{{workflow.parameters.database_user}}"
+          - name: port
+            value: "{{workflow.parameters.database_port}}"
+        #withParam: "{{workflow.parameters.vintages}}"
+        withItems:
+          - 2012
+  
+    #### HERE IS THE PROBLEM: this step seems never to be reached 
+    - - name: print-ips-step
+        templateRef:
+          name: workflow-template-utils-whalesay-template
+          template: whalesay-template
+        arguments:
+          parameters:
+          - name: message
+            value: "The step was reached !"
+            # value: "{{steps.3dcitydb-start-db-loop.outputs.parameters.ip}}"
+
+  # This is just a wrap of 3dcitydb-daemon whose only purpose is to collect
+  # the hostname/ip-number of the pod running the database AS A DAEMON
+  - name: 3dcitydb-daemon-vintaged
+    inputs:
+      parameters:
+      - name: vintage
+      - name: database_name
+      - name: password
+      - name: user
+      - name: port
+    steps:
+    - - name: 3dcitydb-daemon-step
+        templateRef:
+          name: workflow-database-templaterefs
+          template: 3dcitydb-daemon
+        arguments:
+          parameters:
+          - name: database_name
+            value: "{{inputs.parameters.database_name}}-{{inputs.parameters.vintage}}"
+          - name: password
+            value: "{{inputs.parameters.password}}"
+          - name: user
+            value: "{{inputs.parameters.user}}"
+          - name: port
+            value: "{{inputs.parameters.port}}"
+    outputs:
+      parameters:
+        - name: ip
+          value: "{{steps.3dcitydb-daemon-step.ip}}"

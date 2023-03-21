@@ -1,5 +1,7 @@
 # Experimenting with ArgoWorkflows
 
+![Build Status](https://app.travis-ci.com/VCityTeam/ExpeData-Workflows_testing.svg?branch=master&status=started)
+
 <!-- TOC -->
 
 - [Running the examples](#running-the-examples)

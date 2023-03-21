@@ -10,7 +10,7 @@
 
 ## Running the examples
 
-|           | [On Minikube](On_Minikube_cluster/Readme.md) | [On PaGoDA](On_PaGoDa_cluster/Readme.md) |
+|           | [On Minikube](On_Minikube_cluster/Readme.md) | [On PaGoDA](On_PaGoDA_cluster/Readme.md) |
 |-----------|---|---|
 | With CLI  | [CLI/Minikube](Run_with_CLI_on_Minikube.md) | [CLI/PaGoDA](Run_with_CLI_on_PaGoDA.md) |
 | With Hera |  |  |

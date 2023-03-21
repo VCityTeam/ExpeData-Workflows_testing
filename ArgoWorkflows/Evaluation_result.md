@@ -35,7 +35,7 @@
   We have to make sure that every k8s host offers a similar mechanism in order
   to have at hand a locally ran docker registry.
 - Workflow CLI validation (`argo lint`) is far from being friendly: refer
-  to [this workflow example](FailingIssues/good-luck-with-linting-this.yml)
+  to [this workflow example](Workflow_Failing_Or_Issues/good-luck-with-linting-this.yml)
   to get some feeling of the limitations of `argo lint`. And IDE integration 
   (that allows for syntax checking) seems
   [only possible with IntelliJ](https://docs.google.com/document/d/1BCPQx10mq4GO8x6ZRIt1XMONDxcR3OoHdBAEPYP4WiM) (starting from

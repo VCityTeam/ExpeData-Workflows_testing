@@ -2,6 +2,10 @@ os: linux
 dist: focal
 language: generic
 
+cache:
+  directories:
+    - $HOME/.cache
+    
 jobs:
     - stage: "Markdown link checks"
       language: node_js

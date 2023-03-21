@@ -56,7 +56,7 @@ def get_sa_token(
 
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
-    args = parse_arguments("argo-pagoda-user", logger)
+    args = parse_arguments(logger)
     print(args)
 
     token = get_sa_token(

@@ -39,7 +39,7 @@ menu and selecting the ad-hoc entry within the `Explore Cluster` tab.
 Once in the pagoda cluster page, download the `KubeConfig` file associated
 to this pagoda cluster. For this use one of the buttons in the right section
 of the upper row of the page and place the content e.g. in a
-`pagoda_kubeconfig.yaml` file (in this `$(git rev-parse --show-cdup)/ArgoWorkflows/Run_on_PAGoDA` current directory).
+`pagoda_kubeconfig.yaml` file (in this current directory).
 
 Assert you have access to the pagoda (Kubernetes) cluster with the commands
 

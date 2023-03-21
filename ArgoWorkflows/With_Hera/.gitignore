@@ -1,2 +1,5 @@
 hera-workflows
 argo_env_vars.bash
+venv
+__pycache__
+pagoda_kubeconfig.yaml

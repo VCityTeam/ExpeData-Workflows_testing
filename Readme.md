@@ -1,5 +1,7 @@
 # ExpeData workflow comparison
 
+![Build Status](https://app.travis-ci.com/VCityTeam/ExpeData-Workflows_testing.svg?branch=master&status=started)
+
 This repository considers a hopefully representative pipeline of computations
 and tries to express it with different technical formalisms like
 [AirFow](https://airflow.apache.org/), [CWL](https://www.commonwl.org/),

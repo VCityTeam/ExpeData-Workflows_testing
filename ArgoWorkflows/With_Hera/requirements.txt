@@ -1,0 +1,6 @@
+kubernetes==26.1.0
+hera-workflows==4.4.1
+# The following dependency of Hera (refer to  
+# https://github.com/argoproj-labs/hera-workflows/blob/main/src/hera/global_config.py#L6 )
+# doesn't seem to be automatically pulled
+typing_extensions==4.5.0

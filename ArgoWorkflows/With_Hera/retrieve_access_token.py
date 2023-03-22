@@ -3,16 +3,19 @@ import errno
 import os
 from typing import Optional
 from kubernetes import client, config
-import logging
-from parse_arguments import parse_arguments
 
-
-def get_sa_token(
+def retrieve_access_token(
     service_account: str,
     namespace: str = "default",
     config_file: Optional[str] = None,
 ):
     """Get ServiceAccount token using kubernetes config.
+    Watch out: the returned token has nothing to do with the ARGO_TOKEN given
+    by argo UI. Both tokens are not only different by their format (the one
+    returned by this function is _not_ prefixed with the `Bearer v2:` string)
+    but they don't correspond to the same service. This token provides access
+    to the argo-server at the k8s level whereas ARGO_TOKEN provides access to
+    the argo API.
      Parameters
     ----------
     service_account: str
@@ -55,13 +58,13 @@ def get_sa_token(
 
 
 if __name__ == "__main__":
-    logger = logging.getLogger(__name__)
-    args = parse_arguments(logger)
-    print(args)
+  from parse_arguments import parse_arguments
+  args = parse_arguments()
+  print(args)
 
-    token = get_sa_token(
-        args.service_account,
-        namespace=args.namespace,
-        config_file=args.k8s_config_file,
-    )
-    print("The retrieved token is {}".format(token))
+  token = retrieve_access_token(
+      args.service_account,
+      namespace=args.namespace,
+      config_file=args.k8s_config_file,
+  )
+  print("The retrieved token is {}".format(token))

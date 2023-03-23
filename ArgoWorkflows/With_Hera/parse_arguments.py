@@ -30,25 +30,34 @@ def parse_arguments(logger=logging.getLogger(__name__)):
         default=os.environ.get("ARGO_SERVER"),
     )
     parser.add_argument(
-        "service_account",
+        "--service_account",
         help="The name of the service account (holding the token). Default is the value of the ARGO_SERVICE_ACCOUNT environment variable.",
         type=str,
         default=os.environ.get("ARGO_SERVICE_ACCOUNT"),
-        nargs="?",  # Optional positional argument
     )
     args = parser.parse_args()
 
-    ### For some undocumented reason the ARGO_SERVER value given by the argo UI
-    # can be of the form `server.domain.org:443` when Hera expects an URL of
-    # form `https://server.domain.org`. Try to fix that on the fly.
-    # This is kludgy and completely ad-hoc and I will deny having written that
-    # excuse for a code (and yes my github account was hacked).
-    if args.server.endswith(":443"):
-      args.server = args.server.replace(":443","")
-    if args.server.endswith("http://"):
-      args.server = args.server.replace("http://", "https://")
-    if not args.server.startswith("https://"):
-      args.server = "https://"+ args.server
+    if args.server is None:
+      logger.error("Name of the service account not defined: either try")
+      logger.error("  - setting the ARGO_SERVER environment variable")
+      logger.error(
+          "  - providing the server optional argument; refer to usage below"
+      )
+      logger.error("")
+      parser.print_help()
+      sys.exit()
+    else:
+      ### For some undocumented reason the ARGO_SERVER value given by the argo UI
+      # can be of the form `server.domain.org:443` when Hera expects an URL of
+      # form `https://server.domain.org`. Try to fix that on the fly.
+      # This is kludgy and completely ad-hoc and I will deny having written that
+      # excuse for a code (and yes my github account was hacked).
+      if args.server.endswith(":443"):
+        args.server = args.server.replace(":443","")
+      if args.server.endswith("http://"):
+        args.server = args.server.replace("http://", "https://")
+      if not args.server.startswith("https://"):
+        args.server = "https://"+ args.server
     
     if args.service_account is None:
       logger.error("Name of the service account not defined: either try")

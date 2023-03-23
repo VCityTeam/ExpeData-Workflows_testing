@@ -6,7 +6,12 @@ def define_workflow():
       print("Hello, Hera!")
 
   with Workflow("hello-hera-", generate_name=True) as w:
-      Task("t", hello)
+      Task("pythonprint", hello)
+      Task(
+        "cowsayprint", 
+        image="docker/whalesay", 
+        command=["cowsay", "Moo Hera"]
+      )
   w.create()
 
 

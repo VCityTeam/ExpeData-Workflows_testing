@@ -147,6 +147,12 @@ docker push harbor.pagoda.os.univ-lyon1.fr/vcity/py3dtilers:0.1
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/refstudycentre:latest
 ```
 
+Note: if you wish to list the pushed (available) images on the pagoda container
+registry (as you do with a local registry with the `docker images` command) you 
+will alas need to use the UI and web-browse
+`https://harbor.pagoda.os.univ-lyon1.fr`. Indeed it 
+[seems docker doesn't allow remote registry image consultation](https://stackoverflow.com/questions/28320134/how-can-i-list-all-tags-for-a-docker-image-on-a-remote-registry).
+
 ### Define an argo server namespace
 
 Refer to the platform independent commands in order to

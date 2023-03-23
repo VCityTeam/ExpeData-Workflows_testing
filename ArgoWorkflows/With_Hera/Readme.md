@@ -78,16 +78,28 @@ source venv/bin/activate
 
 ```bash
 (venv) source pagoda_hera_env_vars.bash
-(venv) python hello_world_pagoda.py
+(venv) python parse_arguments.py
+(venv) python examples/hello_world_pagoda.py
 ```
 
 Check that argo UI displays a new `hello-hera-xxxxx` workflow, wait for the
 workflow to finish and check the resulting output logs.
 
+### Run the hera-workflow examples
+
+``bash
+(venv) python examples/coin_flip_pagoda.py
+```
+
+### Run the CityGMLto3DTiles_Example
+
+``bash
+(venv) python Workflow_CityGMLto3DTiles_Example/just_collect.py
+```
+
 ### CLEAN ME
 ```bash
 git clone https://github.com/argoproj-labs/hera-workflows
-echo 'hera-workflows' >> .gitignore
 cd hera-workflows
-git checkout 4.3.1
+git checkout 4.4.1    # Has to match the requirements version 
 ```

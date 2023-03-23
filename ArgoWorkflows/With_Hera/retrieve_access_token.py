@@ -2,7 +2,10 @@ import base64
 import errno
 import os
 from typing import Optional
+import logging
 from kubernetes import client, config
+
+logger=logging.getLogger(__name__)
 
 def retrieve_access_token(
     service_account: str,

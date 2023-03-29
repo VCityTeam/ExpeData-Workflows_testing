@@ -1,4 +1,4 @@
-pagoda_hera_env_vars.bash
+.env
 pagoda_kubeconfig.yaml
 hera-workflows
 venv

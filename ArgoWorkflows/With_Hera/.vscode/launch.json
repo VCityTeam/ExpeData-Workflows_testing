@@ -10,10 +10,7 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
-      "args": [
-        "--k8s_config_file",
-        "./pagoda_kubeconfig.yaml"
-      ],
+      "envFile": "${workspaceFolder}/.env",
       "justMyCode": true
     }
   ]

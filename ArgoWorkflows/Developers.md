@@ -32,8 +32,10 @@ Refer to the
 ### On OSX
 
 ```bash
-brew install lens
+brew install --cask openlens
 ```
+
+or alternatively `brew install lens`.
 
 Launch it as an app. Authenticate (SSO) either with github or google.
 Declare the cluster with the "+" button that offers the `sync with files`

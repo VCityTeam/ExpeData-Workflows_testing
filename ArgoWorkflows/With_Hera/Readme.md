@@ -8,6 +8,9 @@
   - [Retrieve your cluster credentials at k8s level](#retrieve-your-cluster-credentials-at-k8s-level)
   - [Install the python dependencies](#install-the-python-dependencies)
   - [Test your installation by running "Hello world" workflow](#test-your-installation-by-running-hello-world-workflow)
+  - [Run the hera-workflow examples](#run-the-hera-workflow-examples)
+  - [Run the CityGMLto3DTiles_Example](#run-the-citygmlto3dtiles_example)
+  - [Developers](#developers)
   - [CLEAN ME](#clean-me)
 
 <!-- /TOC -->
@@ -52,18 +55,28 @@ You are left with obtaining the name of service account, for accessing
 argo-workflows, from your cluster admin.
 
 Because each workflow that you'll launch will require the above information,
-place them in environment variables e.g.
+place them in an environment variables file e.g. `.env` (configure the 
+provided [`.env.tmpl`](env.tmpl) file):
 
 ```bash
-export ARGO_SERVER=argowf.pagoda.os.univ-lyon1.fr:443
-export ARGO_NAMESPACE=argo
-export ARGO_SERVICE_ACCOUNT=argo-pagoda-user
+ARGO_SERVER=argowf.pagoda.os.univ-lyon1.fr:443
+ARGO_NAMESPACE=argo
+ARGO_SERVICE_ACCOUNT=argo-pagoda-user
 KUBECONFIG=./pagoda_kubeconfig.yaml
 ```
 
-that you can in turn place within an adaptation of the
-[`pagoda_hera_env_vars.bash.tmpl`](pagoda_hera_env_vars.bash.tmpl)
-template for a bash script. Name this adaptation e.g. `pagoda_hera_env_vars.bash`) 
+Then you "import" that file into your current shell by
+- either with the `export $(xargs < .env)`
+- or by defining a function (in your `~/.bashrc` or `~/.bash_aliases`) of the
+  form
+  ```bash
+  importenv() {
+  set -a
+  source "$1"
+  set +a
+  }
+  ```
+  and invoking it from your shell.
 
 ### Install the python dependencies
 
@@ -77,25 +90,45 @@ source venv/bin/activate
 ### Test your installation by running "Hello world" workflow
 
 ```bash
-(venv) source pagoda_hera_env_vars.bash
-(venv) python parse_arguments.py
-(venv) python examples/hello_world_pagoda.py
+(venv) export $(xargs < .env)            # Refer above
+(venv) cd Workflow_PaGoDa_definition
+(venv) python pagoda_cluster_definition.py 
 ```
 
-Check that argo UI displays a new `hello-hera-xxxxx` workflow, wait for the
-workflow to finish and check the resulting output logs.
+When this fails try running things step by step
+
+```bash
+(venv) python parse_arguments.py
+(venv) python retrieve_access_token.py
+(venv) python assert_pagoda_configmap.py
+(venv) python pagoda_cluster_definition.py 
+```
+
+Eventually run
+
+```bash
+(venv) python hello_pagoda.py
+```
+
+and assert the workflow ran smoothly with argo UI.
 
 ### Run the hera-workflow examples
 
-``bash
-(venv) python examples/coin_flip_pagoda.py
+```bash
+(venv) python Workflow_examples/coin_flip_pagoda.py
 ```
 
 ### Run the CityGMLto3DTiles_Example
 
-``bash
+```bash
 (venv) python Workflow_CityGMLto3DTiles_Example/just_collect.py
 ```
+
+### Developers
+
+For those using [vscode](https://en.wikipedia.org/wiki/Visual_Studio_Code) a
+workspace is defined in 
+'`git rev-parse --show-toplevel`/.vscode/ExpeData-Workflows_testing.code-workspace'
 
 ### CLEAN ME
 ```bash

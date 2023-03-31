@@ -1,26 +1,13 @@
 ---
-## Zombie pod that has no other purpose than allowing to navigate
-# within the directory-tree/files that this volume gathered after
-# being used by some argo workflow (using that PVC) execution.
-# FIXME: do
-apiVersion: v1
-kind: Pod
-metadata:
-  name: vcity-pvc-nginx-pod
-  namespace: argo
-spec:
-  containers:
-    - name: web-server
-      image: docker.io/library/nginx:latest
-      volumeMounts:
-        - name: mypvc
-          mountPath: /var/lib/www/html
-  volumes:
-    - name: mypvc
-      persistentVolumeClaim:
-        claimName: vcity-pvc
-        readOnly: false
-
+## Zombie pod that has no other purpose than allowing to navigate with a shell,
+# executed in the pod, the directory-tree/files resulting from the execution
+# of some argo workflow (using that PVC) execution.
+# Because this definition uses replicas the name of the pod get postfixed with
+# various numbers (e.g. vcity-handler-8b78b6875-v6p8k).
+# In order to exec a shell in the pod, first retrieve its name with e.g.
+#      k -n argo get pod | grep vcity-handler
+# that will return e.g. vcity-handler-8b78b6875-v6p8k that can be used with
+# k -n argo exec -it vcity-handler-8b78b6875-v6p8k -- bash
 ---
 apiVersion: apps/v1
 kind: Deployment

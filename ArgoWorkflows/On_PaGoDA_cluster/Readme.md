@@ -173,9 +173,12 @@ returns
 ```bash
 cd $(git rev-parse --show-cdup)/ArgoWorkflows/Run_on_PAGoDA
 # Creation of the workflow I/O placeholder (including results)
-kubectl -n argo create -f define_pvc_pagoda.yaml
+kubectl -n argo apply -f define_pvc_pagoda.yaml
+# Assert volume was properly created (the name vcity-pvc comes from
+# define_pvc_pagoda.yaml):
+kubectl -n argo get pvc vcity-pvc
 # Define cluster specific variables
-kubectl -n argo create -f define_http_proxy_configmap.yml
+kubectl -n argo apply -f define_http_proxy_configmap.yml
 ```
 
 The purpose of the above `define_http_proxy_configmap.yml` "Configmap" is to
@@ -188,15 +191,24 @@ allowing for the http retrieval of out-of-cluster data (e.g. with wget).
 
 One can
 
-- either browse the results (at shell level) from within an ad-hoc container with
+- either browse the results (at shell level) from within an ad-hoc container 
+  with (refer to [the header](define_zombie_pod_for_PV_navigation_with_bash.yaml)
+  for further details)
 
   ```bash
-  k create -f define_zombie_pod_for_PV_navigation.yaml
-  k exec -it vcity-pvc-nginx-pod  -n argo -- bash
+  # Create pod
+  k -n argo apply -f define_zombie_pod_for_PV_navigation_with_bash.yaml
+  # Assert pod was created
+  k -n argo get pod vcity-pvc-ubuntu-pod
+  k -n argo exec -it vcity-pvc-ubuntu-pod -- bash
+  # And then `cd /vcity-data/` and navigate with bash...
+  k -n argo delete -f define_zombie_pod_for_PV_navigation_with_bash.yaml
   ```
 
-- or copy the results to the commanding desktop with the following command
+- or copy the results to the commanding desktop with the following commands
 
   ```bash
-  kubectl cp vcity-pvc-nginx-pod:/var/lib/www/html/junk/stage_1/2012/LYON_8EME_2012 junk
+  k -n argo apply -f define_zombie_pod_for_PV_navigation_with_browser.yaml
+  kubectl -n argo cp vcity-pvc-nginx-pod:/var/lib/www/html/junk/stage_1/2012/LYON_8EME_2012 junk
+  k -n argo delete -f define_zombie_pod_for_PV_navigation_with_browser.yaml
   ```

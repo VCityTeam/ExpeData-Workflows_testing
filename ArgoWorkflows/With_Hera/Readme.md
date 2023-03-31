@@ -6,6 +6,7 @@
 - [References](#references)
 - [Running Hera on PaGoDA](#running-hera-on-pagoda)
   - [Retrieve your cluster credentials at k8s level](#retrieve-your-cluster-credentials-at-k8s-level)
+  - [Assert the existence of configmap for proxy and persistent volume claim](#assert-the-existence-of-configmap-for-proxy-and-persistent-volume-claim)
   - [Install the python dependencies](#install-the-python-dependencies)
   - [Test your installation by running "Hello world" workflow](#test-your-installation-by-running-hello-world-workflow)
   - [Run the hera-workflow examples](#run-the-hera-workflow-examples)
@@ -48,7 +49,7 @@ you must also ask your cluster admin to provide you with three information
 3. the service account for accessing argo-workflows.
 
 The first two items can be 
-[retrieved through the argo UI](../On_PaGoDA_cluster#retrieve-your-cluster-credentials-at-the-argo-server-level)
+[retrieved through the argo UI](# retrieve-your-cluster-credentials-at-the-argo-server-level)
 and correspond respectively to the `ARGO_SERVER` and the `ARGO_NAMESPACE`
 environment variables.
 You are left with obtaining the name of service account, for accessing 
@@ -77,6 +78,11 @@ Then you "import" that file into your current shell by
   }
   ```
   and invoking it from your shell.
+
+### Assert the existence of configmap for proxy and persistent volume claim
+
+This is done at k8s level 
+[as explained here](../On_PaGoDA_cluster/Readme.md#volumes-and-context-creation)
 
 ### Install the python dependencies
 

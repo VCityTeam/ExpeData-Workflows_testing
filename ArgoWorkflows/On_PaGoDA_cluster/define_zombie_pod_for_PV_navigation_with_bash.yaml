@@ -1,0 +1,34 @@
+---
+## Zombie pod that has no other purpose than allowing to navigate with a shell,
+# executed in the pod, the directory-tree/files resulting from the execution
+# of some argo workflow (using that PVC) execution.
+# Usage:
+# 1. creation:
+#    k -n argo apply -f define_zombie_pod_for_PV_navigation_with_bash.yaml
+# 2. assert existence:
+#    k -n argo get pod vcity-pvc-ubuntu-pod
+# 3. comsumption:
+#    k -n argo exec -it vcity-pvc-ubuntu-pod -- bash
+#    root@vcity-pvc-ubuntu-pod:/# ls -altr /vcity-data/   
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vcity-pvc-ubuntu-pod
+  namespace: argo
+spec:
+  containers:
+    - name:  vcity-data-container
+      image: ubuntu:22.04
+      imagePullPolicy: IfNotPresent
+      command: ['/bin/sh', '-c']
+      args:
+        - "tail -f /var/log/lastlog"
+      volumeMounts:
+        - name: mypvc
+          mountPath: /vcity-data
+  volumes:
+    - name: mypvc
+      persistentVolumeClaim:
+        claimName: vcity-pvc
+        readOnly: false

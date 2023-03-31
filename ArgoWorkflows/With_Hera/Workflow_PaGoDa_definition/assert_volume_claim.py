@@ -3,7 +3,7 @@ import os
 from kubernetes import client, config
 
 
-def assert_pagoda_configmap(configmap_name):
+def assert_volume_claim(volume_name):
 
     # Configs can be set in Configuration class directly or using helper utility
     config.load_kube_config()
@@ -23,30 +23,30 @@ def assert_pagoda_configmap(configmap_name):
         sys.exit()
 
     try:
-        v1.list_namespaced_config_map(
+        v1.list_namespaced_persistent_volume_claim(
             namespace=os.environ.get("ARGO_NAMESPACE")
         )
     except:
-        print("Unable to list configuration maps of the namespace.")
+        print("Unable to list persistent volumes of the namespace.")
         print("Exiting.")
         sys.exit()
 
     try:
-        v1.read_namespaced_config_map(
+        v1.read_namespaced_persistent_volume_claim(
             namespace=os.environ.get("ARGO_NAMESPACE"),
-            name=configmap_name,
+            name=volume_name,
         )
     except:
-        print("PaGoDa cluster configuration map not defined.")
+        print("Volume claim not found.")
         print("Exiting.")
         sys.exit()
 
 
-def get_configmap_name():
-    pagoda_configmap_name = "vcity-pagoda-proxy-environment"
-    assert_pagoda_configmap(pagoda_configmap_name)
-    return pagoda_configmap_name
+def get_volume_claim_name():
+    pagoda_volume_claim_name = "vcity-pvc"
+    assert_volume_claim(pagoda_volume_claim_name)
+    return pagoda_volume_claim_name
 
 
 if __name__ == "__main__":
-    print("Cluster configuration name:", get_configmap_name())
+    print("Cluster volume claim name:", get_volume_claim_name())

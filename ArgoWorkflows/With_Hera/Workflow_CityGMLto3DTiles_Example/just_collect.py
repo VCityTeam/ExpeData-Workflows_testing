@@ -15,24 +15,31 @@ parameters = types.SimpleNamespace(
     pattern="BATI",
     experiment_output_dir="junk",
     vintage="2012",
-    persistedVolume="/tmp",
-)
-
-results_dir = os.path.join(
-    parameters.experiment_output_dir,
-    "stage_1",
-    parameters.vintage,
-    parameters.borough + "_" + parameters.vintage,
+    persistedVolume="/within-container-mount-point",
 )
 
 ##########
-from hera import ConfigMapEnvFrom, ImagePullPolicy, Task, Workflow
+from hera import (
+    ConfigMapEnvFrom,
+    ImagePullPolicy,
+    Task,
+    Workflow,
+    ExistingVolume,
+)
 
 
 def disk_usage():
     import os
 
     print(f'Available storage:\n{os.popen("df -h").read()}')
+
+
+parameters.results_dir = os.path.join(
+    parameters.experiment_output_dir,
+    "stage_1",
+    parameters.vintage,
+    parameters.borough + "_" + parameters.vintage,
+)
 
 
 def define_workflow():
@@ -57,11 +64,17 @@ def define_workflow():
                 "--pattern",
                 parameters.pattern,
                 "--results_dir",
-                results_dir,
+                parameters.results_dir,
                 "--vintage",
                 parameters.vintage,
                 "--volume",
                 parameters.persistedVolume,
+            ],
+            volumes=[
+                ExistingVolume(
+                    name=cluster.volume_claim,
+                    mount_path=parameters.persistedVolume,
+                )
             ],
         )
     w.create()

@@ -3,6 +3,7 @@ from hera.global_config import GlobalConfig
 from parse_arguments import parse_arguments
 from retrieve_access_token import retrieve_access_token
 from assert_pagoda_configmap import get_configmap_name
+from assert_volume_claim import get_volume_claim_name
 
 
 def define_cluster():
@@ -34,6 +35,11 @@ def define_cluster():
     # (e.g. HTTP_PROXY) values at runtime. They do by retrieving the ad-hoc
     # k8s configuration map. Assert this map exists.
     cluster.configmap = get_configmap_name()
+
+    ### A persistent volume (defined at the k8s level) can be used by
+    # tasks of a workflow in order to flow output results from an upstream
+    # task to a downstream one, and persist once the workflow is finished
+    cluster.volume_claim = get_volume_claim_name()
 
     return cluster
 

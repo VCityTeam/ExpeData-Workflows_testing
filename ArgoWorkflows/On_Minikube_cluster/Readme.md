@@ -77,20 +77,32 @@ whose drawback is that it will fail as soon as the argo-server is respawned.
 
 ### Expose built-in docker command
 
-Minikube comes with a built-in docker daemon/server. In order to expose that
-server at the shell level (refer to
-[this StackOverflow](https://stackoverflow.com/questions/42564058/how-to-use-local-docker-images-with-minikube))
-use
+When working on a Minikube cluster there is an alternative to 
+[installing a docker daemon on your desktop](../With_CLI_Generic/Readme.md#installing-docker-on-your-desktop) using the fact that
+Minikube comes with a built-in docker daemon/server. 
+In order to use this built-in docker daemon/server you will need to
+[install docker-cli and "point it" to minikube](https://minikube.sigs.k8s.io/docs/tutorials/docker_desktop_replacement/).
+
+Once the docker-cli is installed, the pointing to the docker minikube daemon
+boils down to (refer e.g. to
+[this StackOverflow](https://stackoverflow.com/questions/42564058/how-to-use-local-docker-images-with-minikube)):
 
 ```bash
 eval $(minikube docker-env)
 ```
 
-and assert docker-CLI is indeed available with
+and assert that the docker command is indeed functional with
 
 ```bash
 docker --version
 ```
+
+**Warning**: if you happen to use `minikube` to provide you with the `docker`
+command then notice that `minikube` will modify the kubernetes configuration
+file (pointed by the `KUBECONFIG` environment variable) in order to add its
+own entry that will become the new default.
+After installing `minikube`, you might thus assert that
+[you are using the proper kubernetes cluster](../With_CLI_Generic/Readme.md#asserting-argo-server-is-ready)
 
 ### Expose the CWD as k8s volume
 

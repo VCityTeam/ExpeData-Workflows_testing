@@ -3,7 +3,6 @@
 <!-- TOC depthfrom:2 orderedlist:false depthto:4 -->
 
 - [Preparing the execution context](#preparing-the-execution-context)
-  - [Registering the container images](#registering-the-container-images)
   - [Last steps](#last-steps)
 - [Running the workflows](#running-the-workflows)
   - [Running the workflow stage by stage: single vintage version](#running-the-workflow-stage-by-stage-single-vintage-version)
@@ -18,46 +17,11 @@
 Start with the following steps
 - [Prepare the PaGoDA cluster](On_PaGoDA_cluster/Readme.md#cluster-preparation)
 - [Assert that the Argo server is operational](With_CLI_Generic/Readme.md#asserting-argo-server-is-ready)
+- [Install docker on your desktop](With_CLI_Generic/Readme.md#installing-docker-on-your-desktop) (
+  [Here is why](On_PaGoDA_cluster/Readme.md#install-docker-on-your-desktop) 
+  you need to do so) 
 - [Build the required container images](With_CLI_Generic/Readme.md#build-the-required-containers)
-  (this stage [requires docker](On_PaGoDA_cluster/Readme.md#install-docker))
-
-### Registering the container images
-Unlike on Minikube, PaGoDa requires the additional stage of pushing the
-container images to a docker registry that is accessible (not behind some
-firewall). A possible solution is to use the docker registry offered by the
-PAGoDA platform itself.
-
-For this you will need to
-
-1. tag the local image you wish to push with the a tag of the form `harbor.pagoda.os.univ-lyon1.fr/vcity/<MYIMAGENAME>:<MYVERSION>`.
-  The resulting tagging commands are then
-
-    ```bash
-    docker tag vcity/collect_lyon_data harbor.pagoda.os.univ-lyon1.fr/vcity/collect_lyon_data:0.1
-    docker tag vcity/3duse             harbor.pagoda.os.univ-lyon1.fr/vcity/3duse:0.1
-    docker tag vcity/citygml2stripper  harbor.pagoda.os.univ-lyon1.fr/vcity/citygml2stripper:0.1
-    docker tag vcity/py3dtilers        harbor.pagoda.os.univ-lyon1.fr/vcity/py3dtilers:0.1
-    docker tag refstudycentre/scratch-base      harbor.pagoda.os.univ-lyon1.fr/vcity/refstudycentre:latest
-    ```
-
-2. [`docker login`](https://docs.docker.com/engine/reference/commandline/login/)
-to the PAGoDA platform docker registry (the login/password should be provided
-to you by the PAGoDA admin since authentication is not yet hooked-up with the
-LIRIS ldap)
-
-    ```bash
-    docker login harbor.pagoda.os.univ-lyon1.fr/vcity --username <my-username>
-    ```
-
-3. Push the resulting tagged images to the registry with e.g.
-
-    ```bash
-    docker push harbor.pagoda.os.univ-lyon1.fr/vcity/collect_lyon_data:0.1
-    docker push harbor.pagoda.os.univ-lyon1.fr/vcity/3duse:0.1
-    docker push harbor.pagoda.os.univ-lyon1.fr/vcity/citygml2stripper:0.1
-    docker push harbor.pagoda.os.univ-lyon1.fr/vcity/py3dtilers:0.1
-    docker push harbor.pagoda.os.univ-lyon1.fr/vcity/refstudycentre:latest
-    ```
+- [Push the container images to the (local) registry](On_PaGoDA_cluster/Readme.md#registering-the-container-images)
 
 ### Last steps
 Proceed with
@@ -85,8 +49,8 @@ be passed through a `Configmap` (and why this cannot be).
 Make sure (refer above) that
 
 - [container images are properly build](With_CLI_Generic/Readme.md#build-the-required-containers)
-  (this stage [requires docker](On_PaGoDA_cluster/Readme.md#install-docker))
-- [container images were pushed to the registry](#registering-the-container-images),
+  (this stage [requires docker](On_PaGoDA_cluster/Readme.md#install-docker-on-your-desktop))
+- [container images were pushed to the registry](On_PaGoDA_cluster/Readme.md#registering-the-container-images),
 - [workflow templates are populated](With_CLI_Generic/Readme.md#populate-the-workflow-library-with-workflowtemplates),
 - no preceding running traces will conflict with this new submission by running
   
@@ -144,5 +108,5 @@ argo submit --watch --log just-prepare-vintages-boroughs.yml --parameter-file in
 
 ## Accessing the results
 
-Refer to [PaGoDA specific instructions](Run_with_CLI_on_PaGoDA.md#accessing-the-results)
+Refer to [PaGoDA specific instructions](On_PaGoDA_cluster/Readme.md#accessing-results)
 

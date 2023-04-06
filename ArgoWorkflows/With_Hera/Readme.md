@@ -6,9 +6,10 @@
 - [References](#references)
 - [Running Hera on PaGoDA](#running-hera-on-pagoda)
   - [Retrieve your cluster credentials at k8s level](#retrieve-your-cluster-credentials-at-k8s-level)
+  - [Build and register the docker images](#build-and-register-the-docker-images)
   - [Assert the existence of configmap for proxy and persistent volume claim](#assert-the-existence-of-configmap-for-proxy-and-persistent-volume-claim)
   - [Install the python dependencies](#install-the-python-dependencies)
-  - [Test your installation by running "Hello world" workflow](#test-your-installation-by-running-hello-world-workflow)
+  - [Test your installation by running the "Hello Hera on PaGoDa" workflow](#test-your-installation-by-running-the-hello-hera-on-pagoda-workflow)
   - [Run the hera-workflow examples](#run-the-hera-workflow-examples)
   - [Run the CityGMLto3DTiles_Example](#run-the-citygmlto3dtiles_example)
   - [Developers](#developers)
@@ -31,13 +32,13 @@ for constructing and submitting Argo Workflows (refer
 ### Retrieve your cluster credentials (at k8s level)
 
 You will first need to retrieve your 
-[PaGoDA cluster credentials at the Kubernetes "level"](../On_PaGoDA_cluster/Readme.md#retrieve-your-cluster-credentials-at-the-kubernetes-level)
+[PaGoDA cluster credentials at the Kubernetes "level"](../On_PaGoDA_cluster/Readme.md#retrieve-your-cluster-credentials-at-the-kubernetes-level).
 You should now have a `KUBECONFIG` variable (probably pointing to some
 `../Run_on_PAGoDA/pagoda_kubeconfig.yaml` configuration file) and the 
 commands `kubectl get nodes` or `kubectl get pods -n argo` should be 
 returning some content.
 
-Hera accesses the argo-workflows server though the k8s API (as opposed to the
+Hera accesses the argo-workflows server through the k8s API (as opposed to the
 dedicated argo API that is used by the argo CLI). Running an Hera script thus
 requires credentials for the argo-workflows server (accessed at k8s API).
 
@@ -79,6 +80,14 @@ Then you "import" that file into your current shell by
   ```
   and invoking it from your shell.
 
+### Build and register the docker images 
+
+- [Install docker on your desktop](../With_CLI_Generic/Readme.md#installing-docker-on-your-desktop) (
+  [Here is why](../On_PaGoDA_cluster/Readme.md#install-docker-on-your-desktop) 
+  you need to do so) 
+- [Build the required container images](../With_CLI_Generic/Readme.md#build-the-required-containers)
+- [Push the container images to the (local) registry](../On_PaGoDA_cluster/Readme.md#registering-the-container-images)
+
 ### Assert the existence of configmap for proxy and persistent volume claim
 
 This is done at k8s level 
@@ -93,7 +102,7 @@ source venv/bin/activate
 (venv) pip3 install -r requirements.txt   # That install hera-workflows
 ```
 
-### Test your installation by running "Hello world" workflow
+### Test your installation by running the "Hello Hera on PaGoDa" workflow
 
 ```bash
 (venv) export $(xargs < .env)            # Refer above

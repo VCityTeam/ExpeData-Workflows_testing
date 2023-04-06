@@ -1,10 +1,11 @@
-# Running the implemented Argo workflows: platform independent commands
+# Running the implemented Argo workflows: cluster independent commands
 
 <!-- TOC -->
 
 - [Preparation stage](#preparation-stage)
   - [Asserting argo server is ready](#asserting-argo-server-is-ready)
   - [Defining an argo server namespace](#defining-an-argo-server-namespace)
+  - [Installing docker on your desktop](#installing-docker-on-your-desktop)
   - [Build the required containers](#build-the-required-containers)
   - [Populate the workflow "library" with workflowTemplates](#populate-the-workflow-library-with-workflowtemplates)
 - [Running the workflows](#running-the-workflows)
@@ -50,13 +51,21 @@ export ARGO_NAMESPACE=argo
 kubectl config use-context --current --namespace=$ARGO_NAMESPACE
 ```
 
+### Installing docker on your desktop
+
+You will need both docker-CLI and the docker-daemon. You might consider
+installing [docker-desktop](https://www.docker.com/products/docker-desktop/).
+Then assert that `docker` is functional with e.g. `docker info`.
+
 ### Build the required containers
 
 ```bash
-docker build -t vcity/collect_lyon_data ../Docker/Collect-DockerContext/
-docker build -t vcity/3duse             ../../Docker/3DUse-DockerContext/
-docker build -t vcity/citygml2stripper  ../../Docker/CityGML2Stripper-DockerContext/
-docker build --no-cache -t vcity/py3dtilers https://github.com/VCityTeam/py3dtilers-docker.git#:Context
+cd $(git rev-parse --show-cdup)
+# FIXME: document why this specific container is appart from others ?!
+docker build -t vcity/collect_lyon_data ArgoWorkflows/Docker/Collect-DockerContext/
+docker build -t vcity/3duse             Docker/3DUse-DockerContext/
+docker build -t vcity/citygml2stripper  Docker/CityGML2Stripper-DockerContext/
+docker build --no-cache -f Context/Dockerfile -t vcity/py3dtilers https://github.com/VCityTeam/py3dtilers-docker.git
 docker pull refstudycentre/scratch-base:latest
 ```
 
@@ -66,13 +75,12 @@ Notes:
   because of missing disk space) consider using the `--no-cache` flag.
 
 - `refstudycentre/scratch-base` is a really tiny container used as a trick
-  (refer to workflow e.g. `Examples/loading-json-fromValue.yml`
+  (refer to workflow e.g. `Examples/loading-json-fromValue.yml`)
 
-- `docker build` can NOT use the url of sub-directory of git repository (refer
-  e.g. to [this StackOverflow](https://stackoverflow.com/questions/25509828/can-a-docker-build-use-the-url-of-a-git-branch#27295336). This is why some
-  of the above `docker build` commands designate their Dockerfile arguments
-  through a relative path notation which creates an alas implicit dependency
-  (within this repository).
+- `docker build` can sort of use the url of sub-directory of git repository 
+  (refer e.g. to [this StackOverflow](https://stackoverflow.com/questions/25509828/can-a-docker-build-use-the-url-of-a-git-branch#27295336)). Yet the
+  command `docker build --no-cache -t vcity/py3dtilers https://github.com/VCityTeam/py3dtilers-docker.git#:Context` doesn't seem to be effective (Docker version 
+  20.10.12).
 
 ### Populate the workflow "library" with workflowTemplates
 

@@ -6,7 +6,8 @@
 - [Cluster preparation](#cluster-preparation)
   - [Retrieve your cluster credentials at the Kubernetes "level"](#retrieve-your-cluster-credentials-at-the-kubernetes-level)
   - [Retrieve your cluster credentials at the Argo server "level"](#retrieve-your-cluster-credentials-at-the-argo-server-level)
-  - [Install docker](#install-docker)
+  - [Install docker on your desktop](#install-docker-on-your-desktop)
+  - [Registering the container images](#registering-the-container-images)
   - [Define an argo server namespace](#define-an-argo-server-namespace)
   - [Volumes and context creation](#volumes-and-context-creation)
 - [Accessing results](#accessing-results)
@@ -89,69 +90,24 @@ source ./pagoda_argo.bash
 
 and [assert that the argo server is ready](../With_CLI_Generic/Readme.md#asserting-argo-server-is-ready)
 
-### Install docker
 
-Unlike a [Minikube cluster](../On_Minikube_cluster/Readme.md#expose-built-in-docker-command)
+### Install docker on your desktop
+
+Unlike on a [Minikube cluster](../On_Minikube_cluster/Readme.md#expose-built-in-docker-command)
 the PaGoDA cluster doesn't offer a docker daemon (because of the cluster sits
 behind FW that imposes the usage of an
 [http proxy](https://en.wikipedia.org/wiki/Proxy_server) that in turn
 complicates the Dockerfile writing).
 
-You will thus need to install docker (both docker-CLI and docker-daemon).
-In doing you might
+You will thus need to install [install docker on your desktop](../With_CLI_Generic/Readme.md#installing-docker-on-your-desktop).
 
-- either install [docker-desktop](https://www.docker.com/products/docker-desktop/)
-  (that installs both the docker-CLI and the docker-daemon),
-- or [install docker-cli and "point it" to minikube](https://minikube.sigs.k8s.io/docs/tutorials/docker_desktop_replacement/).
-  **Warning**: if you happen to use `minikube` to provide you with the `docker`
-  command then notice that `minikube` will modify the kubernetes configuration
-  file (pointed by the `KUBECONFIG` environment variable) in order to add its
-  own entry that will become the new default.
-  After installing `minikube`, you might thus assert that
-  [you are using the proper kubernetes cluster](../With_CLI_Generic/Readme.md#)
+### Registering the container images
+Unlike on Minikube, PaGoDa requires the additional stage of pushing the
+container images to a docker registry that is accessible (not behind some
+firewall). A possible solution is to use the docker registry offered by the
+PAGoDA platform itself.
 
-Then assert the `docker` is functional with `doc../Run_on_Generic/Readme.mds`.
 
-), you can first
-proceed with
-[building of the required container images](../With_CLI_Generic/Readme.md#build-the-required-containers).
-
-Then tag the local image you wish to push with the a tag of the form `harbor.pagoda.os.univ-lyon1.fr/vcity/<MYIMAGENAME>:<MYVERSION>`.
-The resulting tagging commands are then
-
-```bash
-docker tag vcity/collect_lyon_data harbor.pagoda.os.univ-lyon1.fr/vcity/collect_lyon_data:0.1
-docker tag vcity/3duse             harbor.pagoda.os.univ-lyon1.fr/vcity/3duse:0.1
-docker tag vcity/citygml2stripper  harbor.pagoda.os.univ-lyon1.fr/vcity/citygml2stripper:0.1
-docker tag vcity/py3dtilers        harbor.pagoda.os.univ-lyon1.fr/vcity/py3dtilers:0.1
-docker tag refstudycentre/scratch-base      harbor.pagoda.os.univ-lyon1.fr/vcity/refstudycentre:latest
-```
-
-Eventually
-[`docker login`](https://docs.docker.com/engine/reference/commandline/login/)
-to the PAGoDA platform docker registry (the login/password should be provided
-to you by the PAGoDA admin since authentication is not yet hooked-up with the
-LIRIS ldap)
-
-```bash
-docker login harbor.pagoda.os.univ-lyon1.fr/vcity --username <my-username>
-```
-
-Then push the resulting tagged images with e.g.
-
-```bash
-docker push harbor.pagoda.os.univ-lyon1.fr/vcity/collect_lyon_data:0.1
-docker push harbor.pagoda.os.univ-lyon1.fr/vcity/3duse:0.1
-docker push harbor.pagoda.os.univ-lyon1.fr/vcity/citygml2stripper:0.1
-docker push harbor.pagoda.os.univ-lyon1.fr/vcity/py3dtilers:0.1
-docker push harbor.pagoda.os.univ-lyon1.fr/vcity/refstudycentre:latest
-```
-
-Note: if you wish to list the pushed (available) images on the pagoda container
-registry (as you do with a local registry with the `docker images` command) you 
-will alas need to use the UI and web-browse
-`https://harbor.pagoda.os.univ-lyon1.fr`. Indeed it 
-[seems docker doesn't allow remote registry image consultation](https://stackoverflow.com/questions/28320134/how-can-i-list-all-tags-for-a-docker-image-on-a-remote-registry).
 
 ### Define an argo server namespace
 

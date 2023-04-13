@@ -5,13 +5,12 @@ from hera import (
     ConfigMapEnvFrom,
     ExistingVolume,
     ImagePullPolicy,
-    Parameter,
     Task,
     Workflow,
 )
 
 
-def split_buildings_task(
+def strip_gml_task(
     cluster,
     workflow_parameters,
     input_filename: str,  # Absolute file path
@@ -20,19 +19,20 @@ def split_buildings_task(
 ):
     output_dir = os.path.join(workflow_parameters.persistedVolume, output_dir)
     treatment_task = Task(
-        "split-buildings",
-        image=cluster.docker_registry + "vcity/3duse:0.1",
+        "strip-gml",
+        image=cluster.docker_registry + "vcity/citygml2stripper:0.1",
         image_pull_policy=ImagePullPolicy.IfNotPresent,
-        working_dir="/root/3DUSE/Build/src/utils/cmdline/",
+        # working_dir: is not necessary in this case
         env=[
             # Assumes the corresponding config map is defined in the k8s cluster
             ConfigMapEnvFrom(config_map_name=cluster.configmap, optional=False)
         ],
         command=[
-            "splitCityGMLBuildings",
-            "--input-file",
+            "python3",
+            "/src/CityGML2Stripper.py",
+            "--input",
             os.path.join(workflow_parameters.persistedVolume, input_filename),
-            "--output-file",
+            "--output",
             output_filename,
             "--output-dir",
             output_dir,
@@ -65,42 +65,25 @@ if __name__ == "__main__":
     )
     from pagoda_cluster_definition import define_cluster
     from input_2012_tiny_import_dump import parameters
+    from experiment_layout import layout
 
     def consume(msg: str):
         print(f"Resulting filenames: {msg}")
 
     cluster = define_cluster()
-    with Workflow("splitbuildings-", generate_name=True) as w:
-        split_buildings_t = split_buildings_task(
+    with Workflow("stripgml-", generate_name=True) as w:
+        strip_gml_t = strip_gml_task(
             cluster,
             parameters,
             input_filename=os.path.join(
-                parameters.experiment_output_dir,
-                "stage_1",
-                parameters.vintage,
-                parameters.borough + "_" + parameters.vintage,
-                parameters.borough
-                + "_"
-                + parameters.pattern
-                + "_"
-                + parameters.vintage
-                + ".gml",
+                layout.split_buildings_output_dir(parameters),
+                layout.split_buildings_output_filename(parameters)
             ),
-            output_dir=os.path.join(
-                parameters.experiment_output_dir,
-                "stage_2",
-                parameters.vintage,
-                parameters.borough + "_" + parameters.vintage,
-            ),
-            output_filename=parameters.borough
-            + "_"
-            + parameters.pattern
-            + "_"
-            + parameters.vintage
-            + "_split.gml",
+            output_dir=layout.strip_gml_output_dir(parameters),
+            output_filename=layout.strip_gml_output_filename(parameters),
         )
         consume_t = Task(
-            "c", consume, inputs=[split_buildings_t.get_parameter("msg")]
+            "c", consume, inputs=[strip_gml_t.get_parameter("msg")]
         )
-        split_buildings_t >> consume_t
+        strip_gml_t >> consume_t
     w.create()

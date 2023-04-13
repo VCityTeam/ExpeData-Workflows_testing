@@ -64,7 +64,7 @@ Make sure (refer above) that
 Eventually you can proceed with the following submissions
 
 ```bash
-cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflow_CityGMLto3DTiles_Example/
+cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Yaml/CityGMLto3DTiles_Example/
 # The following environment variable should already be defined within the 
 # "On_PaGoDA_cluster/pagoda_argo.bash" shell file
 export KUBE_DOCKER_REGISTRY=dockerRegistryHost=harbor.pagoda.os.univ-lyon1.fr/
@@ -87,6 +87,7 @@ argo submit --watch --log just-compute-tileset.yml --parameter-file input-2012-t
 ### Running the full workflow
 
 ```bash
+cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Yaml/CityGMLto3DTiles_Example/
 argo submit --watch --log full-workflow.yml --parameter-file input-2012-tiny-import_no_dump.yaml -p ${KUBE_DOCKER_REGISTRY}
 ```
 

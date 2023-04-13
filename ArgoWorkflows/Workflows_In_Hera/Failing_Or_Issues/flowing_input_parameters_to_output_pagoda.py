@@ -1,7 +1,7 @@
 import sys, os
 
 sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "Workflow_PaGoDa_definition")
+    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
 )
 from pagoda_cluster_definition import define_cluster
 

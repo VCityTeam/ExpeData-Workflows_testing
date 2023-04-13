@@ -1,1 +1,4 @@
 __pycache__
+.env
+pagoda_kubeconfig.yaml
+venv

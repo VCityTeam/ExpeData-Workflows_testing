@@ -77,8 +77,12 @@ in checking for the existence of the ad-hoc `configmap`
 
 ## Running the workflows
 
+```bash
+cd Run_with_HERA_on_PaGoDA
+```
+
 - [Run the "Hello Hera on PaGoDa" workflow](../With_HERA_Generic/Readme.md#running-the-hello-hera-on-pagoda-workflow)
 
 - [Run the hera-workflow examples](../With_HERA_Generic/Readme.md#running-the-hera-workflow-examples)
 
-- [Run the CityGMLto3DTiles example](../With_HERA_Generic/Readme.md#running-the-citygmlto3dtiles_example)
+- [Run the CityGMLto3DTiles example](../With_HERA_Generic/Readme.md#running-the-citygmlto3dtiles-example)

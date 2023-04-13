@@ -5,7 +5,7 @@ def define_workflow():
   def hello():
       print("Hello, Hera!")
 
-  with Workflow("hello-hera-", generate_name=True) as w:
+  with Workflow("hello-world-", generate_name=True) as w:
       Task("pythonprint", hello)
       Task(
         "cowsayprint", 

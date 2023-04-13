@@ -13,7 +13,7 @@
 |           | [On Minikube](On_Minikube_cluster/Readme.md) | [On PaGoDA](On_PaGoDA_cluster/Readme.md) |
 |-----------|---|---|
 | With CLI  | [CLI/Minikube](Run_with_CLI_on_Minikube.md) | [CLI/PaGoDA](Run_with_CLI_on_PaGoDA.md) |
-| With Hera |  | [Hera/PaGoDA](With_Hera/Readme.md#running-hera-on-pagoda) |
+| With Hera |  | [Hera/PaGoDA](Run_with_HERA_on_PaGoDA/Readme.md) |
 
 ## Notes
 

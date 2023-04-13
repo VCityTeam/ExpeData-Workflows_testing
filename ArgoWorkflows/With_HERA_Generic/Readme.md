@@ -1,14 +1,16 @@
-# Hera framework quick evaluation
+# Hera framework cluster neutral instructions 
 
 <!-- TOC -->
 
 - [Introduction](#introduction)
 - [References](#references)
 - [Install Hera and its dependencies](#install-hera-and-its-dependencies)
-- [Test your installation by running the "Hello Hera on PaGoDa" workflow](#test-your-installation-by-running-the-hello-hera-on-pagoda-workflow)
-- [Run the hera-workflow examples](#run-the-hera-workflow-examples)
-- [Run the CityGMLto3DTiles_Example](#run-the-citygmlto3dtiles_example)
+- [Running the "Hello Hera on PaGoDa" workflow](#running-the-hello-hera-on-pagoda-workflow)
+- [Running the hera-workflow examples](#running-the-hera-workflow-examples)
+- [Running the CityGMLto3DTiles example](#running-the-citygmlto3dtiles-example)
 - [Developers](#developers)
+  - [Running the failing or issues](#running-the-failing-or-issues)
+  - [IDE notes](#ide-notes)
 - [CLEAN ME](#clean-me)
 
 <!-- /TOC -->
@@ -33,44 +35,65 @@ source venv/bin/activate
 (venv) pip3 install -r requirements.txt   # That install hera-workflows
 ```
 
-## Test your installation by running the "Hello Hera on PaGoDa" workflow
+## Running the "Hello Hera on PaGoDa" workflow
 
 ```bash
+(venv) cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera
 (venv) export $(xargs < .env)            # Refer above
-(venv) cd Workflow_PaGoDa_definition
-(venv) python pagoda_cluster_definition.py 
+(venv) python PaGoDa_definition/pagoda_cluster_definition.py
 ```
 
-When this fails try running things step by step
+When this fails try running things step by step for troubleshooting
 
 ```bash
-(venv) python parse_arguments.py
-(venv) python retrieve_access_token.py
-(venv) python assert_pagoda_configmap.py
-(venv) python pagoda_cluster_definition.py 
+(venv) python PaGoDa_definition/parse_arguments.py
+(venv) python PaGoDa_definition/retrieve_access_token.py
+(venv) python PaGoDa_definition/assert_pagoda_configmap.py
+(venv) python PaGoDa_definition/pagoda_cluster_definition.py 
 ```
 
 Eventually run
 
 ```bash
-(venv) python hello_pagoda.py
+(venv) python PaGoDa_definition/hello_pagoda.py
 ```
 
 and assert the workflow ran smoothly with argo UI.
 
-## Run the hera-workflow examples
+## Running the hera-workflow examples
 
 ```bash
-(venv) python Workflow_examples/coin_flip_pagoda.py
+(venv) python Tutorial_examples/coin_flip_pagoda.py
+(venv) python Tutorial_examples/hello_world_pagoda.py
 ```
 
-## Run the CityGMLto3DTiles_Example
+## Running the CityGMLto3DTiles example
+As
+[stated in the accessing results](../On_PaGoDA_cluster/Readme.md#accessing-results)
+the permanent volume holding the resulting files is accessible through a
+dedicated pod. Prior to running the CityGMLto3DTiles example make sure that
+previous run results won't collide with the new ones and just remove them with
+```bash
+k -n argo exec -it vcity-pvc-ubuntu-pod -- rm -r /vcity-data/junk/
+```
 
 ```bash
-(venv) python Workflow_CityGMLto3DTiles_Example/just_collect.py
+(venv) python CityGMLto3DTiles_Example/just_collect.py
+(venv) python CityGMLto3DTiles_Example/split-buildings.py 
 ```
+
 
 ## Developers
+
+### Running the failing or issues
+```bash
+(venv) python Failing_Or_Issues/lint_pagoda.py
+(venv) python Failing_Or_Issues/string_output_pagoda.py
+(venv) python Failing_Or_Issues/flowing_input_parameters_to_output_pagoda.py
+(venv) python Failing_Or_Issues/raw_archive_pagoda.py
+```
+
+### IDE notes
 
 For those using [vscode](https://en.wikipedia.org/wiki/Visual_Studio_Code) a
 workspace is defined in 

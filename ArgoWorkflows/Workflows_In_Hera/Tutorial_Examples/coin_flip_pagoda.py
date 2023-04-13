@@ -1,7 +1,8 @@
 import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-import pagoda
-pagoda.define_cluster()
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', "PaGoDa_definition"))
+from pagoda_cluster_definition import define_cluster
+
+define_cluster()
 
 # The following is a copy of 
 # https://github.com/argoproj-labs/hera-workflows/blob/4.4.1/examples/coin_flip.py

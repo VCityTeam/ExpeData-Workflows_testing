@@ -10,13 +10,7 @@ from hera import (
 )
 
 
-def collect_task(cluster, parameters, output_dir: str):
-    results_dir = os.path.join(
-        parameters.experiment_output_dir,
-        output_dir,
-        parameters.vintage,
-        parameters.borough + "_" + parameters.vintage,
-    )
+def collect_task(cluster, parameters, results_dir: str):
     output_value_path = os.path.join(
         parameters.persistedVolume,
         results_dir,
@@ -62,19 +56,24 @@ if __name__ == "__main__":
     import sys, os
 
     sys.path.append(
-        os.path.join(
-            os.path.dirname(__file__), "..", "Workflow_PaGoDa_definition"
-        )
+        os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
     )
     from pagoda_cluster_definition import define_cluster
     from input_2012_tiny_import_dump import parameters
+    from experiment_layout import layout
 
     def consume(msg: str):
         print(f"Message was: {msg}")
 
     cluster = define_cluster()
     with Workflow("fullcollect-", generate_name=True) as w:
-        collect_t = collect_task(cluster, parameters, output_dir="stage_1")
+        collect_t = collect_task(
+            cluster,
+            parameters,
+            results_dir=layout.collect_output_dir(
+                parameters, output_dir="stage_1"
+            ),
+        )
         t2 = Task("c", consume, inputs=[collect_t.get_parameter("msg")])
         collect_t >> t2
     w.create()

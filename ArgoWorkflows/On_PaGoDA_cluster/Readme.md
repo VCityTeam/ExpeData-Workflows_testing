@@ -102,10 +102,51 @@ complicates the Dockerfile writing).
 You will thus need to install [install docker on your desktop](../With_CLI_Generic/Readme.md#installing-docker-on-your-desktop).
 
 ### Registering the container images
-Unlike on Minikube, PaGoDa requires the additional stage of pushing the
-container images to a docker registry that is accessible (not behind some
-firewall). A possible solution is to use the docker registry offered by the
-PAGoDA platform itself.
+Unlike on Minikube, PaGoDa requires the additional stage of (tagging and) 
+pushing the container images to a docker registry that is accessible (not 
+behind some firewall). A possible solution is to use the docker registry 
+offered by the PAGoDA platform itself.
+
+Once the [local image are build](../With_CLI_Generic/Readme.md#build-the-required-containers))
+you first need to tag the local image you wish to push with the a tag of the 
+form `harbor.pagoda.os.univ-lyon1.fr/vcity/<MYIMAGENAME>:<MYVERSION>`.
+The resulting tagging commands are then
+
+```bash
+docker tag vcity/collect_lyon_data harbor.pagoda.os.univ-lyon1.fr/vcity/collect_lyon_data:0.1
+docker tag vcity/3duse             harbor.pagoda.os.univ-lyon1.fr/vcity/3duse:0.1
+docker tag vcity/citygml2stripper  harbor.pagoda.os.univ-lyon1.fr/vcity/citygml2stripper:0.1
+docker tag vcity/py3dtilers        harbor.pagoda.os.univ-lyon1.fr/vcity/py3dtilers:0.1
+docker tag refstudycentre/scratch-base      harbor.pagoda.os.univ-lyon1.fr/vcity/refstudycentre:latest
+docker tag tumgis/3dcitydb-postgis:v4.0.2 harbor.pagoda.os.univ-lyon1.fr/vcity/3dcitydb-postgis:v4.0.2
+```
+
+Eventually
+[`docker login`](https://docs.docker.com/engine/reference/commandline/login/)
+to the PAGoDA platform docker registry (the login/password should be provided
+to you by the PAGoDA admin since authentication is not yet hooked-up with the
+LIRIS ldap)
+
+```bash
+docker login harbor.pagoda.os.univ-lyon1.fr/vcity --username <my-username>
+```
+
+Then push the resulting tagged images with e.g.
+
+```bash
+docker push harbor.pagoda.os.univ-lyon1.fr/vcity/collect_lyon_data:0.1
+docker push harbor.pagoda.os.univ-lyon1.fr/vcity/3duse:0.1
+docker push harbor.pagoda.os.univ-lyon1.fr/vcity/citygml2stripper:0.1
+docker push harbor.pagoda.os.univ-lyon1.fr/vcity/py3dtilers:0.1
+docker push harbor.pagoda.os.univ-lyon1.fr/vcity/refstudycentre:latest
+docker push harbor.pagoda.os.univ-lyon1.fr/vcity/3dcitydb-postgis:v4.0.2
+```
+
+Note: if you wish to list the pushed (available) images on the pagoda container
+registry (as you do with a local registry with the `docker images` command) you 
+will alas need to use the UI and web-browse
+`https://harbor.pagoda.os.univ-lyon1.fr`. Indeed it 
+[seems docker doesn't allow remote registry image consultation](https://stackoverflow.com/questions/28320134/how-can-i-list-all-tags-for-a-docker-image-on-a-remote-registry).
 
 
 

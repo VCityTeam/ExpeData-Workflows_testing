@@ -1,4 +1,3 @@
-import hello_world
 import sys, os
 
 sys.path.append(
@@ -7,4 +6,19 @@ sys.path.append(
 from pagoda_cluster_definition import define_cluster
 
 define_cluster()
-hello_world.define_workflow()
+
+#### 
+from hera import(Workflow, Task)
+
+def hello():
+    print("Hello, Hera!")
+
+with Workflow("hello-world-", generate_name=True) as w:
+    Task("pythonprint", hello)
+    Task(
+      "cowsayprint", 
+      image="docker/whalesay", 
+      command=["cowsay", "Moo Hera"]
+    )
+w.create()
+

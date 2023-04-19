@@ -68,8 +68,22 @@ if __name__ == "__main__":
     )
     from pagoda_cluster_definition import define_cluster
     from input_2012_tiny_import_dump import parameters
+    from database import readinessProbe_task
 
     cluster = define_cluster()
     with Workflow("threedcitydb-start-", generate_name=True) as w:
         threedcitydb_start_t = threedcitydb_start_db(cluster, parameters)
+        ## Will fail on submission with
+        #     argo_workflows.exceptions.ServiceException: (500)
+        #     Reason: Internal Server Error
+        #     failed to resolve {{tasks.threedcitydb-start-db.ip}}
+        # Note: using <<task>>.ip notation is inspired by
+        #  hera(4.4.2)/examples/daemon.py 
+        readinessProbe_t = readinessProbe_task(
+          cluster, 
+          parameters, 
+          threedcitydb_start_t.ip, 
+          5
+        )
+        # threedcitydb_start_t >> readinessProbe_t
     w.create()

@@ -1,5 +1,12 @@
+from hera_utils import hera_check_version
+if hera_check_version("5.1.3"):
+    from hera.shared._global_config import GlobalConfig 
+elif hera_check_version("4.4.2"):
+    from hera.global_config import GlobalConfig
+else:
+    hera_check_version("X.X.X")
+
 import types
-from hera.global_config import GlobalConfig
 from parse_arguments import parse_arguments
 from retrieve_access_token import retrieve_access_token
 from assert_pagoda_configmap import get_configmap_name
@@ -46,6 +53,9 @@ def define_cluster():
 
 if __name__ == "__main__":
     import json
+    from hera_utils import hera_print_version
+
+    hera_print_version()
 
     print("CLI arguments/environment variables:")
     print(json.dumps(parse_arguments().__dict__, indent=4))

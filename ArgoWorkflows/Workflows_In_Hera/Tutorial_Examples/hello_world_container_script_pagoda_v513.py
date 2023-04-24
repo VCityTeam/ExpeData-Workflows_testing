@@ -19,7 +19,9 @@ from hera.workflows import Container, Parameter, Steps, script, Task, Workflow
 def hello(message):
     print(message)
 
-with Workflow(generate_name="hello-", entrypoint="hello-hello-hello") as w:
+with Workflow(
+  generate_name="mixed-scripts-and-container-", entrypoint="entry"
+) as w:
     # Callable container
     whalesay = Container(
       name="whalesay",
@@ -28,13 +30,13 @@ with Workflow(generate_name="hello-", entrypoint="hello-hello-hello") as w:
       command=["cowsay"],
       args=["{{inputs.parameters.message}}"],
     )
-    with Steps(name="hello-hello-hello") as s:
-        Task = hello(name="hello-1", arguments={"message": "Hello 1."})
+    with Steps(name="entry") as s:
+        hello(name="hello-1", arguments={"message": "Hello 1."})
         whalesay(
             name="hello-2",
             arguments=[Parameter(name="message", value="Hello 2.")],
         )
-        Task = hello(name="hello-3", arguments={"message": "Hello 3."})
+        hello(name="hello-3", arguments={"message": "Hello 3."})
 
 w.create()
 

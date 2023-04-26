@@ -8,13 +8,24 @@ from pagoda_cluster_definition import define_cluster
 cluster = define_cluster()
 
 ####
-from hera_utils import hera_check_version
-hera_check_version("5.1.3")
+from hera_utils import hera_assert_version
+
+hera_assert_version("5.1.3")
 
 #########################################################################
-from hera.workflows import (ConfigMapEnvFrom, Container, DAG, Env, models, Parameter, RetryStrategy, Task, Workflow)
+from hera.workflows import (
+    ConfigMapEnvFrom,
+    Container,
+    DAG,
+    Env,
+    models,
+    Parameter,
+    RetryStrategy,
+    Task,
+    Workflow,
+)
 
-with Workflow(generate_name="param-passing-", entrypoint="d") as w:
+with Workflow(generate_name="retrieve-pod-ip-", entrypoint="d") as w:
     daemon_template = Container(
         name="mydaemon",
         # start 3dcitydb as a daemon
@@ -32,9 +43,16 @@ with Workflow(generate_name="param-passing-", entrypoint="d") as w:
         ],
         command=["docker-entrypoint.sh"],
         args=["postgres", "-p", "5432"],
-        readinessProbe=models.Probe(exec = models.ExecAction(command=["/bin/sh",
-          "-c", "exec pg_isready -U postgres -h 127.0.0.1 -p 5432"])),
-          # + {{inputs.parameters.port}}
+        readinessProbe=models.Probe(
+            exec=models.ExecAction(
+                command=[
+                    "/bin/sh",
+                    "-c",
+                    "exec pg_isready -U postgres -h 127.0.0.1 -p 5432",
+                ]
+            )
+        ),
+        # + {{inputs.parameters.port}}
     )
     in_ = Container(
         name="in",

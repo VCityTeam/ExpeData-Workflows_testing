@@ -8,9 +8,9 @@ from pagoda_cluster_definition import define_cluster
 cluster = define_cluster()
 
 ####
-from hera_utils import hera_check_version
+from hera_utils import hera_assert_version
 
-hera_check_version("5.1.3")
+hera_assert_version("5.1.3")
 
 #########################################################################
 from hera.workflows import Container, Workflow

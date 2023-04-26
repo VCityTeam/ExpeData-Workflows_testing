@@ -1,10 +1,11 @@
-from hera_utils import hera_check_version
+from hera_utils import hera_check_version, hera_assert_version
+
 if hera_check_version("5.1.3"):
-    from hera.shared._global_config import GlobalConfig 
-elif hera_check_version("4.4.2"):
+    from hera.shared._global_config import GlobalConfig
+elif hera_check_version("4.4.1"):
     from hera.global_config import GlobalConfig
 else:
-    hera_check_version("X.X.X")
+    hera_assert_version("X.X.X")  # Will fail
 
 import types
 from parse_arguments import parse_arguments

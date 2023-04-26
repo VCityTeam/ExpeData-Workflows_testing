@@ -1,4 +1,14 @@
-import os
+### Assessing ad-hoc hera version
+import os, sys
+
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
+)
+from hera_utils import hera_assert_version
+
+hera_assert_version("4.4.1")
+
+###
 from hera import (
     ConfigMapEnvFrom,
     ExistingVolume,

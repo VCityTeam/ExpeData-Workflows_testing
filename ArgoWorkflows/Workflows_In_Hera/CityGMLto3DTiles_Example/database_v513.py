@@ -45,8 +45,8 @@ def threedcitydb_start_db_container_constructor(cluster, parameters):
         volumes=[
             ExistingVolume(
                 claim_name=cluster.volume_claim,
+                # Providing a name is mandatory but how is it relevant/used ?
                 name="dummy-name",
-                # V4.4.3 name=cluster.volume_claim,
                 mount_path=parameters.persistedVolume,
             )
         ],

@@ -8,14 +8,14 @@ if __name__ == "__main__":
     from input_2012_tiny_import_dump import parameters
 
     from hera.workflows import DAG, Task, Workflow
-    from hera_utils import hera_check_version
+    from hera_utils import hera_assert_version
     from database_v513 import (
         threedcitydb_start_db_container_constructor,
         readiness_probe_container_constructor,
     )
     from utils import whalesay_container_constructor
 
-    hera_check_version("5.1.3")
+    hera_assert_version("5.1.3")
 
     cluster = define_cluster()
     with Workflow(generate_name="threedcitydb-start-", entrypoint="d") as w:
@@ -27,15 +27,15 @@ if __name__ == "__main__":
 
         with DAG(name="d"):
             threedcitydb_start_t = Task(
-                name="a", template=threedcitydb_start_db_c
+                name="startthreedcitydb", template=threedcitydb_start_db_c
             )
             t2 = Task(
-                name="b",
+                name="whalesay",
                 template=whalesay_c,
                 arguments={"a": threedcitydb_start_t.ip},
             )
             t3 = Task(
-                name="c",
+                name="shellprobing",
                 template=c,
                 arguments={"hostaddr": threedcitydb_start_t.ip},
             )

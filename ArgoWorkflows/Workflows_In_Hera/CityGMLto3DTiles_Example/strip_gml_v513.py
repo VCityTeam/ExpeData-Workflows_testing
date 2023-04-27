@@ -2,7 +2,7 @@ import os
 from hera.workflows import Container, ExistingVolume, models
 
 
-def split_buildings_container(
+def strip_gml_container(
     cluster,
     workflow_parameters,
     input_filename: str,  # Absolute file path
@@ -11,15 +11,16 @@ def split_buildings_container(
 ):
     output_dir = os.path.join(workflow_parameters.persistedVolume, output_dir)
     return Container(
-        name="split-buildings",
-        image=cluster.docker_registry + "vcity/3duse:0.1",
+        name="strip-gml",
+        image=cluster.docker_registry + "vcity/citygml2stripper:0.1",
         image_pull_policy=models.ImagePullPolicy.if_not_present,
-        working_dir="/root/3DUSE/Build/src/utils/cmdline/",
+        # working_dir: is not necessary in this case
         command=[
-            "splitCityGMLBuildings",
-            "--input-file",
+            "python3",
+            "/src/CityGML2Stripper.py",
+            "--input",
             os.path.join(workflow_parameters.persistedVolume, input_filename),
-            "--output-file",
+            "--output",
             output_filename,
             "--output-dir",
             output_dir,
@@ -51,19 +52,20 @@ if __name__ == "__main__":
     from hera.workflows import DAG, Task, Parameter, Workflow
 
     cluster = define_cluster()
-    with Workflow(generate_name="splitbuildings-", entrypoint="dag") as w:
-        split_buildings_c = split_buildings_container(
+    with Workflow(generate_name="strip-gml-", entrypoint="dag") as w:
+        strip_gml_c = strip_gml_container(
             cluster,
             parameters,
-            input_filename=layout.split_buildings_input_filename(parameters),
-            output_dir=layout.split_buildings_output_dir(parameters),
-            output_filename=layout.split_buildings_output_filename(parameters),
+            input_filename=os.path.join(
+                layout.split_buildings_output_dir(parameters),
+                layout.split_buildings_output_filename(parameters),
+            ),
+            output_dir=layout.strip_gml_output_dir(parameters),
+            output_filename=layout.strip_gml_output_filename(parameters),
         )
         whalesay_c = whalesay_container_constructor()
         with DAG(name="dag"):
-            split_buildings_t = Task(
-                name="split-buildings", template=split_buildings_c
-            )
+            strip_gml_t = Task(name="split-buildings", template=strip_gml_c)
             # The original `split-buildings` container does not define an output
             # file that holds the name of the resulting file. This makes it hard
             # to transmit that information (the name of the resulting file) to the next
@@ -85,5 +87,5 @@ if __name__ == "__main__":
                 template=whalesay_c,
                 arguments=write_output_t.get_parameter("a").with_name("a"),
             )
-            split_buildings_t >> write_output_t >> whalesay_t
+            strip_gml_t >> write_output_t >> whalesay_t
     w.create()

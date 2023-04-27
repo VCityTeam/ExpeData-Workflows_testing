@@ -2,12 +2,9 @@ import os
 from hera.workflows import (
     ConfigMapEnvFrom,
     Container,
-    DAG,
     ExistingVolume,
     models,
     Parameter,
-    Task,
-    Workflow,
 )
 
 
@@ -61,10 +58,15 @@ if __name__ == "__main__":
     sys.path.append(
         os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
     )
+    from hera_utils import hera_assert_version
+
+    hera_assert_version("5.1.3")
+
     from pagoda_cluster_definition import define_cluster
     from input_2012_tiny_import_dump import parameters
     from experiment_layout import layout
     from utils import whalesay_container_constructor
+    from hera.workflows import DAG, Task, Workflow
 
     cluster = define_cluster()
     with Workflow(generate_name="fullcollect-", entrypoint="dag") as w:
@@ -81,6 +83,7 @@ if __name__ == "__main__":
             whalesay_t = Task(
                 name="whalesay",
                 template=whalesay_c,
+                # FIXME
                 # The following commented version fail: the whale says
                 # something but not what is expected
                 # arguments={"a": collect_t.get_parameter("msg")},

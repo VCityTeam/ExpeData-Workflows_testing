@@ -65,11 +65,12 @@ if __name__ == "__main__":
     from pagoda_cluster_definition import define_cluster
     from input_2012_tiny_import_dump import parameters
     from experiment_layout import layout
-    from utils import whalesay_container_constructor
+    from utils import whalesay_container_constructor, ip_http_check_container
     from hera.workflows import DAG, Task, Workflow
 
     cluster = define_cluster()
     with Workflow(generate_name="fullcollect-", entrypoint="dag") as w:
+        ip_http_check_c = ip_http_check_container(cluster)
         whalesay_c = whalesay_container_constructor()
         collect_c = collect_container_constructor(
             cluster,
@@ -79,16 +80,14 @@ if __name__ == "__main__":
             ),
         )
         with DAG(name="dag"):
+            check_ip_connectivity_t = Task(
+                name="iphttpcheck", template=ip_http_check_c
+            )
             collect_t = Task(name="collect", template=collect_c)
             whalesay_t = Task(
                 name="whalesay",
                 template=whalesay_c,
-                # FIXME
-                # The following commented version fail: the whale says
-                # something but not what is expected
-                # arguments={"a": collect_t.get_parameter("msg")},
-                # arguments=[Parameter(name="a", value=collect_t.get_parameter("msg"))],
                 arguments=collect_t.get_parameter("msg").with_name("a"),
             )
-            collect_t >> whalesay_t
+            check_ip_connectivity_t >> collect_t >> whalesay_t
     w.create()

@@ -1,4 +1,10 @@
-from hera.workflows import Container, models, Parameter, script
+from hera.workflows import (
+    ConfigMapEnvFrom,
+    Container,
+    models,
+    Parameter,
+    script,
+)
 
 
 def whalesay_container_constructor():
@@ -19,3 +25,16 @@ def whalesay_container_constructor():
 def write_output(message):
     with open("/test", "w") as f_out:
         f_out.write(message)
+
+
+def ip_http_check_container(cluster):
+    return Container(
+        name="iphttpcheck",
+        image=cluster.docker_registry + "vcity/iphttpcheck:0.1",
+        image_pull_policy=models.ImagePullPolicy.always,
+        env_from=[
+            # Assumes the corresponding config map is defined in the k8s cluster
+            ConfigMapEnvFrom(name=cluster.configmap, optional=False),
+        ],
+        command=["python", "entrypoint.py"],
+    )

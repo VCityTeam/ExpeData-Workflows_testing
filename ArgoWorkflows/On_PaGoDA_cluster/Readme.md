@@ -117,6 +117,7 @@ docker tag vcity/collect_lyon_data harbor.pagoda.os.univ-lyon1.fr/vcity/collect_
 docker tag vcity/3duse             harbor.pagoda.os.univ-lyon1.fr/vcity/3duse:0.1
 docker tag vcity/citygml2stripper  harbor.pagoda.os.univ-lyon1.fr/vcity/citygml2stripper:0.1
 docker tag vcity/py3dtilers        harbor.pagoda.os.univ-lyon1.fr/vcity/py3dtilers:0.1
+docker tag vcity/iphttpcheck       harbor.pagoda.os.univ-lyon1.fr/vcity/iphttpcheck:0.1
 docker tag refstudycentre/scratch-base    harbor.pagoda.os.univ-lyon1.fr/vcity/refstudycentre:latest
 docker tag tumgis/3dcitydb-postgis:v4.0.2 harbor.pagoda.os.univ-lyon1.fr/vcity/3dcitydb-postgis:v4.0.2
 docker tag postgres:15.2                  harbor.pagoda.os.univ-lyon1.fr/vcity/postgres:15.2
@@ -139,6 +140,7 @@ docker push harbor.pagoda.os.univ-lyon1.fr/vcity/collect_lyon_data:0.1
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/3duse:0.1
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/citygml2stripper:0.1
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/py3dtilers:0.1
+docker push harbor.pagoda.os.univ-lyon1.fr/vcity/iphttpcheck:0.1
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/refstudycentre:latest
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/3dcitydb-postgis:v4.0.2
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/postgres:15.2 

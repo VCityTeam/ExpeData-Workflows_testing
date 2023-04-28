@@ -1,3 +1,7 @@
+This docker context holds a version whose entrypoint is a quite
+simple (in its argument handling) bash shell based entrypoint.
+For a more elaborate version refer to the [python based version](../../ArgoWorkflows/Docker/Collect-DockerContext/).
+
 Building the image:
 ```bash
 docker build -t liris:collect_lyon_data .

@@ -1,36 +1,38 @@
 import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', "PaGoDa_definition"))
+
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
+)
 from pagoda_cluster_definition import define_cluster
 
 define_cluster()
 
-# The following is a copy of 
-# https://github.com/argoproj-labs/hera-workflows/blob/4.4.1/examples/coin_flip.py
+# The following is a copy of
+# https://github.com/argoproj-labs/hera/blob/5.1.7/examples/workflows/coinflip.py
+from hera.workflows import DAG, Workflow, script
 
-from hera import Task, Workflow
 
-
-def random_code():
+@script()
+def flip():
     import random
-    res = "heads" if random.randint(0, 1) == 0 else "tails"
-    print(res)
+
+    result = "heads" if random.randint(0, 1) == 0 else "tails"
+    print(result)
 
 
+@script()
 def heads():
     print("it was heads")
 
 
+@script()
 def tails():
     print("it was tails")
 
 
-# assumes you used `hera.set_global_token` and `hera.set_global_host` so that the workflow can be submitted
-with Workflow("coin-flip-", generate_name=True) as w:
-    r = Task("r", random_code)
-    h = Task("h", heads)
-    t = Task("t", tails)
-
-    h.on_other_result(r, "heads")
-    t.on_other_result(r, "tails")
-
+with Workflow(generate_name="coinflip-", entrypoint="d") as w:
+    with DAG(name="d") as s:
+        f = flip()
+        heads().on_other_result(f, "heads")
+        tails().on_other_result(f, "tails")
 w.create()

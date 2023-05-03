@@ -1,21 +1,28 @@
+# The following script can be launched in Hera 5.1.3 but the server
+# is not run as deamon (which is reflected by the YAML Manifest given by AW
+# UI). The server thus runs without ending and consumer is never triggered.
+
 import sys, os
 
 sys.path.append(
     os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
 )
 from pagoda_cluster_definition import define_cluster
+
 define_cluster()
 
 
-### The following is a copy of version 4.4.2 of hera/examples/daemon.py
+### The following is an adapted (to version > 531) copy of
+# https://github.com/argoproj-labs/hera/blob/4.4.2/examples/daemon.py
 """Enablement of https://argoproj.github.io/argo-workflows/variables/
 This example creates two tasks, one of the Tasks is a deamond task and its IP address is shared with the second task
 The daemoned task operates as server, serving an example payload, with the second task operating as a client, making
 http requests to the server."""
 
-from hera import Env, Task, Workflow
+from hera.workflows import DAG, Env, script, Task, Workflow
 
 
+@script()
 def server():
     from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -30,6 +37,7 @@ def server():
     webServer.serve_forever()
 
 
+@script()
 def consumer():
     import http.client
     import os
@@ -42,10 +50,13 @@ def consumer():
     print(response.read())
 
 
-# assumes you used `hera.set_global_token` and `hera.set_global_host` so that the workflow can be submitted
-with Workflow("variables") as w:
-    d = Task("daemon", server, daemon=True)
-    t = Task("consumer", consumer, env=[Env(name="SERVER_IP", value_from_input=d.ip)])
-    d >> t
+with Workflow(generate_name="variables", entrypoint="entry") as w:
+    with DAG(name="entry"):
+        d = server(name="daemon", daemon=True)
+        t = consumer(
+            name="consumer",
+            env=[Env(name="SERVER_IP", value=d.ip)],
+        )
+        d >> t
 
 w.create()

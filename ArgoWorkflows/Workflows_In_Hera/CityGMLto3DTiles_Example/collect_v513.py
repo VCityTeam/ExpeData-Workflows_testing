@@ -65,13 +65,13 @@ if __name__ == "__main__":
     from pagoda_cluster_definition import define_cluster
     from input_2012_tiny_import_dump import parameters
     from experiment_layout import layout
-    from utils import whalesay_container_constructor, ip_http_check_container
+    from utils import whalesay_container, ip_http_check_container
     from hera.workflows import DAG, Task, Workflow
 
     cluster = define_cluster()
     with Workflow(generate_name="fullcollect-", entrypoint="dag") as w:
         ip_http_check_c = ip_http_check_container(cluster)
-        whalesay_c = whalesay_container_constructor()
+        whalesay_c = whalesay_container()
         collect_c = collect_container_constructor(
             cluster,
             parameters,

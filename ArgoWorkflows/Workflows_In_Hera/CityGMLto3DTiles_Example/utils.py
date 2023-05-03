@@ -7,9 +7,9 @@ from hera.workflows import (
 )
 
 
-def whalesay_container_constructor():
+def whalesay_container():
     return Container(
-        name="in",
+        name="whalesay",
         image="docker/whalesay:latest",
         command=["cowsay"],
         args=["{{inputs.parameters.a}}"],

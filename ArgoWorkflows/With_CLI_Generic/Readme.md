@@ -68,7 +68,7 @@ docker build -t vcity/citygml2stripper  Docker/CityGML2Stripper-DockerContext/
 docker build --no-cache -f Context/Dockerfile -t vcity/py3dtilers https://github.com/VCityTeam/py3dtilers-docker.git
 docker build -t vcity/iphttpcheck       Docker/IpHttpConnectivityCheck-DockerContext/
 docker pull refstudycentre/scratch-base:latest
-docker pull tumgis/3dcitydb-postgis:v4.0.2
+docker pull 3dcitydb/3dcitydb-pg:13-3.1-4.1.0
 docker pull postgres:15.2
 ```
 

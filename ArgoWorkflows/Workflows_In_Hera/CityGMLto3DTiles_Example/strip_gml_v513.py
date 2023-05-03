@@ -42,7 +42,7 @@ if __name__ == "__main__":
         os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
     )
     from pagoda_cluster_definition import define_cluster
-    from utils import whalesay_container_constructor, write_output
+    from utils import whalesay_container, write_output
     from hera_utils import hera_assert_version
 
     hera_assert_version("5.1.3")
@@ -63,7 +63,7 @@ if __name__ == "__main__":
             output_dir=layout.strip_gml_output_dir(parameters),
             output_filename=layout.strip_gml_output_filename(parameters),
         )
-        whalesay_c = whalesay_container_constructor()
+        whalesay_c = whalesay_container()
         with DAG(name="dag"):
             strip_gml_t = Task(name="split-buildings", template=strip_gml_c)
             # The original `split-buildings` container does not define an output

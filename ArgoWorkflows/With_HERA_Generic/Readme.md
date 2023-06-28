@@ -81,7 +81,15 @@ k -n argo exec -it vcity-pvc-ubuntu-pod -- rm -r /vcity-data/junk/
 (venv) python CityGMLto3DTiles_Example/collect.py
 (venv) python CityGMLto3DTiles_Example/split_buildings.py
 (venv) python CityGMLto3DTiles_Example/strip_gml.py 
-# The following is work in progress
+```
+
+The next workflow, 
+[`3dcitydb_start_db.py`](../Workflows_In_Hera/CityGMLto3DTiles_Example/3dcitydb_start_db.py),
+is a test for starting a 3DCityDB database as a service (that is immediately
+halted on success). Refer to the
+[comments heading `3dcitydb_start_db.py`](../Workflows_In_Hera/CityGMLto3DTiles_Example/3dcitydb_start_db.py)
+for the available behavioral parameters as well as a few usage caveats
+```bash
 (venv) python CityGMLto3DTiles_Example/3dcitydb_start_db.py
 ```
 

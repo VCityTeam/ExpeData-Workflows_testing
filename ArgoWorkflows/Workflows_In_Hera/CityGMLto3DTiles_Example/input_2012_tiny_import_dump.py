@@ -11,5 +11,6 @@ parameters = types.SimpleNamespace(
         name="citydb-lyon-2012",
         user="postgres",
         password="postgres",
+        keep_database=True,
     ),
 )

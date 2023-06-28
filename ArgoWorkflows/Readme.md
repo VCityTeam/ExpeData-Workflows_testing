@@ -14,6 +14,8 @@
 |-----------|---|---|
 | With CLI  | [CLI/Minikube](Run_with_CLI_on_Minikube.md) | [CLI/PaGoDA](Run_with_CLI_on_PaGoDA.md) |
 | With Hera |  | [Hera/PaGoDA](Run_with_HERA_on_PaGoDA/Readme.md) |
+| Argo UI   |  | [UI website](https://argowf.pagoda.os.univ-lyon1.fr/) |
+
 
 ## Notes
 

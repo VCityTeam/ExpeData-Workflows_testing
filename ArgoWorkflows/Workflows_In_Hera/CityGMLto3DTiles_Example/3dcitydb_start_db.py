@@ -1,3 +1,17 @@
+# The following pipeline uses input_2012_tiny_import_dump.py as parameter file.
+# When `parameters.database.keep_database` is set, an initialized 3DCityDB is
+# serialized (to files as opposed to a database dump). Unless you wish to start
+# the 3DCityDabase from a previous database serialisation, you might want to
+# start from a clean slate and remove any possibly pre-existing database
+# serialization (that would exist on the k8s volume) with the command :
+# k -n argo exec -it vcity-pvc-ubuntu-pod -- rm -fr /vcity-data/junk/citydb-lyon-2012/
+# (concerning the vcity-pvc-ubuntu-pod pod refer to the "Accessing results"
+# chapter of the On_PaGoDA_cluster/Readme.md file).
+# Running this pipeline is now done with
+#     python  CityGMLto3DTiles_Example/3dcitydb_start_db.py
+# Refer to "Accessing results" chapter of the On_PaGoDA_cluster/Readme.md file
+# for further details about result exploration.
+
 if __name__ == "__main__":
     import sys, os
 
@@ -9,7 +23,7 @@ if __name__ == "__main__":
 
     from hera.workflows import DAG, script, Task, Workflow
     from hera_utils import hera_assert_version
-    from database_v513 import (
+    from database import (
         threedcitydb_start_db_container,
         db_isready_container,
         db_probe_catalog_container,

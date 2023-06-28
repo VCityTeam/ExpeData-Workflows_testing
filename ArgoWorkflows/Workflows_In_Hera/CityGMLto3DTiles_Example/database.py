@@ -10,40 +10,112 @@ from hera.workflows import (
 )
 
 
+def get_statistical_value_of_initial_delay(db_files_out_of_container: bool):
+    """_summary_
+    The sole purpose of this function is to gather methodological elements
+    that led to the choice of some valueS (depends on the context) of the
+    initial delay (initialDelaySeconds) before the database is ready for usage
+
+    Parameters:
+      db_files_out_of_container: whether we wish to store the database files
+      (that is serialized internal representation as opposed to a dump) outisde
+      of the container or not.
+    """
+    # On any given platform, there is a strong dependency between
+    #  - the original state of database (e.g. never created, successfully
+    #    already previously (externaly or at prior pipeline execution) or
+    #    left inconsistent (after failure of a prior execution)
+    #  - whether we can discard the database (it leaves within the
+    #    container and gets discarded on exit) or we wish to preserve it
+    #    after the workflow execution (the database is written on a
+    #    mounted volume)
+    # and the delay after which the database will be available (availability
+    # is asserted with a properly configured startup probe).
+    # On PaGoDA the following table holds the respective values of
+    # `initialDelaySeconds` required for 3dcitydb to become properly
+    # active (and a workflow using that container to succeed):
+    #
+    #                        |---------------------------------------|
+    #                        | PGDATA value is SET | PGDATA is UNSET |
+    #  |---------------------|---------------------|-----------------|
+    #  | Database not yet    |        360          |                 |
+    #  | created             |                     |                 |
+    #  |---------------------|---------------------|                 |
+    #  | Database previously |        120          |                 |
+    #  | created with success|                     |       60        |
+    #  |---------------------|---------------------|                 |
+    #  | Database creation   |                     |                 |
+    #  | aborted at previous |        ???          |                 |
+    #  | run                 |                     |                 |
+    #  |---------------------|---------------------|-----------------|
+    #
+    # The above table values were aquired through an empirical trial
+    # and error process and are probably cluster dependent.
+    #
+    # Technical notes (if further debug is required):
+    #    Oddly enough, when the chosen value of `initialDelaySeconds` is
+    #    below the (respective) working threshold, AW displays an end date
+    #    for the Container (with a duration roughly equivalent to the
+    #    value of initialDelaySeconds) and the 3dcitydb initialization
+    #    process seems to be halted. In this case the error messages are
+    #    of the form:
+    #       Setting up 3DCityDB database schema in database <db-name> ...
+    #       <some date> UTC [101] FATAL:  role "root" does not exist
+    #       <some date> UTC [108] FATAL:  role "root" does not exist
+    #       ....
+    if db_files_out_of_container:
+        # Because we cannot tell whether the database was previously created or
+        # not we are constrained to play it safe and take the maximum value of
+        # both cases (that is consider the worse case) database already created
+        # and database not yet created:
+        initialDelaySeconds = 360
+    else:
+        initialDelaySeconds = 60
+    return initialDelaySeconds
+
+
 def threedcitydb_start_db_container(cluster, parameters):
     results_dir = os.path.join(
         parameters.persistedVolume,
         parameters.experiment_output_dir,
         parameters.database.name,
     )
+    ### Deal with the variability of requirements concerning db serialization
+    # storage and associated inital delay of availability
+    env = [
+        # Assumes the corresponding config map is defined in the k8s cluster
+        ConfigMapEnvFrom(config_map_name=cluster.configmap, optional=False),
+        # Specific to 3dCityDB container, refer to
+        # https://3dcitydb-docs.readthedocs.io/en/latest/3dcitydb/docker.html#citydb-docker-config-psql
+        Env(name="SRID", value=3946),
+        Env(name="SRSNAME", value="espg:3946"),
+        # Adressed to postgres (that underpins 3DCityDB) at container level
+        # as opposed to libpq environment variables refer to
+        # https://www.postgresql.org/docs/current/libpq-envars.html
+        Env(name="POSTGRES_DB", value=parameters.database.name),
+        Env(name="POSTGRES_PASSWORD", value=parameters.database.password),
+        Env(name="POSTGRES_USER", value=parameters.database.user),
+    ]
+    if parameters.database.keep_database:
+        # As offered by 3dCityDB container, just provide a PGDATA environment
+        # value that points to the ad-hoc directory
+        env.append(
+            Env(name="PGDATA", value=results_dir),
+        )
+
+    initialDelaySeconds = get_statistical_value_of_initial_delay(
+        parameters.database.keep_database
+    )
+
+    ### We can now define the container per se
     new_container = Container(
         name="threedcitydb-start-db",
-        # start 3dcitydb as a daemon
-        daemon=True,
+        daemon=True,  # Run 3dcitydb container as a daemon (i.e. in background)
         # Number of container retrial when failing
         # retry_strategy=RetryStrategy(limit=2),
         image=cluster.docker_registry + "vcity/3dcitydb-pg:13-3.1-4.1.0",
         image_pull_policy=models.ImagePullPolicy.always,
-        env=[
-            # Assumes the corresponding config map is defined in the k8s cluster
-            ConfigMapEnvFrom(
-                config_map_name=cluster.configmap, optional=False
-            ),
-            # Specific to 3dCityDB container, refer to
-            # https://3dcitydb-docs.readthedocs.io/en/latest/3dcitydb/docker.html#citydb-docker-config-psql
-            Env(name="SRID", value=3946),
-            Env(name="SRSNAME", value="espg:3946"),
-            # Adressed to postgres (that underpins 3DCityDB) at container level
-            # as opposed to libpq environment variables refer to
-            # https://www.postgresql.org/docs/current/libpq-envars.html
-            Env(name="POSTGRES_DB", value=parameters.database.name),
-            Env(name="POSTGRES_PASSWORD", value=parameters.database.password),
-            Env(name="POSTGRES_USER", value=parameters.database.user),
-            # On PaGoDa if you set PGDATA by uncommenting the following line,
-            # then YOU NEED TO ADJUST the value of the `initialDelaySeconds`
-            # filed within the readinessProbe:
-            # Env(name="PGDATA", value=results_dir),
-        ],
+        env=env,
         volumes=[
             ExistingVolume(
                 claim_name=cluster.volume_claim,
@@ -52,52 +124,61 @@ def threedcitydb_start_db_container(cluster, parameters):
                 mount_path=parameters.persistedVolume,
             )
         ],
-        # With Hera v5.1.3 you must use `readiness_probe` as opposed to the
-        # aliased (refer to v1.py) readinessProbe that does not seem to work.
-        # Running the workflow will NOT display any error message, but the
+        # CAVEAT EMPTOR:
+        # With Hera v5.1.3 you must use `startup_probe` as opposed to the
+        # aliased (refer to v1.py) `startupProbe` that does not seem to work:
+        # running the workflow will NOT display any error message, but the
         # `readinessProbe` entry is simply droppped (won't appear in the
         # manifest).
-        readiness_probe=models.Probe(
-            exec=models.ExecAction(command=["pg_isready"]),
-            # On PaGoDa, the following table holds the respective values of
-            # `initialDelaySeconds` required for 3dcitydb to become properly
-            # active (and a workflow using that container to succeed):
-            #
-            #                        |---------------------------------------|
-            #                        | PGDATA value is SET | PGDATA is UNSET |
-            #  |---------------------|---------------------|-----------------|
-            #  | Database not yet    |        360          |                 |
-            #  | created             |                     |                 |
-            #  |---------------------|---------------------|       60        |
-            #  | Database previously |        120          |                 |
-            #  | created             |                     |                 |
-            #  |---------------------|---------------------|-----------------|
-            #
-            # The above table values were aquired through an empirical trial
-            # and error process and are probably cluster dependent.
-            # Oddly enough, when the chosen value of `initialDelaySeconds` is
-            # below the (respective) working threshold, AW displays an end date
-            # for the Container (with a duration roughly equivalent to the
-            # value of initialDelaySeconds) and the 3dcitydb initialization
-            # process seems to be halted. In this case the error messages are
-            # of the form:
-            #    Setting up 3DCityDB database schema in database <db-name> ...
-            #    <some date> UTC [101] FATAL:  role "root" does not exist
-            #    <some date> UTC [108] FATAL:  role "root" does not exist
-            #     ....
-            initialDelaySeconds=60,
+        # Ditto with `readiness_probe` vs `readinessProbe`.
+        # Note: documentation reference
+        # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes
+        startup_probe=models.Probe(
+            exec=models.ExecAction(
+                command=[
+                    "/usr/lib/postgresql/13/bin/psql",
+                    # "password=postgres",
+                    # "export PGPASSWORD=postgres ;",
+                    # "-d citydb-lyon-2012" FAILS with message
+                    #    'FATAL:  database " citydb-lyon-2012" does not exist'
+                    # (notice the leading whitespace in the string). It looks
+                    # like HERA/AW throws an extra withespace at run time !?
+                    "--dbname=" + parameters.database.name,
+                    # "-U user" FAILS with
+                    #     'FATAL:  role " postgres" does not exist'
+                    # with a similar symptom as for the "-d " flag (refer above)
+                    "--username=" + parameters.database.user,
+                    "-c",
+                    # '"SELECT * FROM citydb.building"' (that is with enquoted
+                    # double-quotes) yields
+                    #     ERROR:  syntax error at or near ""SELECT * FROM citydb.building"" at character 1
+                    "SELECT * FROM citydb.building",
+                ]
+            ),
+            initialDelaySeconds=initialDelaySeconds,
+            # In case this doesn't suffice (e.g. on another platform than
+            # PaGoDA), we add some further delay by picking some (quite
+            # arbitraty at this stage of testing) values for failureThreshold
+            # and periodSeconds:
+            failureThreshold=10,
+            periodSeconds=30,
+            # Number of seconds after which the probe times out.
+            timeoutSeconds=10,
         ),
     )
     return new_container
 
 
-# FIXME: these are not Tasks anymore. Change the function names
-def send_command_to_postgres_container(cluster, parameters, name, arguments):
+def send_command_to_postgres_container(
+    cluster, parameters, name, command, arguments
+):
     container = Container(
         name=name,
         image=cluster.docker_registry + "vcity/postgres:15.2",
         image_pull_policy=models.ImagePullPolicy.if_not_present,
         inputs=Parameter(name="hostaddr"),
+        # Avoid conflicting demands with other pods.
+        # synchronization=models.Mutex(name=mutex_lock_on_database_dump_import),
         env=[
             # Assumes the corresponding config map is defined in the k8s cluster
             ConfigMapEnvFrom(
@@ -113,7 +194,7 @@ def send_command_to_postgres_container(cluster, parameters, name, arguments):
             # Note: the difference of syntax between the respective definitions
             # of the values of the PGHOSTADDR and PGPASSWORD environment
             # variables is due to the difference of their respective stages of
-            # evalution:
+            # evaluation:
             # - the value of PGHOSTADDR is evaluated at workflow run-time
             #   (on the argo server) and it thus follows the yaml syntax of an
             #   Argo Workflow,
@@ -126,7 +207,7 @@ def send_command_to_postgres_container(cluster, parameters, name, arguments):
             ### FIXME DO WE NEED THE PORT IN ALL THE FOLLOWING COMMAND ?
             # The variable is parameters.database.port
         ],
-        command=["/bin/bash", "-c"],
+        command=command,
         args=arguments,
     )
     return container
@@ -139,55 +220,26 @@ def db_isready_container(cluster, parameters, name):
     #    It is not necessary to supply correct user name, password, or database
     #    name values to obtain the server status; however, if incorrect values
     #    are provided, the server will log a failed connection attempt.
+    command = ["/bin/bash", "-c"]
     arguments = ["pg_isready"]
     return send_command_to_postgres_container(
-        cluster, parameters, name, arguments
+        cluster, parameters, name, command, arguments
     )
 
 
 def db_probe_catalog_container(cluster, parameters, name):
-    arguments = ["psql", "-c", "SELECT * FROM pg_catalog.pg_tables"]
+    command = ["psql"]
+    # Following fails with
+    #     "10.42.2.130:5432 - no response"
+    #     ...
+    #     Error: exit status 2
+    # arguments = ["psql", "-c", "SELECT * FROM pg_catalog.pg_tables"]
+    arguments = [
+        "--dbname=citydb-lyon-2012",
+        "--username=" + parameters.database.user,
+        "-c",
+        "SELECT * FROM citydb.building",
+    ]
     return send_command_to_postgres_container(
-        cluster, parameters, name, arguments
+        cluster, parameters, name, command, arguments
     )
-
-
-# FIXME: clean the following debugging notes
-# \rm -fr citydb-lyon-2012/
-# k -n argo exec -it vcity-pvc-ubuntu-pod -- rm -fr /vcity-data/junk/citydb-lyon-2012/
-# python CityGMLto3DTiles_Example/3dcitydb_start_db_v513.py
-# kubectl -n argo cp vcity-pvc-nginx-pod:/var/lib/www/html/junk/citydb-lyon-2012 citydb-lyon-2012
-# docker run --mount type=bind,source="$(pwd)"/citydb-lyon-2012,target=/var/lib/postgresql/data -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:13
-# docker ps  yields 0.0.0.0:5432->5432/tcp
-# lsof -i -P | grep -i "listen" | grep 5432
-# psql -l -p 5432 -h 134.214.143.170 -U postgres -W -d citydb-lyon-2012
-#    no pg_hba.conf entry for host "172.17.0.1", user "postgres", database "postgres"
-# vim citydb-lyon-2012/
-#      -----> edit line to become             host all all 127.17.0.1/32 trust
-# Relaunch docker container
-# psql -l -p 5432 -h 134.214.143.170 -U postgres -W -d citydb-lyon-2012
-#      -----> psql: error: connection to server at "134.214.143.170", port 5432 failed: Connection refused
-
-
-# En fait le initdb de la base semble interompu avec les messages
-#         running bootstrap script ... ok
-#         child process was terminated by signal 15: Terminated
-#         initdb: removing contents of data directory "/within-container-mount-point/junk/citydb-lyon-2012"car les messages de logs
-# qui ne sont pas les même qui si on fait à la main
-# docker run --mount type=bind,source=`pwd`/citydb-lyon-2012,target=/var/lib/postgresql/data -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=citydb-lyon-2012 -p 5432:5432 3dcitydb/3dcitydb-pg:13-3.1-4.1.0
-
-# Moralité: la readinessProbe ne fonctionne pas (avec ces parametres ? quoique
-#  le MANIFEST ne parle pas de probe !?)
-# du coup la base commence a demarrer
-# mais est interompue car le workflow est fini (et mal car il n'a pas pu
-# consommer la page)
-# du coup la base n'est pas initialisee
-# du coup on ne peut pas interoger le dump (psql -l) car le create_user n'est
-# pas effectif...
-#
-# TO DEBUG:
-# 0. les time sleep suivants ne suffisent pas: 30, 60, 120, 180...
-# 1. quand on enleve PGDATA alors le boot semble etre plus rapide et du
-#    coup cela passe plus souvent.
-# 2. jouer sur les delais de la readinessProbe (si elle est générée) pour
-#    attendre plus longtemps

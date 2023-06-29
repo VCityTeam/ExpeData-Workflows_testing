@@ -229,13 +229,13 @@ def db_isready_container(cluster, parameters, name):
 
 def db_probe_catalog_container(cluster, parameters, name):
     command = ["psql"]
-    # Following fails with
+    # Note: oddly enough (?) the following arguments definition fails with
     #     "10.42.2.130:5432 - no response"
     #     ...
     #     Error: exit status 2
     # arguments = ["psql", "-c", "SELECT * FROM pg_catalog.pg_tables"]
     arguments = [
-        "--dbname=citydb-lyon-2012",
+        "--dbname=" + parameters.database.name,
         "--username=" + parameters.database.user,
         "-c",
         "SELECT * FROM citydb.building",

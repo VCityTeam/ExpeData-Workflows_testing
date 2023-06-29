@@ -1,9 +1,23 @@
-from hera import Workflow, ConfigMapEnvFrom, Task, ExistingVolume
+from hera.workflows import (
+    ConfigMapEnvFrom,
+    Container,
+    DAG,
+    ExistingVolume,
+    script,
+    Task,
+    Workflow,
+)
 from pagoda_cluster_definition import define_cluster
 
 cluster = define_cluster()
 
 
+@script(
+    env=[
+        # Assumes the corresponding config map is defined at k8s level
+        ConfigMapEnvFrom(config_map_name=cluster.configmap, optional=False)
+    ]
+)
 def print_environment():
     import os
     import json
@@ -16,6 +30,14 @@ def print_environment():
     print("Done.")
 
 
+@script(
+    inputs={"mount_point": "/vol"},
+    volumes=[
+        ExistingVolume(
+            name="dummy", claim_name=cluster.volume_claim, mount_path="/vol"
+        )
+    ],
+)
 def list_files(mount_point: str):
     import os
 
@@ -23,20 +45,10 @@ def list_files(mount_point: str):
     print("Done.")
 
 
-def define_workflow():
-    with Workflow("hera-on-pagoda-", generate_name=True) as w:
-        Task(
-            "printpythonenv",
-            print_environment,
-            env=[
-                # Assumes the corresponding config map is defined at k8s level
-                ConfigMapEnvFrom(
-                    config_map_name=cluster.configmap, optional=False
-                )
-            ],
-        )
-        Task(
-            "cowsayprint",
+if __name__ == "__main__":
+    with Workflow(generate_name="hera-on-pagoda-", entrypoint="main") as w:
+        cowsayprint = Container(
+            name="cowsayprint",
             image="docker/whalesay",
             env=[
                 ConfigMapEnvFrom(
@@ -45,16 +57,9 @@ def define_workflow():
             ],
             command=["cowsay", "PaGoda can pull whalesay docker container."],
         )
-        Task(
-            "listvolumeclaimfiles",
-            source=list_files,
-            inputs={"mount_point": "/vol"},
-            volumes=[
-                ExistingVolume(name=cluster.volume_claim, mount_path="/vol")
-            ],
-        )
+        with DAG(name="main"):
+            t1: Task = print_environment()
+            t2 = Task(name="cowsayprint", template=cowsayprint)
+            t3 = Task = list_files()
+            t1 >> t2 >> t3
     w.create()
-
-
-if __name__ == "__main__":
-    define_workflow()

@@ -11,7 +11,6 @@
 - [Developers](#developers)
   - [Running the failing or issues](#running-the-failing-or-issues)
   - [IDE notes](#ide-notes)
-- [CLEAN ME](#clean-me)
 
 <!-- /TOC -->
 
@@ -29,17 +28,21 @@ for constructing and submitting Argo Workflows (refer
 ## Install Hera and its dependencies
 
 ```bash
+cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera
 python3 --version     # Say python 3.10.8 
 python3 -m venv venv
 source venv/bin/activate
-(venv) pip3 install -r requirements.txt   # That install hera-workflows
+(venv) pip3 install -r requirements.txt  # Installs hera-workflows among others
 ```
 
 ## Running the "Hello Hera on PaGoDa" workflow
 
+First assert that the k8s cluster is available, accessible (access rights) and
+that the Argo-workflows server is ready for workflow submission  
+
 ```bash
 (venv) cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera
-(venv) export $(xargs < .env)            # Refer above
+(venv) export $(xargs < .env)            # Refer above for .env creation
 (venv) python PaGoDa_definition/pagoda_cluster_definition.py
 ```
 
@@ -52,7 +55,7 @@ When this fails try running things step by step for troubleshooting
 (venv) python PaGoDa_definition/pagoda_cluster_definition.py 
 ```
 
-Eventually run
+Eventually run the "Hello" workflow
 
 ```bash
 (venv) python PaGoDa_definition/hello_pagoda.py
@@ -62,9 +65,15 @@ and assert the workflow ran smoothly with argo UI.
 
 ## Running the hera-workflow examples
 
+A few illustrative hera-workflow examples were adapted to the PaGoDa cluster
+and placed in the 
+[`Tutorial_Examples/`](../Workflows_In_Hera/Tutorial_Examples/) sub-directory
+
 ```bash
-(venv) python Tutorial_examples/coin_flip_pagoda.py
-(venv) python Tutorial_examples/hello_world_pagoda.py
+(venv) cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera
+(venv) python Tutorial_Examples/coin_flip_pagoda.py
+(venv) python Tutorial_Examples/hello_world_pagoda.py
+(venv) ...
 ```
 
 ## Running the CityGMLto3DTiles example
@@ -108,10 +117,3 @@ for the available behavioral parameters as well as a few usage caveats
 For those using [vscode](https://en.wikipedia.org/wiki/Visual_Studio_Code) a
 workspace is defined in 
 '`git rev-parse --show-toplevel`/.vscode/ExpeData-Workflows_testing.code-workspace'
-
-## CLEAN ME
-```bash
-git clone https://github.com/argoproj-labs/hera-workflows
-cd hera-workflows
-git checkout 4.4.1    # Has to match the requirements version 
-```

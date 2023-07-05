@@ -75,6 +75,7 @@ def get_statistical_value_of_initial_delay(db_files_out_of_container: bool):
 
 
 def threedcitydb_start_db_container(cluster, parameters):
+    # IMPROVE: promote this derived variable to become a paramters attribute ?
     results_dir = os.path.join(
         parameters.persistedVolume,
         parameters.experiment_output_dir,
@@ -243,3 +244,35 @@ def db_probe_catalog_container(cluster, parameters, name):
     return send_command_to_postgres_container(
         cluster, parameters, name, command, arguments
     )
+
+
+def import_citygml_file_to_db_container(cluster, parameters, input_filename):
+    container = Container(
+        name="threedcitydb-importer",
+        image=cluster.docker_registry + "vcity/impexp:4.3.0",
+        image_pull_policy=models.ImagePullPolicy.always,
+        inputs=Parameter(name="hostaddr"),
+        volumes=[
+            ExistingVolume(
+                claim_name=cluster.volume_claim,
+                # Providing a name is mandatory but how is it relevant/used ?
+                name="dummy-name",
+                mount_path=parameters.persistedVolume,
+            )
+        ],
+        command=["impexp-entrypoint.sh"],
+        args=[
+            "import",
+            "-H",
+            "{{inputs.parameters.hostaddr}}",
+            "-d",
+            parameters.database.name,
+            "-u",
+            parameters.database.user,
+            "-p",
+            parameters.database.password,
+            os.path.join(parameters.persistedVolume, input_filename)
+            # "-P", "{{inputs.parameters.port}}",
+        ],
+    )
+    return container

@@ -41,7 +41,7 @@ if __name__ == "__main__":
         os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
     )
     from pagoda_cluster_definition import define_cluster
-    from utils import whalesay_container, write_output
+    from utils import whalesay_container, convert_message_to_output_parameter
     from hera_utils import hera_assert_version
 
     hera_assert_version("5.1.3")
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                 parameters.persistedVolume,
                 layout.split_buildings_output_dir(parameters),
             )
-            write_output_t: Task = write_output(
+            write_output_t: Task = convert_message_to_output_parameter(
                 arguments=Parameter(name="message", value=output_dir)
             )
             whalesay_t = Task(

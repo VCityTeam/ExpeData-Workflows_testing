@@ -42,7 +42,7 @@ if __name__ == "__main__":
         os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
     )
     from pagoda_cluster_definition import define_cluster
-    from utils import whalesay_container, write_output
+    from utils import whalesay_container, convert_message_to_output_parameter
     from hera_utils import hera_assert_version
 
     hera_assert_version("5.1.3")
@@ -68,18 +68,19 @@ if __name__ == "__main__":
             strip_gml_t = Task(name="split-buildings", template=strip_gml_c)
             # The original `split-buildings` container does not define an output
             # file that holds the name of the resulting file. This makes it hard
-            # to transmit that information (the name of the resulting file) to the next
-            # taks in the workflow that requires that filename as one of its inputs.
-            # In order to circumvent that shortcoming of the `split-buildings` container
-            # we add a posttreament that whose single purpose is to write that result
-            # file (holding filename(s).
-            # This inital limited task is thus complemented with an adhoc post-treament
-            # task.
+            # to transmit that information (the name of the resulting file) to
+            # the next task in the workflow that requires that filename as one
+            # of its inputs.
+            # In order to circumvent that shortcoming of the `split-buildings`
+            # container, we add a post-treament (to `split-buildings`) whose
+            # single purpose is to write that result file (holding filename(s)).
+            # This inital limited task is thus complemented with an adhoc
+            # post-treament task.
             output_dir = os.path.join(
                 parameters.persistedVolume,
                 layout.split_buildings_output_dir(parameters),
             )
-            write_output_t: Task = write_output(
+            write_output_t: Task = convert_message_to_output_parameter(
                 arguments=Parameter(name="message", value=output_dir)
             )
             whalesay_t = Task(

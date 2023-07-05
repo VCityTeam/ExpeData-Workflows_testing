@@ -22,7 +22,7 @@ def whalesay_container():
 @script(
     outputs=[Parameter(name="a", value_from=models.ValueFrom(path="/test"))]
 )
-def write_output(message):
+def convert_message_to_output_parameter(message):
     with open("/test", "w") as f_out:
         f_out.write(message)
 

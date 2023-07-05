@@ -107,7 +107,7 @@ pushing the container images to a docker registry that is accessible (not
 behind some firewall). A possible solution is to use the docker registry 
 offered by the PAGoDA platform itself.
 
-Once the [local image are build](../With_CLI_Generic/Readme.md#build-the-required-containers))
+Once the [local image are build](../With_CLI_Generic/Readme.md#buildpull-the-required-containers))
 you first need to tag the local image you wish to push with the a tag of the 
 form `harbor.pagoda.os.univ-lyon1.fr/vcity/<MYIMAGENAME>:<MYVERSION>`.
 The resulting tagging commands are then
@@ -120,7 +120,8 @@ docker tag vcity/py3dtilers        harbor.pagoda.os.univ-lyon1.fr/vcity/py3dtile
 docker tag vcity/iphttpcheck       harbor.pagoda.os.univ-lyon1.fr/vcity/iphttpcheck:0.1
 docker tag refstudycentre/scratch-base    harbor.pagoda.os.univ-lyon1.fr/vcity/refstudycentre:latest
 docker tag 3dcitydb/3dcitydb-pg:13-3.1-4.1.0 harbor.pagoda.os.univ-lyon1.fr/vcity/3dcitydb-pg:13-3.1-4.1.0
-docker tag postgres:15.2                  harbor.pagoda.os.univ-lyon1.fr/vcity/postgres:15.2
+docker tag 3dcitydb/impexp:4.3.0   harbor.pagoda.os.univ-lyon1.fr/vcity/impexp:4.3.0
+docker tag postgres:15.2           harbor.pagoda.os.univ-lyon1.fr/vcity/postgres:15.2
 ```
 
 Eventually
@@ -143,6 +144,7 @@ docker push harbor.pagoda.os.univ-lyon1.fr/vcity/py3dtilers:0.1
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/iphttpcheck:0.1
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/refstudycentre:latest
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/3dcitydb-pg:13-3.1-4.1.0
+docker push harbor.pagoda.os.univ-lyon1.fr/vcity/impexp:4.3.0
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/postgres:15.2 
 ```
 
@@ -151,7 +153,6 @@ registry (as you do with a local registry with the `docker images` command) you
 will alas need to use the UI and web-browse
 `https://harbor.pagoda.os.univ-lyon1.fr`. Indeed it 
 [seems docker doesn't allow remote registry image consultation](https://stackoverflow.com/questions/28320134/how-can-i-list-all-tags-for-a-docker-image-on-a-remote-registry).
-
 
 
 ### Define an argo server namespace

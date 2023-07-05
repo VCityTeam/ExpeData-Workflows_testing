@@ -6,7 +6,7 @@
   - [Asserting argo server is ready](#asserting-argo-server-is-ready)
   - [Defining an argo server namespace](#defining-an-argo-server-namespace)
   - [Installing docker on your desktop](#installing-docker-on-your-desktop)
-  - [Build the required containers](#build-the-required-containers)
+  - [Build/Pull the required containers](#buildpull-the-required-containers)
   - [Populate the workflow "library" with workflowTemplates](#populate-the-workflow-library-with-workflowtemplates)
 - [Running the workflows](#running-the-workflows)
   - [Running the workflow stage by stage: single vintage version](#running-the-workflow-stage-by-stage-single-vintage-version)
@@ -57,7 +57,7 @@ You will need both docker-CLI and the docker-daemon. You might consider
 installing [docker-desktop](https://www.docker.com/products/docker-desktop/).
 Then assert that `docker` is functional with e.g. `docker info`.
 
-### Build the required containers
+### Build/Pull the required containers
 
 ```bash
 cd $(git rev-parse --show-cdup)
@@ -69,6 +69,7 @@ docker build --no-cache -f Context/Dockerfile -t vcity/py3dtilers https://github
 docker build -t vcity/iphttpcheck       Docker/IpHttpConnectivityCheck-DockerContext/
 docker pull refstudycentre/scratch-base:latest
 docker pull 3dcitydb/3dcitydb-pg:13-3.1-4.1.0
+docker pull 3dcitydb/impexp:4.3.0
 docker pull postgres:15.2
 ```
 

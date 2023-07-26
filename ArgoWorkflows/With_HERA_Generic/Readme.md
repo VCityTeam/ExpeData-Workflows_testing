@@ -65,14 +65,31 @@ and assert the workflow ran smoothly with argo UI.
 
 ## Running the hera-workflow examples
 
-A few illustrative hera-workflow examples were adapted to the PaGoDa cluster
+A few illustrative hera-workflows examples were adapted to the PaGoDa cluster
 and placed in the 
-[`Tutorial_Examples/`](../Workflows_In_Hera/Tutorial_Examples/) sub-directory
+[`Tutorial_Examples/`](../Workflows_In_Hera/Tutorial_Examples/) sub-directory.
+In order to run some of the hera-workflows examples you will need the associated 
+Hera specific containers that require
+* to be pulled 
+  ([as done for VCity containers](../With_CLI_Generic/Readme.md#buildpull-the-required-containers)) 
+* to be tagged and registered
+  ([as done for VCity containers](../On_PaGoDA_cluster/Readme.md#registering-the-container-images))
+
+This process boils down to the following commands
+```bash
+docker pull argoproj/argosay:v2
+docker tag argoproj/argosay:v2 harbor.pagoda.os.univ-lyon1.fr/vcity/argosay:v2
+docker login harbor.pagoda.os.univ-lyon1.fr/vcity --username <my-username>
+docker push harbor.pagoda.os.univ-lyon1.fr/vcity/argosay:v2
+```
+
+You can now proceed with submitting the hera-workflows examples with:
 
 ```bash
 (venv) cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera
 (venv) python Tutorial_Examples/coin_flip_pagoda.py
 (venv) python Tutorial_Examples/hello_world_pagoda.py
+(venv) python Tutorial_Examples/workflow_template__steps.py
 (venv) ...
 ```
 
@@ -93,13 +110,13 @@ k -n argo exec -it vcity-pvc-ubuntu-pod -- rm -r /vcity-data/junk/
 ```
 
 The next workflow, 
-[`3dcitydb_start_db.py`](../Workflows_In_Hera/CityGMLto3DTiles_Example/3dcitydb_start_db.py),
+[`threedcitydb_start_db.py`](../Workflows_In_Hera/CityGMLto3DTiles_Example/threedcitydb_start_db.py),
 is a test for starting a 3DCityDB database as a service (that is immediately
 halted on success). Refer to the
-[comments heading `3dcitydb_start_db.py`](../Workflows_In_Hera/CityGMLto3DTiles_Example/3dcitydb_start_db.py)
+[comments heading `threedcitydb_start_db.py`](../Workflows_In_Hera/CityGMLto3DTiles_Example/threedcitydb_start_db.py)
 for the available behavioral parameters as well as a few usage caveats
 ```bash
-(venv) python CityGMLto3DTiles_Example/3dcitydb_start_db.py
+(venv) python CityGMLto3DTiles_Example/threedcitydb_start_db.py
 ```
 
 ## Developers

@@ -59,6 +59,8 @@ Then assert that `docker` is functional with e.g. `docker info`.
 
 ### Build/Pull the required containers
 
+Running the VCity related workflow requires to build (or pull) the following 
+containers:
 ```bash
 cd $(git rev-parse --show-cdup)
 # FIXME: document why this specific container is appart from others ?!

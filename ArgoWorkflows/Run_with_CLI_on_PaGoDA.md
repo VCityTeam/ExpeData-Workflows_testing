@@ -1,9 +1,9 @@
 # Running the implemented Argo workflows on the PAGoDA cluster
 
+**Table of content**
 <!-- TOC depthfrom:2 orderedlist:false depthto:4 -->
 
 - [Preparing the execution context](#preparing-the-execution-context)
-  - [Last steps](#last-steps)
 - [Running the workflows](#running-the-workflows)
   - [Running the workflow stage by stage: single vintage version](#running-the-workflow-stage-by-stage-single-vintage-version)
   - [Running the full workflow](#running-the-full-workflow)
@@ -14,7 +14,7 @@
 
 ## Preparing the execution context
 
-Start with the following steps
+Apply the following steps
 - [Prepare the PaGoDA cluster](On_PaGoDA_cluster/Readme.md#cluster-preparation)
 - [Assert that the Argo server is operational](With_CLI_Generic/Readme.md#asserting-argo-server-is-ready)
 - [Install docker on your desktop](With_CLI_Generic/Readme.md#installing-docker-on-your-desktop) (
@@ -22,15 +22,10 @@ Start with the following steps
   you need to do so) 
 - [Build the required container images](With_CLI_Generic/Readme.md#build-the-required-containers)
 - [Push the container images to the (local) registry](On_PaGoDA_cluster/Readme.md#registering-the-container-images)
-
-### Last steps
-Proceed with
-
 - [Defining an argo namespace](With_CLI_Generic/Readme.md#defining-an-argo-server-namespace)
 - [Defining I/O volumes](On_PaGoDA_cluster/Readme.md#volumes-and-context-creation)
 - [Populating the workflow "library" with workflowTemplates](With_CLI_Generic/Readme.md#populate-the-workflow-library-with-workflowtemplates).
 
----
 
 ## Running the workflows
 

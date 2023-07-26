@@ -107,10 +107,10 @@ pushing the container images to a docker registry that is accessible (not
 behind some firewall). A possible solution is to use the docker registry 
 offered by the PAGoDA platform itself.
 
-Once the [local image are build](../With_CLI_Generic/Readme.md#buildpull-the-required-containers))
-you first need to tag the local image you wish to push with the a tag of the 
-form `harbor.pagoda.os.univ-lyon1.fr/vcity/<MYIMAGENAME>:<MYVERSION>`.
-The resulting tagging commands are then
+Once the [local images are build/pulled](../With_CLI_Generic/Readme.md#buildpull-the-required-containers))
+you first need to tag them with a tag of the form 
+`harbor.pagoda.os.univ-lyon1.fr/vcity/<MYIMAGENAME>:<MYVERSION>` prior to
+pushing them to the registry. The resulting tagging commands are
 
 ```bash
 docker tag vcity/collect_lyon_data harbor.pagoda.os.univ-lyon1.fr/vcity/collect_lyon_data:0.1

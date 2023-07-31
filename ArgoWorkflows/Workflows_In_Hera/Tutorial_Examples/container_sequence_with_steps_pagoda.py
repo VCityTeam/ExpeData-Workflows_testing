@@ -10,7 +10,7 @@ cluster = define_cluster()
 ####
 from hera_utils import hera_assert_version
 
-hera_assert_version("5.1.3")
+hera_assert_version("5.6.0")
 
 #########################################################################
 # This is a simplification of

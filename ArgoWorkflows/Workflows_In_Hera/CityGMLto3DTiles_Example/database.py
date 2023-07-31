@@ -6,8 +6,13 @@ from hera.workflows import (
     ExistingVolume,
     models,
     Parameter,
-    RetryStrategy,
+    script,
+    Steps,
+    WorkflowTemplate,
 )
+from hera_utils import hera_assert_version, hera_clear_workflow_template
+
+hera_assert_version("5.6.0")
 
 
 def get_statistical_value_of_initial_delay(db_files_out_of_container: bool):
@@ -75,40 +80,7 @@ def get_statistical_value_of_initial_delay(db_files_out_of_container: bool):
 
 
 def threedcitydb_start_db_container(cluster, parameters):
-    # IMPROVE: promote this derived variable to become a paramters attribute ?
-    results_dir = os.path.join(
-        parameters.persistedVolume,
-        parameters.experiment_output_dir,
-        parameters.database.name,
-    )
-    ### Deal with the variability of requirements concerning db serialization
-    # storage and associated inital delay of availability
-    env = [
-        # Assumes the corresponding config map is defined in the k8s cluster
-        ConfigMapEnvFrom(config_map_name=cluster.configmap, optional=False),
-        # Specific to 3dCityDB container, refer to
-        # https://3dcitydb-docs.readthedocs.io/en/latest/3dcitydb/docker.html#citydb-docker-config-psql
-        Env(name="SRID", value=3946),
-        Env(name="SRSNAME", value="espg:3946"),
-        # Adressed to postgres (that underpins 3DCityDB) at container level
-        # as opposed to libpq environment variables refer to
-        # https://www.postgresql.org/docs/current/libpq-envars.html
-        Env(name="POSTGRES_DB", value=parameters.database.name),
-        Env(name="POSTGRES_PASSWORD", value=parameters.database.password),
-        Env(name="POSTGRES_USER", value=parameters.database.user),
-    ]
-    if parameters.database.keep_database:
-        # As offered by 3dCityDB container, just provide a PGDATA environment
-        # value that points to the ad-hoc directory
-        env.append(
-            Env(name="PGDATA", value=results_dir),
-        )
-
-    initialDelaySeconds = get_statistical_value_of_initial_delay(
-        parameters.database.keep_database
-    )
-
-    ### We can now define the container per se
+    # The simplest possible usage of the 3dcitydb container per se
     new_container = Container(
         name="threedcitydb-start-db",
         daemon=True,  # Run 3dcitydb container as a daemon (i.e. in background)
@@ -116,25 +88,77 @@ def threedcitydb_start_db_container(cluster, parameters):
         # retry_strategy=RetryStrategy(limit=2),
         image=cluster.docker_registry + "vcity/3dcitydb-pg:13-3.1-4.1.0",
         image_pull_policy=models.ImagePullPolicy.always,
-        env=env,
-        volumes=[
+        env=[
+            # Assumes the corresponding config map is defined in the k8s cluster
+            ConfigMapEnvFrom(
+                config_map_name=cluster.configmap, optional=False
+            ),
+            # Specific to 3dCityDB container, refer to
+            # https://3dcitydb-docs.readthedocs.io/en/latest/3dcitydb/docker.html#citydb-docker-config-psql
+            Env(name="SRID", value=3946),
+            Env(name="SRSNAME", value="espg:3946"),
+            # Adressed to postgres (that underpins 3DCityDB) at container level
+            # as opposed to libpq environment variables refer to
+            # https://www.postgresql.org/docs/current/libpq-envars.html
+            Env(name="POSTGRES_DB", value=parameters.database.name),
+            Env(name="POSTGRES_PASSWORD", value=parameters.database.password),
+            Env(name="POSTGRES_USER", value=parameters.database.user),
+        ],
+        # FIXME command=["docker-entrypoint.sh"],
+        # FIXME args=["postgres", "-p", "5432"],
+    )
+
+    if parameters.database.keep_database:
+        # IMPROVE: promote this derived variable to become a paramters attribute ?
+        results_dir = os.path.join(
+            parameters.persistedVolume,
+            parameters.experiment_output_dir,
+            parameters.database.name,
+        )
+        # As offered by 3dCityDB container, just provide a PGDATA environment
+        # value that points to the ad-hoc directory
+        new_container.env.append(
+            Env(name="PGDATA", value=results_dir),
+        )
+        new_container.volumes = [
             ExistingVolume(
                 claim_name=cluster.volume_claim,
                 # Providing a name is mandatory but how is it relevant/used ?
                 name="dummy-name",
                 mount_path=parameters.persistedVolume,
             )
-        ],
+        ]
+
+    if use_readiness_probe := True:
+        readiness_probe = models.Probe(
+            exec=models.ExecAction(
+                command=[
+                    "/bin/sh",
+                    "-c",
+                    "exec pg_isready -U postgres -h 127.0.0.1 -p 5432",
+                ]
+            )
+        )
+        new_container.readiness_probe = readiness_probe
+
+    use_startup_probe = True
+    if use_startup_probe:
+        # The inital delay of availability depends on the mode db serialization
+        # storage and associated
+
+        initialDelaySeconds = get_statistical_value_of_initial_delay(
+            parameters.database.keep_database
+        )
+
         # CAVEAT EMPTOR:
         # With Hera v5.1.3 you must use `startup_probe` as opposed to the
         # aliased (refer to v1.py) `startupProbe` that does not seem to work:
         # running the workflow will NOT display any error message, but the
-        # `readinessProbe` entry is simply droppped (won't appear in the
-        # manifest).
+        # `startupProbe` entry is simply droppped (won't appear in the manifest).
         # Ditto with `readiness_probe` vs `readinessProbe`.
         # Note: documentation reference
         # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes
-        startup_probe=models.Probe(
+        startup_probe = models.Probe(
             exec=models.ExecAction(
                 command=[
                     "/usr/lib/postgresql/13/bin/psql",
@@ -165,8 +189,9 @@ def threedcitydb_start_db_container(cluster, parameters):
             periodSeconds=30,
             # Number of seconds after which the probe times out.
             timeoutSeconds=10,
-        ),
-    )
+        )
+        new_container.startup_probe = startup_probe
+
     return new_container
 
 
@@ -276,3 +301,59 @@ def import_citygml_file_to_db_container(cluster, parameters, input_filename):
         ],
     )
     return container
+
+
+@script()
+def check_is_valid_ip(ip_addr: str):
+    """
+    Check whether the input string is a valid ip number i.e. that the
+    string is of the form X.Y.Z.T where X, Y, Z, T are intergers ranging in
+    [1:256]
+    """
+    import socket
+
+    try:
+        socket.inet_aton(ip_addr)
+        print("IP number is ", ip_addr)
+    except socket.error:
+        print(ip_addr, "is not a valid IP number.")
+        raise Exception("failure")
+
+
+def define_checkdb_template(cluster, parameters):
+    with WorkflowTemplate(
+        name="workflow-startdb",
+        entrypoint="checkdb-template",
+    ) as w:
+        db_isready_c = db_isready_container(
+            cluster, parameters, "shellprobing"
+        )
+        db_probe_c = db_probe_catalog_container(
+            cluster, parameters, "catalogprobing"
+        )
+        with Steps(
+            name="checkdb-template", inputs=[Parameter(name="dbhostaddr")]
+        ):
+            check_is_valid_ip(
+                arguments={"ip_addr": "{{inputs.parameters.dbhostaddr}}"}
+            )
+            db_isready_c(
+                name="shellprobing",
+                arguments=[
+                    Parameter(
+                        name="hostaddr",
+                        value="{{inputs.parameters.dbhostaddr}}",
+                    )
+                ],
+            )
+            db_probe_c(
+                name="catalogprobing",
+                arguments=[
+                    Parameter(
+                        name="hostaddr",
+                        value="{{inputs.parameters.dbhostaddr}}",
+                    )
+                ],
+            )
+    hera_clear_workflow_template(cluster, "workflow-startdb")
+    w.create()

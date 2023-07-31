@@ -1,6 +1,6 @@
 from hera_utils import hera_check_version, hera_assert_version
 
-if hera_check_version("5.1.3"):
+if hera_check_version("5.6.0") or hera_check_version("5.1.3"):
     from hera.shared._global_config import GlobalConfig
 elif hera_check_version("4.4.1"):
     from hera.global_config import GlobalConfig

@@ -2,6 +2,6 @@ __pycache__
 .env
 pagoda_kubeconfig.yaml
 hera/
-hera-513/
+hera-*/
 venv
-venv-513/
+venv-*/

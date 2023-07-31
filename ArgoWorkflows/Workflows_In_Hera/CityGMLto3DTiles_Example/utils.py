@@ -10,9 +10,9 @@ from hera.workflows import (
 whalesay_container = Container(
     name="whalesay",
     image="docker/whalesay:latest",
+    inputs=Parameter(name="message"),
     command=["cowsay"],
-    args=["{{inputs.parameters.a}}"],
-    inputs=Parameter(name="a"),
+    args=["{{inputs.parameters.message}}"],
 )
 
 

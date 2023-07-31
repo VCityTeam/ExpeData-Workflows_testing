@@ -10,8 +10,7 @@ define_cluster()
 ####
 from hera_utils import hera_assert_version
 
-hera_assert_version("5.1.3")
-from hera.shared._global_config import GlobalConfig
+hera_assert_version("5.6.0")
 
 ####
 from hera.workflows import Container, Workflow

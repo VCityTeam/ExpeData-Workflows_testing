@@ -10,7 +10,7 @@ cluster = define_cluster()
 ####
 from hera_utils import hera_assert_version
 
-hera_assert_version("5.1.3")
+hera_assert_version("5.6.0")
 
 #########################################################################
 from hera.workflows import (
@@ -52,7 +52,6 @@ with Workflow(generate_name="retrieve-pod-ip-", entrypoint="d") as w:
                 ]
             )
         ),
-        # + {{inputs.parameters.port}}
     )
     in_ = Container(
         name="in",

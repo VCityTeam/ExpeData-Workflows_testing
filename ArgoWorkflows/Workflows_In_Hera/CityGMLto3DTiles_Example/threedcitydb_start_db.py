@@ -18,21 +18,17 @@ sys.path.append(
     os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
 )
 
-from hera.workflows import (
-    models,
-    Parameter,
-    script,
-    Step,
-    Steps,
-    Task,
-    WorkflowTemplate,
-)
 from hera_utils import hera_assert_version
-from database import threedcitydb_start_db_container, define_checkdb_template
-from utils import whalesay_container
 
 hera_assert_version("5.6.0")
 
+from database import threedcitydb_start_db_container, define_checkdb_template
+
+from hera.workflows import (
+    DAG,
+    models,
+    Task,
+)
 
 if __name__ == "__main__":
     from pagoda_cluster_definition import define_cluster

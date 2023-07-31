@@ -11,7 +11,6 @@ from hera.workflows import (
     WorkflowTemplate,
 )
 from hera_utils import hera_assert_version, hera_clear_workflow_template
-
 hera_assert_version("5.6.0")
 
 

@@ -2,15 +2,18 @@ import os
 from hera.workflows import (
     ConfigMapEnvFrom,
     Container,
+    DAG,
     Env,
     ExistingVolume,
     models,
     Parameter,
     script,
-    Steps,
+    Task,
     WorkflowTemplate,
 )
+from hera.expr import g as expr
 from hera_utils import hera_assert_version, hera_clear_workflow_template
+
 hera_assert_version("5.6.0")
 
 
@@ -319,40 +322,53 @@ def check_is_valid_ip(ip_addr: str):
         raise Exception("failure")
 
 
-def define_checkdb_template(cluster, parameters):
+def define_db_start_template(cluster, parameters):
     with WorkflowTemplate(
         name="workflow-startdb",
-        entrypoint="checkdb-template",
+        entrypoint="db-start-template",
     ) as w:
+        threedcitydb_start_db_c = threedcitydb_start_db_container(
+            cluster, parameters
+        )
         db_isready_c = db_isready_container(
             cluster, parameters, "shellprobing"
         )
         db_probe_c = db_probe_catalog_container(
             cluster, parameters, "catalogprobing"
         )
-        with Steps(
-            name="checkdb-template", inputs=[Parameter(name="dbhostaddr")]
-        ):
-            check_is_valid_ip(
-                arguments={"ip_addr": "{{inputs.parameters.dbhostaddr}}"}
+        with DAG(name="db-start-template") as main_dag:
+            t1 = Task(name="start-db-daemon", template=threedcitydb_start_db_c)
+            t2: Task = check_is_valid_ip(
+                name="check-db-ip-is-valid",
+                arguments=[Parameter(name="ip_addr", value=t1.ip)],
             )
-            db_isready_c(
-                name="shellprobing",
+            t3 = Task(
+                name="db-shell-probing",
+                template=db_isready_c,
                 arguments=[
                     Parameter(
                         name="hostaddr",
-                        value="{{inputs.parameters.dbhostaddr}}",
+                        value=t1.ip,
                     )
                 ],
             )
-            db_probe_c(
-                name="catalogprobing",
+            t4 = Task(
+                name="db-catalog-probing",
+                template=db_probe_c,
                 arguments=[
                     Parameter(
                         name="hostaddr",
-                        value="{{inputs.parameters.dbhostaddr}}",
+                        value=t1.ip,
                     )
                 ],
             )
+            t1 >> t2 >> t3 >> t4
+            # Template output(s) forwarding:
+            expression = expr.tasks["start-db-daemon"].ip
+            main_dag.outputs = [
+                Parameter(
+                    name="dbip", value_from={"expression": str(expression)}
+                )
+            ]
     hera_clear_workflow_template(cluster, "workflow-startdb")
     w.create()

@@ -52,6 +52,9 @@ def define_cluster():
     return cluster
 
 
+cluster = define_cluster()
+
+
 if __name__ == "__main__":
     import json
     from hera_utils import hera_print_version
@@ -61,7 +64,7 @@ if __name__ == "__main__":
     print("CLI arguments/environment variables:")
     print(json.dumps(parse_arguments().__dict__, indent=4))
 
-    cluster = define_cluster()
+    # The following implictly assumes that cluster = define_cluster() is defined
     print("Derived cluster variables:")
     print("  - Hera global variables: ")
     print("    host = ", GlobalConfig.host)

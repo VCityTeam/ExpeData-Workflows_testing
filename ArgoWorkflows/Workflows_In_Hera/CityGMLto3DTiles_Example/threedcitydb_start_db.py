@@ -11,7 +11,6 @@
 #     python  CityGMLto3DTiles_Example/threedcitydb_start_db.py
 # Refer to "Accessing results" chapter of the On_PaGoDA_cluster/Readme.md file
 # for further details about result exploration.
-
 import sys, os
 
 sys.path.append(
@@ -22,36 +21,30 @@ from hera_utils import hera_assert_version
 
 hera_assert_version("5.6.0")
 
-from database import threedcitydb_start_db_container, define_checkdb_template
-
-from hera.workflows import (
-    DAG,
-    models,
-    Task,
-)
-
+#################### Cluster independent code
 if __name__ == "__main__":
-    from pagoda_cluster_definition import define_cluster
+    from pagoda_cluster_definition import cluster
     from input_2012_tiny_import_dump import parameters
-    from hera.workflows import DAG, Workflow
+    from database import define_db_start_template, check_is_valid_ip
+    from hera.workflows import DAG, models, Parameter, Task, Workflow
 
-    cluster = define_cluster()
-    define_checkdb_template(cluster, parameters)
+    define_db_start_template(cluster, parameters)
     with Workflow(generate_name="threedcitydb-start-", entrypoint="main") as w:
-        threedcitydb_start_db_c = threedcitydb_start_db_container(
-            cluster, parameters
-        )
         with DAG(name="main") as s:
             threedcitydb_start_t = Task(
-                name="startthreedcitydb", template=threedcitydb_start_db_c
-            )
-            checkdb_t = Task(
-                name="checkdb",
+                name="threed-city-db-start",
                 template_ref=models.TemplateRef(
                     name="workflow-startdb",
-                    template="checkdb-template",
+                    template="db-start-template",
                 ),
-                arguments={"dbhostaddr": threedcitydb_start_t.ip},
             )
-            threedcitydb_start_t >> checkdb_t
+            print_ip_t = check_is_valid_ip(
+                name="db-check-ip-validity",
+                arguments=Parameter(
+                    name="ip_addr",
+                    value="{{tasks.threed-city-db-start.outputs.parameters.dbip}}",
+                ),
+            )
+            threedcitydb_start_t >> print_ip_t
+
     w.create()

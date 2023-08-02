@@ -19,7 +19,9 @@ whalesay_container = Container(
 ### Refer to
 # https://github.com/argoproj-labs/hera/blob/5.1.3/examples/workflows/dag-with-script-output-param-passing.py
 @script(
-    outputs=[Parameter(name="a", value_from=models.ValueFrom(path="/test"))]
+    outputs=[
+        Parameter(name="message", value_from=models.ValueFrom(path="/test"))
+    ]
 )
 def convert_message_to_output_parameter(message):
     with open("/test", "w") as f_out:

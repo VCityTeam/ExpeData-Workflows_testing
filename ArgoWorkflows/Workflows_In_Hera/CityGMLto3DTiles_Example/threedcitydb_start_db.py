@@ -25,26 +25,37 @@ hera_assert_version("5.6.0")
 if __name__ == "__main__":
     from pagoda_cluster_definition import cluster
     from input_2012_tiny_import_dump import parameters
-    from database import define_db_start_template, check_is_valid_ip
+    from database import (
+        define_db_check_template,
+        check_is_valid_ip,
+        threedcitydb_start_db_container,
+    )
     from hera.workflows import DAG, models, Parameter, Task, Workflow
 
-    define_db_start_template(cluster, parameters)
+    define_db_check_template(cluster, parameters)
     with Workflow(generate_name="threedcitydb-start-", entrypoint="main") as w:
+        threedcitydb_start_db_c = threedcitydb_start_db_container(
+            cluster, parameters
+        )
         with DAG(name="main") as s:
-            threedcitydb_start_t = Task(
-                name="threed-city-db-start",
+            start_db_t = Task(
+                name="start-db-daemon", template=threedcitydb_start_db_c
+            )
+            threed_city_db_check_t = Task(
+                name="threed-city-db-check",
                 template_ref=models.TemplateRef(
-                    name="workflow-startdb",
-                    template="db-start-template",
+                    name="workflow-checkdb",
+                    template="db-check-template",
                 ),
+                arguments={"dbhostaddr": start_db_t.ip},
             )
             print_ip_t = check_is_valid_ip(
                 name="db-check-ip-validity",
                 arguments=Parameter(
                     name="ip_addr",
-                    value="{{tasks.threed-city-db-start.outputs.parameters.dbip}}",
+                    value="{{tasks.threed-city-db-check.outputs.parameters.dbip}}",
                 ),
             )
-            threedcitydb_start_t >> print_ip_t
+            start_db_t >> threed_city_db_check_t >> print_ip_t
 
     w.create()

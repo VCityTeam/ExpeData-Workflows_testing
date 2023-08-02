@@ -1,3 +1,7 @@
+from hera_utils import hera_assert_version, hera_clear_workflow_template
+
+hera_assert_version("5.6.0")
+
 import os
 from hera.workflows import (
     ConfigMapEnvFrom,
@@ -12,9 +16,7 @@ from hera.workflows import (
     WorkflowTemplate,
 )
 from hera.expr import g as expr
-from hera_utils import hera_assert_version, hera_clear_workflow_template
-
-hera_assert_version("5.6.0")
+from utils import convert_message_to_output_parameter
 
 
 def get_statistical_value_of_initial_delay(db_files_out_of_container: bool):
@@ -278,7 +280,7 @@ def import_citygml_file_to_db_container(cluster, parameters, input_filename):
         name="threedcitydb-importer",
         image=cluster.docker_registry + "vcity/impexp:4.3.0",
         image_pull_policy=models.ImagePullPolicy.always,
-        inputs=Parameter(name="hostaddr"),
+        inputs=[Parameter(name="hostaddr"), Parameter(name="filenames")],
         volumes=[
             ExistingVolume(
                 claim_name=cluster.volume_claim,
@@ -298,7 +300,9 @@ def import_citygml_file_to_db_container(cluster, parameters, input_filename):
             parameters.database.user,
             "-p",
             parameters.database.password,
-            os.path.join(parameters.persistedVolume, input_filename)
+            os.path.join(
+                parameters.persistedVolume, "{{inputs.parameters.filenames}}"
+            )
             # "-P", "{{inputs.parameters.port}}",
         ],
     )
@@ -315,60 +319,83 @@ def check_is_valid_ip(ip_addr: str):
     import socket
 
     try:
+        print("Checking ", ip_addr, " as presumed IP number.")
         socket.inet_aton(ip_addr)
-        print("IP number is ", ip_addr)
+        print(ip_addr, " is a well formed string to stand as IP number.")
     except socket.error:
-        print(ip_addr, "is not a valid IP number.")
+        print(ip_addr, " was NOT well formed string to stand as IP number.")
         raise Exception("failure")
 
 
-def define_db_start_template(cluster, parameters):
+def define_db_check_template(cluster, parameters):
+    # Notice: we cannot integrate the starting of the database within this
+    # workflow because as stated in the ArgoWorkflows documentation (refer to
+    # https://argoproj.github.io/argo-workflows/walk-through/daemon-containers/)
+    #   the daemons will be automatically destroyed when the workflow exits
+    #   the template scope in which the daemon was invoked.
     with WorkflowTemplate(
-        name="workflow-startdb",
-        entrypoint="db-start-template",
+        name="workflow-checkdb",
+        entrypoint="db-check-template",
     ) as w:
-        threedcitydb_start_db_c = threedcitydb_start_db_container(
-            cluster, parameters
-        )
         db_isready_c = db_isready_container(
             cluster, parameters, "shellprobing"
         )
         db_probe_c = db_probe_catalog_container(
             cluster, parameters, "catalogprobing"
         )
-        with DAG(name="db-start-template") as main_dag:
-            t1 = Task(name="start-db-daemon", template=threedcitydb_start_db_c)
-            t2: Task = check_is_valid_ip(
+        with DAG(
+            name="db-check-template", inputs=[Parameter(name="dbhostaddr")]
+        ) as main_dag:
+            # When the database fails to start properly, sometimes the ip number
+            # returned by the AW engine is the original/uninterpreted expression
+            # of the form "{{tasks.<TASKNAME>.ip}}" as opposed to a valid ip
+            # number. We thus first check that the AW engine did its job.
+            t1: Task = check_is_valid_ip(
                 name="check-db-ip-is-valid",
-                arguments=[Parameter(name="ip_addr", value=t1.ip)],
+                arguments={"ip_addr": "{{inputs.parameters.dbhostaddr}}"},
             )
-            t3 = Task(
+            t2 = Task(
                 name="db-shell-probing",
                 template=db_isready_c,
                 arguments=[
                     Parameter(
                         name="hostaddr",
-                        value=t1.ip,
+                        value="{{inputs.parameters.dbhostaddr}}",
                     )
                 ],
             )
-            t4 = Task(
+            t3 = Task(
                 name="db-catalog-probing",
                 template=db_probe_c,
                 arguments=[
                     Parameter(
                         name="hostaddr",
-                        value=t1.ip,
+                        value="{{inputs.parameters.dbhostaddr}}",
                     )
                 ],
             )
+            # At this stage we can consider the db ip is valid (because behind
+            # that IP the DB was proprely initialized/loaded and answering
+            # requests). We thus repeat it to the output (although it was
+            # handled over as input) in order for the caller to have the
+            # notational convenience to hook his workflow downstream from this
+            # check as opposed to directly downstream from the db starting
+            # (which could be corrupted/ill-initialized/brain-damaged)
+            t4: Task = convert_message_to_output_parameter(
+                name="repeat-validated-ip",
+                arguments=Parameter(
+                    name="message", value="{{inputs.parameters.dbhostaddr}}"
+                ),
+            )
             t1 >> t2 >> t3 >> t4
             # Template output(s) forwarding:
-            expression = expr.tasks["start-db-daemon"].ip
+            expression = expr.tasks[
+                "repeat-validated-ip"
+            ].outputs.parameters.message
             main_dag.outputs = [
                 Parameter(
                     name="dbip", value_from={"expression": str(expression)}
                 )
             ]
-    hera_clear_workflow_template(cluster, "workflow-startdb")
+    hera_clear_workflow_template(cluster, "workflow-checkdb")
     w.create()

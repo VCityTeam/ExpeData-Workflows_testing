@@ -35,5 +35,5 @@ def hera_clear_workflow_template(cluster, workflow_template_name):
         if workflow_template.metadata.name == workflow_template_name:
             # A workflow_template (with the same name) is already registered and
             # it must thus be flushed
-            print("Deleting Workflow Template ", workflow_template_name)
+            print("Deleting", workflow_template_name, "WorkflowTemplate.")
             service.delete_workflow_template(workflow_template_name)

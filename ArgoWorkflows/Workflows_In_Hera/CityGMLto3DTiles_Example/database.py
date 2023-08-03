@@ -275,7 +275,7 @@ def db_probe_catalog_container(cluster, parameters, name):
     )
 
 
-def import_citygml_file_to_db_container(cluster, parameters, input_filename):
+def import_citygml_file_to_db_container(cluster, parameters):
     container = Container(
         name="threedcitydb-importer",
         image=cluster.docker_registry + "vcity/impexp:4.3.0",

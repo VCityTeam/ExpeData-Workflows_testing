@@ -8,7 +8,7 @@
 # (concerning the vcity-pvc-ubuntu-pod pod refer to the "Accessing results"
 # chapter of the On_PaGoDA_cluster/Readme.md file).
 # Running this pipeline is now done with
-#     python  CityGMLto3DTiles_Example/threedcitydb_start_db.py
+#     python  CityGMLto3DTiles_Example/test_threedcitydb_start_db.py
 # Refer to "Accessing results" chapter of the On_PaGoDA_cluster/Readme.md file
 # for further details about result exploration.
 import sys, os

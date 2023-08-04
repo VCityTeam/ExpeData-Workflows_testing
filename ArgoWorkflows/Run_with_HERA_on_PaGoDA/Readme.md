@@ -1,11 +1,14 @@
 # Running Hera on PaGoDA
 
+**TOC**
 <!-- TOC -->
 
 - [Preparing the execution context](#preparing-the-execution-context)
   - [Retrieve your cluster credentials at k8s level](#retrieve-your-cluster-credentials-at-k8s-level)
   - [Further installation steps](#further-installation-steps)
-- [Running the workflows](#running-the-workflows)
+- [Run the workflows](#run-the-workflows)
+  - [Accessing the workflow results](#accessing-the-workflow-results)
+- [Developers](#developers)
 
 <!-- /TOC -->
 
@@ -73,16 +76,8 @@ Then you "import" that file into your current shell by
 in checking for the existence of the ad-hoc `configmap` 
 - [Install HERA](../With_HERA_Generic/Readme.md#install-hera-and-its-dependencies)
 
----
+## [Run the workflows](../With_HERA_Generic/Readme.md#running-workflows)
 
-## Running the workflows
+### [Accessing the workflow results](On_PaGoDA_cluster/Readme.md#accessing-results)
 
-```bash
-cd Run_with_HERA_on_PaGoDA
-```
-
-- [Run the "Hello Hera on PaGoDa" workflow](../With_HERA_Generic/Readme.md#running-the-hello-hera-on-pagoda-workflow)
-
-- [Run the hera-workflow examples](../With_HERA_Generic/Readme.md#running-the-hera-workflow-examples)
-
-- [Run the CityGMLto3DTiles example](../With_HERA_Generic/Readme.md#running-the-citygmlto3dtiles-example)
+## [Developers](../With_HERA_Generic/Readme.md#developers)

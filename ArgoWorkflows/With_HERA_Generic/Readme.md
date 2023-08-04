@@ -1,13 +1,15 @@
 # Hera framework cluster neutral instructions 
 
+**TOC**
 <!-- TOC -->
 
 - [Introduction](#introduction)
 - [References](#references)
 - [Install Hera and its dependencies](#install-hera-and-its-dependencies)
-- [Running the "Hello Hera on PaGoDa" workflow](#running-the-hello-hera-on-pagoda-workflow)
-- [Running the hera-workflow examples](#running-the-hera-workflow-examples)
-- [Running the CityGMLto3DTiles example](#running-the-citygmlto3dtiles-example)
+- [Running workflows](#running-workflows)
+  - [Running the "Hello Hera on PaGoDa" workflow](#running-the-hello-hera-on-pagoda-workflow)
+  - [Running the hera-workflow examples](#running-the-hera-workflow-examples)
+  - [Running the CityGMLto3DTiles example](#running-the-citygmlto3dtiles-example)
 - [Developers](#developers)
   - [Running the failing or issues](#running-the-failing-or-issues)
   - [IDE notes](#ide-notes)
@@ -35,7 +37,9 @@ source venv/bin/activate
 (venv) pip3 install -r requirements.txt  # Installs hera-workflows among others
 ```
 
-## Running the "Hello Hera on PaGoDa" workflow
+## Running workflows
+
+### Running the "Hello Hera on PaGoDa" workflow
 
 First assert that the k8s cluster is available, accessible (access rights) and
 that the Argo-workflows server is ready for workflow submission  
@@ -63,7 +67,7 @@ Eventually run the "Hello" workflow
 
 and assert the workflow ran smoothly with argo UI.
 
-## Running the hera-workflow examples
+### Running the hera-workflow examples
 
 A few illustrative hera-workflows examples were adapted to the PaGoDa cluster
 and placed in the 
@@ -93,7 +97,7 @@ You can now proceed with submitting the hera-workflows examples with:
 (venv) ...
 ```
 
-## Running the CityGMLto3DTiles example
+### Running the CityGMLto3DTiles example
 As
 [stated in the accessing results](../On_PaGoDA_cluster/Readme.md#accessing-results)
 the permanent volume holding the resulting files is accessible through a
@@ -110,13 +114,13 @@ k -n argo exec -it vcity-pvc-ubuntu-pod -- rm -r /vcity-data/junk/
 ```
 
 The next workflow, 
-[`threedcitydb_start_db.py`](../Workflows_In_Hera/CityGMLto3DTiles_Example/threedcitydb_start_db.py),
+[`test_threedcitydb_start_db.py`](../Workflows_In_Hera/CityGMLto3DTiles_Example/test_threedcitydb_start_db.py),
 is a test for starting a 3DCityDB database as a service (that is immediately
 halted on success). Refer to the
-[comments heading `threedcitydb_start_db.py`](../Workflows_In_Hera/CityGMLto3DTiles_Example/threedcitydb_start_db.py)
+[comments heading `test_threedcitydb_start_db.py`](../Workflows_In_Hera/CityGMLto3DTiles_Example/test_threedcitydb_start_db.py)
 for the available behavioral parameters as well as a few usage caveats
 ```bash
-(venv) python CityGMLto3DTiles_Example/threedcitydb_start_db.py
+(venv) python CityGMLto3DTiles_Example/test_threedcitydb_start_db.py
 ```
 
 ## Developers

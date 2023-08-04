@@ -102,7 +102,5 @@ and their boroughs (inside loop).
 argo submit --watch --log just-prepare-vintages-boroughs.yml --parameter-file input-loop-in-loop-tiny.yaml -p ${KUBE_DOCKER_REGISTRY}
 ```
 
-## Accessing the results
-
-Refer to [PaGoDA specific instructions](On_PaGoDA_cluster/Readme.md#accessing-results)
+## [Accessing the results](On_PaGoDA_cluster/Readme.md#accessing-results)
 

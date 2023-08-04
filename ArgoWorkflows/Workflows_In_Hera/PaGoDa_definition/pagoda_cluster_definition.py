@@ -7,6 +7,8 @@ elif hera_check_version("4.4.1"):
 else:
     hera_assert_version("X.X.X")  # Will fail
 
+from hera.workflows import ExistingVolume
+
 import types
 from parse_arguments import parse_arguments
 from retrieve_access_token import retrieve_access_token
@@ -52,7 +54,22 @@ def define_cluster():
     return cluster
 
 
+# FIXME: temporarily left here for backwards compatibility matters since the
+# introduciton of the environment (refer below) notion.
 cluster = define_cluster()
+
+# Trial to be coherent with lexicon notions
+# https://gitlab.liris.cnrs.fr/expedata/expe-data-project/-/blob/master/lexicon.md
+environment = types.SimpleNamespace(
+    cluster=cluster,
+    persisted_volume_mount_path="/within-container-mount-point",
+    persisted_volume=ExistingVolume(
+        claim_name=cluster.volume_claim,
+        # Providing a name is mandatory but how is it relevant/usefull ?
+        name="dummy-name",
+        mount_path="/within-container-mount-point",  # Not DRY !
+    ),
+)
 
 
 if __name__ == "__main__":

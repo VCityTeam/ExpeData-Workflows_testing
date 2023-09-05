@@ -1,3 +1,6 @@
+# Caveat emptor
+# This is an oudated file (Hera version 4.4.1) that is just kept here on
+# historival purposes. Trying to fix this file would be pointless...
 import sys, os
 
 sys.path.append(

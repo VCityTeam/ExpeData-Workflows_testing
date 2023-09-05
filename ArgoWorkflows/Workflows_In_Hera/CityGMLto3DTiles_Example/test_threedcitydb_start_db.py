@@ -21,9 +21,9 @@ from hera_utils import hera_assert_version
 
 hera_assert_version("5.6.0")
 
-#################### Cluster independent code
+#################### Cluster independent code (well almost)
 if __name__ == "__main__":
-    from pagoda_cluster_definition import cluster
+    from pagoda_environment_definition import environment
     from input_2012_tiny_import_dump import parameters
     from database import (
         define_db_check_template,
@@ -32,10 +32,10 @@ if __name__ == "__main__":
     )
     from hera.workflows import DAG, models, Parameter, Task, Workflow
 
-    define_db_check_template(cluster, parameters)
+    define_db_check_template(environment, parameters)
     with Workflow(generate_name="threedcitydb-start-", entrypoint="main") as w:
         threedcitydb_start_db_c = threedcitydb_start_db_container(
-            cluster, parameters
+            environment, parameters
         )
         with DAG(name="main") as s:
             start_db_t = Task(

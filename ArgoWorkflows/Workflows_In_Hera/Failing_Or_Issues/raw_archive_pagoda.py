@@ -3,32 +3,46 @@ import sys, os
 sys.path.append(
     os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
 )
-from pagoda_cluster_definition import define_cluster
+from pagoda_environment_definition import environment
 
-cluster = define_cluster()
 
 #################################################################
 # The following trial of returning a string through a RawArtifact
-# will error with "You need to configure artifact storage".
-# But the configuration of artifact storage is far from trivial. And the
-# documentation page
+# dates back to version 4.1.1. The following is an adaptation trial
+# to Hera version 4.6.0. that will fail at submission stage (there is
+# something wrong with writing "consume(t1.get_artifact("msg"))").
+# Besides the configuration of artifact storage is far from trivial. And
+# the documentation page
 # https://argoproj.github.io/argo-workflows/configure-artifact-repository/
 # doesn't illustrate how to use RawFactory  :-(
 #################################################################
 
-from hera import ConfigMapEnvFrom, ExistingVolume, RawArtifact, Task, Workflow
+from hera.workflows import (
+    ConfigMapEnvFrom,
+    Container,
+    DAG,
+    ExistingVolume,
+    RawArtifact,
+    script,
+    Task,
+    Workflow,
+)
 
 
+@script()
 def consume(msg: str):
     print(f"Message was: {msg}")
 
 
-with Workflow("rawartifact-", generate_name=True) as w:
-    t1 = Task(
-        "cowsayprint",
+with Workflow(generate_name="rawartifact-") as w:
+    cowsayprint = Container(
+        name="cowsayprint",
         image="docker/whalesay",
         env=[
-            ConfigMapEnvFrom(config_map_name=cluster.configmap, optional=False)
+            ConfigMapEnvFrom(
+                config_map_name=environment.cluster.configmap,
+                optional=False,
+            )
         ],
         command=[
             "cowsay",
@@ -36,13 +50,22 @@ with Workflow("rawartifact-", generate_name=True) as w:
         ],
         volumes=[
             ExistingVolume(
-                name=cluster.volume_claim,
-                mount_path="/persistedVolume",
+                name="dummy",
+                claim_name=environment.persisted_volume.claim_name,
+                mount_path=environment.persisted_volume.mount_path,
             )
         ],
-        outputs=[RawArtifact("msg", path="/persistedVolume", data="ball")],
+        outputs=[
+            RawArtifact(
+                name="msg",
+                path=environment.persisted_volume.mount_path,
+                data="ball",
+            )
+        ],
     )
-    t2 = Task("c", consume, inputs=[t1.get_artifact("msg")])
-    t1 >> t2
+    with DAG(name="main"):
+        t1 = Task(name="cowsayprint", template=cowsayprint)
+        t2 = consume(t1.get_artifact("msg"))
+        t1 >> t2
 
 w.create()

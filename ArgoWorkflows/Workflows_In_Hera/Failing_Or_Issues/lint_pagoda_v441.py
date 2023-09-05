@@ -1,3 +1,7 @@
+# Caveat emptor
+# This is an oudated file (version 4.4.1) that is just kept here on
+# historival purposes. Trying to fix this file would be pointless...
+
 import sys, os
 
 sys.path.append(
@@ -8,7 +12,10 @@ from pagoda_cluster_definition import define_cluster
 define_cluster()
 
 ####################################################################
-# The following script will fail although it is part of the examples
+# The following script (Hera version 4.1.1) will fail although it was
+# part of the examples refer to
+# https://github.com/argoproj-labs/hera/blob/4.4.1/examples/lint.py
+#   
 # Submitted for discussion to hera
 # https://github.com/argoproj-labs/hera/discussions/571
 ####################################################################

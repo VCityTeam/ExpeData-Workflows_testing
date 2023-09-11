@@ -1,4 +1,4 @@
-# Running the implemented Argo workflows on the PAGoDA cluster
+# Running from CLI the implemented Argo workflows on the PAGoDA cluster
 
 **Table of content**
 <!-- TOC depthfrom:2 orderedlist:false depthto:4 -->
@@ -20,7 +20,7 @@ Apply the following steps
 - [Install docker on your desktop](With_CLI_Generic/Readme.md#installing-docker-on-your-desktop) (
   [Here is why](On_PaGoDA_cluster/Readme.md#install-docker-on-your-desktop) 
   you need to do so) 
-- [Build the required container images](With_CLI_Generic/Readme.md#build-the-required-containers)
+- [Build the required container images](With_CLI_Generic/Readme.md#buildpull-the-required-containers)
 - [Push the container images to the (local) registry](On_PaGoDA_cluster/Readme.md#registering-the-container-images)
 - [Defining an argo namespace](With_CLI_Generic/Readme.md#defining-an-argo-server-namespace)
 - [Defining I/O volumes](On_PaGoDA_cluster/Readme.md#volumes-and-context-creation)
@@ -43,14 +43,16 @@ be passed through a `Configmap` (and why this cannot be).
 
 Make sure (refer above) that
 
-- [container images are properly build](With_CLI_Generic/Readme.md#build-the-required-containers)
+- [container images are properly build](With_CLI_Generic/Readme.md#buildpull-the-required-containers)
   (this stage [requires docker](On_PaGoDA_cluster/Readme.md#install-docker-on-your-desktop))
 - [container images were pushed to the registry](On_PaGoDA_cluster/Readme.md#registering-the-container-images),
 - [workflow templates are populated](With_CLI_Generic/Readme.md#populate-the-workflow-library-with-workflowtemplates),
 - no preceding running traces will conflict with this new submission by running
+  (refer to the [accessing results chapter](./On_PaGoDA_cluster/Readme.md#accessing-results) for further details)
   
   ```bash
-  \rm -fr junk     # Leading backslash is for inhibiting a possible alias
+  k -n argo apply -f define_zombie_pod_for_PV_navigation_with_bash.yaml
+  \rm -fr /vcity-data/junk     # Leading backslash is for inhibiting a possible shell alias
   ```
 
   or alternatively modify the `experiment_output_dir` entries of the parameter

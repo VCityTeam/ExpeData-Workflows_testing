@@ -1,24 +1,31 @@
-import os
+import os, sys
+
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
+)
+from hera_utils import hera_assert_version
+
+hera_assert_version("5.6.0")
+
+###
 from hera.workflows import Container, ExistingVolume, models
 
 
 def split_buildings_container(
-    cluster,
-    workflow_parameters,
+    environment,
     input_filename: str,  # Absolute file path
     output_dir: str,  # Absolute directory path
     output_filename: str,  # Filename (relative to output_dir)
 ):
-    output_dir = os.path.join(workflow_parameters.persistedVolume, output_dir)
     return Container(
         name="split-buildings",
-        image=cluster.docker_registry + "vcity/3duse:0.1",
+        image=environment.cluster.docker_registry + "vcity/3duse:0.1",
         image_pull_policy=models.ImagePullPolicy.if_not_present,
         working_dir="/root/3DUSE/Build/src/utils/cmdline/",
         command=[
             "splitCityGMLBuildings",
             "--input-file",
-            os.path.join(workflow_parameters.persistedVolume, input_filename),
+            input_filename,
             "--output-file",
             output_filename,
             "--output-dir",
@@ -27,39 +34,34 @@ def split_buildings_container(
         volumes=[
             ExistingVolume(
                 name="dummy-name-but-required",
-                claim_name=cluster.volume_claim,
-                mount_path=parameters.persistedVolume,
+                claim_name=environment.persisted_volume.claim_name,
+                mount_path=environment.persisted_volume.mount_path,
             )
         ],
     )
 
 
 if __name__ == "__main__":
-    import sys, os
-
-    sys.path.append(
-        os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-    )
-    from pagoda_cluster_definition import define_cluster
-    from utils import whalesay_container, convert_message_to_output_parameter
-    from hera_utils import hera_assert_version
-
-    hera_assert_version("5.1.3")
-
+    from pagoda_environment_definition import environment
     from input_2012_tiny_import_dump import parameters
     from experiment_layout import layout
+
+    from utils import print_script, convert_message_to_output_parameter
     from hera.workflows import DAG, Task, Parameter, Workflow
 
-    cluster = define_cluster()
-    with Workflow(generate_name="splitbuildings-", entrypoint="dag") as w:
+    with Workflow(generate_name="split-buildings-", entrypoint="dag") as w:
         split_buildings_c = split_buildings_container(
-            cluster,
-            parameters,
-            input_filename=layout.split_buildings_input_filename(parameters),
-            output_dir=layout.split_buildings_output_dir(parameters),
+            environment,
+            input_filename=os.path.join(
+                environment.persisted_volume.mount_path,
+                layout.split_buildings_input_filename(parameters),
+            ),
+            output_dir=os.path.join(
+                environment.persisted_volume.mount_path,
+                layout.split_buildings_output_dir(parameters),
+            ),
             output_filename=layout.split_buildings_output_filename(parameters),
         )
-        whalesay_c = whalesay_container()
         with DAG(name="dag"):
             split_buildings_t = Task(
                 name="split-buildings", template=split_buildings_c
@@ -74,16 +76,15 @@ if __name__ == "__main__":
             # This inital limited task is thus complemented with an adhoc post-treament
             # task.
             output_dir = os.path.join(
-                parameters.persistedVolume,
+                environment.persisted_volume.mount_path,
                 layout.split_buildings_output_dir(parameters),
             )
             write_output_t: Task = convert_message_to_output_parameter(
                 arguments=Parameter(name="message", value=output_dir)
             )
-            whalesay_t = Task(
-                name="whalesay",
-                template=whalesay_c,
-                arguments=write_output_t.get_parameter("a").with_name("a"),
+            print_t = print_script(
+                name="print-results",
+                arguments=write_output_t.get_parameter("message"),
             )
-            split_buildings_t >> write_output_t >> whalesay_t
+            split_buildings_t >> write_output_t >> print_t
     w.create()

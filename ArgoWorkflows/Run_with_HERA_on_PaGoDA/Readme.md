@@ -1,4 +1,4 @@
-# Running Hera on PaGoDA
+# Running workflows with Hera on PaGoDA
 
 **TOC**
 <!-- TOC -->
@@ -70,7 +70,7 @@ Then you "import" that file into your current shell by
 - [Install docker on your desktop](../With_CLI_Generic/Readme.md#installing-docker-on-your-desktop) (
   [Here is why](../On_PaGoDA_cluster/Readme.md#install-docker-on-your-desktop) 
   you need to do so) 
-- [Build the required container images](../With_CLI_Generic/Readme.md#build-the-required-containers)
+- [Build the required container images](../With_CLI_Generic/Readme.md#buildpull-the-required-containers)
 - [Push the container images to the (local) registry](../On_PaGoDA_cluster/Readme.md#registering-the-container-images)
 - [Assert the existence of a persistent volume claim](../On_PaGoDA_cluster/Readme.md#volumes-and-context-creation). This is done at the k8s level and consists
 in checking for the existence of the ad-hoc `configmap` 
@@ -78,6 +78,6 @@ in checking for the existence of the ad-hoc `configmap`
 
 ## [Run the workflows](../With_HERA_Generic/Readme.md#running-workflows)
 
-### [Accessing the workflow results](On_PaGoDA_cluster/Readme.md#accessing-results)
+### [Accessing the workflow results](../On_PaGoDA_cluster/Readme.md#accessing-results)
 
 ## [Developers](../With_HERA_Generic/Readme.md#developers)

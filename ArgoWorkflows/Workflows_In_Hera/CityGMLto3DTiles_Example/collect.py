@@ -1,3 +1,14 @@
+import sys, os
+
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
+)
+from hera_utils import hera_assert_version
+
+hera_assert_version("5.6.0")
+
+####
+
 import os
 from hera.workflows import (
     ConfigMapEnvFrom,
@@ -8,25 +19,29 @@ from hera.workflows import (
 )
 
 
-def collect_container_constructor(cluster, parameters, results_dir: str):
+def collect_container_constructor(environment, parameters, results_dir: str):
     output_value_path = os.path.join(
-        parameters.persistedVolume,
+        environment.persisted_volume.mount_path,
         results_dir,
         "Resulting_Filenames.txt",
     )
     return Container(
         name="collect",
-        image=cluster.docker_registry + "vcity/collect_lyon_data:0.1",
+        image=environment.cluster.docker_registry
+        + "vcity/collect_lyon_data:0.1",
         image_pull_policy=models.ImagePullPolicy.always,
         env_from=[
             # Assumes the corresponding config map is defined in the k8s cluster
-            ConfigMapEnvFrom(name=cluster.configmap, optional=False),
+            ConfigMapEnvFrom(
+                name=environment.cluster.configmap, optional=False
+            ),
         ],
         command=[
             "python3",
             # inputs=[
             "entrypoint.py",
             "--borough",
+            # FAIL: NE MARCHERA PAS sur une boucle
             parameters.borough,
             "--pattern",
             parameters.pattern,
@@ -35,13 +50,13 @@ def collect_container_constructor(cluster, parameters, results_dir: str):
             "--vintage",
             parameters.vintage,
             "--volume",
-            parameters.persistedVolume,
+            environment.persisted_volume.mount_path,
         ],
         volumes=[
             ExistingVolume(
-                claim_name=cluster.volume_claim,
-                name=cluster.volume_claim,
-                mount_path=parameters.persistedVolume,
+                claim_name=environment.persisted_volume.claim_name,
+                name="dummy",
+                mount_path=environment.persisted_volume.mount_path,
             )
         ],
         outputs=[
@@ -53,27 +68,17 @@ def collect_container_constructor(cluster, parameters, results_dir: str):
 
 
 if __name__ == "__main__":
-    import sys, os
-
-    sys.path.append(
-        os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-    )
-    from hera_utils import hera_assert_version
-
-    hera_assert_version("5.1.3")
-
-    from pagoda_cluster_definition import define_cluster
+    from pagoda_environment_definition import environment
     from input_2012_tiny_import_dump import parameters
     from experiment_layout import layout
-    from utils import whalesay_container, ip_http_check_container
+
+    from utils import print_script, ip_http_check_container
     from hera.workflows import DAG, Task, Workflow
 
-    cluster = define_cluster()
     with Workflow(generate_name="fullcollect-", entrypoint="dag") as w:
-        ip_http_check_c = ip_http_check_container(cluster)
-        whalesay_c = whalesay_container()
+        ip_http_check_c = ip_http_check_container(environment)
         collect_c = collect_container_constructor(
-            cluster,
+            environment,
             parameters,
             results_dir=layout.collect_output_dir(
                 parameters, output_dir="stage_1"
@@ -84,10 +89,9 @@ if __name__ == "__main__":
                 name="iphttpcheck", template=ip_http_check_c
             )
             collect_t = Task(name="collect", template=collect_c)
-            whalesay_t = Task(
-                name="whalesay",
-                template=whalesay_c,
-                arguments=collect_t.get_parameter("msg").with_name("a"),
+            print_t = print_script(
+                name="print-results",
+                arguments=collect_t.get_parameter("msg").with_name("message"),
             )
-            check_ip_connectivity_t >> collect_t >> whalesay_t
+            check_ip_connectivity_t >> collect_t >> print_t
     w.create()

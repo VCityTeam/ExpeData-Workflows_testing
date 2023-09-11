@@ -47,7 +47,7 @@ that the Argo-workflows server is ready for workflow submission
 ```bash
 (venv) cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera
 (venv) export $(xargs < .env)            # Refer above for .env creation
-(venv) python PaGoDa_definition/pagoda_cluster_definition.py
+(venv) python PaGoDa_definition/pagoda_environment_definition.py
 ```
 
 When this fails try running things step by step for troubleshooting
@@ -56,13 +56,13 @@ When this fails try running things step by step for troubleshooting
 (venv) python PaGoDa_definition/parse_arguments.py
 (venv) python PaGoDa_definition/retrieve_access_token.py
 (venv) python PaGoDa_definition/assert_pagoda_configmap.py
-(venv) python PaGoDa_definition/pagoda_cluster_definition.py 
+(venv) python PaGoDa_definition/pagoda_environment_definition.py 
 ```
 
-Eventually run the "Hello" workflow
+Eventually run the testing workflow
 
 ```bash
-(venv) python PaGoDa_definition/hello_pagoda.py
+(venv) python PaGoDa_definition/test_pagoda_setup.py
 ```
 
 and assert the workflow ran smoothly with argo UI.
@@ -98,14 +98,26 @@ You can now proceed with submitting the hera-workflows examples with:
 ```
 
 ### Running the CityGMLto3DTiles example
+
+You can inspect/test this numerical setup by running the following testing
+workflow
+
+```
+(venv) cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera/CityGMLto3DTiles_Example/
+(venv) python CityGMLto3DTiles_Example/test_experiment_setup.py
+```
+
 As
 [stated in the accessing results](../On_PaGoDA_cluster/Readme.md#accessing-results)
 the permanent volume holding the resulting files is accessible through a
-dedicated pod. Prior to running the CityGMLto3DTiles example make sure that
-previous run results won't collide with the new ones and just remove them with
+dedicated pod. 
+Prior to running the CityGMLto3DTiles example, you might want to make sure that 
+previous numerical experiment run results won't collide with the new ones 
+and just remove them with
 ```bash
 k -n argo exec -it vcity-pvc-ubuntu-pod -- rm -r /vcity-data/junk/
 ```
+
 
 ```bash
 (venv) python CityGMLto3DTiles_Example/collect.py

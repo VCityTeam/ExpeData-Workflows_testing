@@ -4,7 +4,7 @@
 
 This repository considers a hopefully representative pipeline of computations
 and tries to express it with different technical formalisms like
-[AirFow](https://airflow.apache.org/), [CWL](https://www.commonwl.org/),
+[AirFlow](https://airflow.apache.org/), [CWL](https://www.commonwl.org/),
 Argo Worflows...
 
 Although it doesn't really matter for this comparison, the original 

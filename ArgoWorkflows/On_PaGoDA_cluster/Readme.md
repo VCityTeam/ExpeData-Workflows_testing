@@ -198,18 +198,25 @@ One can
   for further details)
 
   ```bash
+  cd $(git rev-parse --show-cdup)/ArgoWorkflows/On_PaGoDA_cluster
   # Create pod
   k -n argo apply -f define_zombie_pod_for_PV_navigation_with_bash.yaml
   # Assert pod was created
   k -n argo get pod vcity-pvc-ubuntu-pod
   k -n argo exec -it vcity-pvc-ubuntu-pod -- bash
   # And then `cd /vcity-data/` and navigate with bash...
+  ```
+  
+Eventually (when the work session is over), free the allocated pod
+
+  ```bash
   k -n argo delete -f define_zombie_pod_for_PV_navigation_with_bash.yaml
   ```
 
 - or copy the results to the commanding desktop with the following commands
 
   ```bash
+  cd $(git rev-parse --show-cdup)/ArgoWorkflows/On_PaGoDA_cluster
   k -n argo apply -f define_zombie_pod_for_PV_navigation_with_browser.yaml
   kubectl -n argo cp vcity-pvc-nginx-pod:/var/lib/www/html/junk/stage_1/2012/LYON_8EME_2012 junk
   k -n argo delete -f define_zombie_pod_for_PV_navigation_with_browser.yaml

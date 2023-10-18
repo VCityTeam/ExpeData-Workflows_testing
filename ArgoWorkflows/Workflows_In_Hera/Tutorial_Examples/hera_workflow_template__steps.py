@@ -4,9 +4,7 @@ import sys, os
 sys.path.append(
     os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
 )
-from pagoda_cluster_definition import define_cluster
-
-cluster = define_cluster()
+from pagoda_environment_definition import environment
 
 ### Some Hera helpers and checks...
 from hera_utils import hera_assert_version, hera_clear_workflow_template
@@ -41,7 +39,7 @@ with WorkflowTemplate(
         # CHANGED: because the cluster in behind a seclusive/autistic firewall
         # there is no access to Docker Hub (hub.docker.com)
         #    image="argoproj/argosay:v2",
-        image=cluster.docker_registry + "vcity/argosay:v2",
+        image=environment.cluster.docker_registry + "vcity/argosay:v2",
         image_pull_policy=m.ImagePullPolicy.always,
         inputs=[
             Parameter(name="message"),
@@ -65,7 +63,9 @@ with WorkflowTemplate(
 # CHANGED: if we want the workflow script (that is this file) to be run once
 # edited we need to remove a previously submitted version of this workflow
 # template (or AW server will reject this new version with a name conflict):
-hera_clear_workflow_template(cluster, "workflow-template-whalesay-template")
+hera_clear_workflow_template(
+    environment.cluster, "workflow-template-whalesay-template"
+)
 
 # CHANGED: following line added for the workflow templae to be registered
 w.create()

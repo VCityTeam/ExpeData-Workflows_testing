@@ -93,6 +93,7 @@ You can now proceed with submitting the hera-workflows examples with:
 (venv) cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera
 (venv) python Tutorial_Examples/coin_flip_pagoda.py
 (venv) python Tutorial_Examples/hello_world_pagoda.py
+(venv) Tutorial_Examples/hello_world_container_script_pagoda.py
 (venv) python Tutorial_Examples/workflow_template__steps.py
 (venv) ...
 ```

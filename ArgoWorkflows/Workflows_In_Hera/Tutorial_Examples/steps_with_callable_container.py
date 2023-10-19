@@ -4,9 +4,7 @@ import sys, os
 sys.path.append(
     os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
 )
-from pagoda_cluster_definition import define_cluster
-
-cluster = define_cluster()
+from pagoda_environment_definition import environment
 
 ### Some Hera helpers and checks...
 from hera_utils import hera_assert_version, hera_clear_workflow_template

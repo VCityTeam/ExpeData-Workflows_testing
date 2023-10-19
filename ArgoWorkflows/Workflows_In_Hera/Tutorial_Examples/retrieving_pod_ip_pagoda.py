@@ -3,9 +3,7 @@ import sys, os
 sys.path.append(
     os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
 )
-from pagoda_cluster_definition import define_cluster
-
-cluster = define_cluster()
+from pagoda_environment_definition import environment
 
 ####
 from hera_utils import hera_assert_version
@@ -32,12 +30,12 @@ with Workflow(generate_name="retrieve-pod-ip-", entrypoint="d") as w:
         daemon=True,
         # Number of container retrial when failing
         retry_strategy=RetryStrategy(limit=2),
-        image=cluster.docker_registry + "vcity/3dcitydb-postgis:v4.0.2",
+        image=environment.cluster.docker_registry + "vcity/3dcitydb-postgis:v4.0.2",
         image_pull_policy=models.ImagePullPolicy.always,
         env=[
             # Assumes the corresponding config map is defined in the k8s cluster
             ConfigMapEnvFrom(
-                config_map_name=cluster.configmap, optional=False
+                config_map_name=environment.cluster.configmap, optional=False
             ),
             Env(name="POSTGRES_PASSWORD", value="dummy"),
         ],

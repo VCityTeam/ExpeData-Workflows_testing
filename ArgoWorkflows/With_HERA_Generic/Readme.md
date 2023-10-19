@@ -91,10 +91,16 @@ You can now proceed with submitting the hera-workflows examples with:
 
 ```bash
 (venv) cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera
-(venv) python Tutorial_Examples/coin_flip_pagoda.py
 (venv) python Tutorial_Examples/hello_world_pagoda.py
-(venv) Tutorial_Examples/hello_world_container_script_pagoda.py
-(venv) python Tutorial_Examples/workflow_template__steps.py
+(venv) python Tutorial_Examples/hello_world_container_script_pagoda.py
+(venv) python Tutorial_Examples/hera_workflow_template__steps.py
+(venv) python Tutorial_Examples/hera_coin_flip.py
+(venv) python Tutorial_Examples/hera_dag_with_param_passing_pagoda.py 
+(venv) python Tutorial_Examples/hera_dag_with_script_output_param_passing_pagoda.py
+(venv) python Tutorial_Examples/just_sleep_and_exit_pagoda.py
+(venv) python Tutorial_Examples/retrieving_pod_ip_pagoda.py
+(venv) python Tutorial_Examples/steps_with_callable_container.py
+(venv) python Tutorial_Examples/workflow_template_with_output_forwarding.py
 (venv) ...
 ```
 

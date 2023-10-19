@@ -3,13 +3,12 @@ import sys, os
 sys.path.append(
     os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
 )
-from pagoda_cluster_definition import define_cluster
-
-define_cluster()
 from hera_utils import hera_assert_version
 
 hera_assert_version("5.6.0")
+from pagoda_environment_definition import environment
 
+###############################################################################
 # The following is a copy of
 # https://github.com/argoproj-labs/hera/blob/5.1.7/examples/workflows/coinflip.py
 from hera.workflows import DAG, Workflow, script

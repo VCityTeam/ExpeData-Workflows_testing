@@ -4,9 +4,7 @@ import sys, os
 sys.path.append(
     os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
 )
-from pagoda_cluster_definition import define_cluster
-
-cluster = define_cluster()
+from pagoda_environment_definition import environment
 
 # Some Hera helpers and checks...
 from hera_utils import hera_assert_version, hera_clear_workflow_template
@@ -74,7 +72,7 @@ with WorkflowTemplate(
                 name="computed", value_from={"expression": str(expression)}
             )
         ]
-hera_clear_workflow_template(cluster, "increment-workflow-template")
+hera_clear_workflow_template(environment.cluster, "increment-workflow-template")
 w.create()
 
 

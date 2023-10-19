@@ -4,10 +4,9 @@ sys.path.append(
     os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
 )
 from hera_utils import hera_assert_version
-from pagoda_cluster_definition import define_cluster
+from pagoda_environment_definition import environment
 
 hera_assert_version("5.6.0")
-cluster = define_cluster()
 
 ####### Cluster independent
 from hera.workflows import script
@@ -23,7 +22,6 @@ def sleep_while_db_boots():
 if __name__ == "__main__":
     from hera.workflows import Container, DAG, Task, Workflow
 
-    cluster = define_cluster()
     with Workflow(
         generate_name="sleep-and-exit-", entrypoint="dag-entry"
     ) as w:

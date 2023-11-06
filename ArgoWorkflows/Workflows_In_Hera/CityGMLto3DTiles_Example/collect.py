@@ -19,13 +19,13 @@ from hera.workflows import (
 )
 
 
-def collect_container_constructor(environment, inputs, results_dir: str):
-    output_value_path = os.path.join(
-        environment.persisted_volume.mount_path,
-        results_dir,
-        "Resulting_Filenames.txt",
-    )
+def collect_container_constructor(environment, constants):
     return Container(
+        inputs=[
+            Parameter(name="vintage"),
+            Parameter(name="borough"),
+            Parameter(name="results_dir"),
+        ],
         name="collect",
         image=environment.cluster.docker_registry
         + "vcity/collect_lyon_data:0.1",
@@ -38,18 +38,15 @@ def collect_container_constructor(environment, inputs, results_dir: str):
         ],
         command=[
             "python3",
-            # inputs=[
             "entrypoint.py",
             "--borough",
-            # FAIL: NE MARCHERA PAS sur une boucle
-            inputs.parameters.boroughs,
+            "{{inputs.parameters.borough}}",
             "--pattern",
-            inputs.constants.pattern,
+            constants.pattern,
             "--results_dir",
-            results_dir,
+            "{{inputs.parameters.results_dir}}",
             "--vintage",
-            # FAIL: NE MARCHERA PAS sur une boucle
-            inputs.parameters.vintages,
+            "{{inputs.parameters.vintage}}",
             "--volume",
             environment.persisted_volume.mount_path,
         ],
@@ -62,7 +59,10 @@ def collect_container_constructor(environment, inputs, results_dir: str):
         ],
         outputs=[
             Parameter(
-                name="msg", value_from=models.ValueFrom(path=output_value_path)
+                name="msg",
+                value_from=models.ValueFrom(
+                    path="{{inputs.parameters.results_dir}}/Resulting_Filenames.txt"
+                ),
             )
         ],
     )

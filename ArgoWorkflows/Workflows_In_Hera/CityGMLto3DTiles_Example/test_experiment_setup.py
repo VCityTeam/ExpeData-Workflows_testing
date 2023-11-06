@@ -43,10 +43,12 @@ def list_experiment_pesisted_files(
 
 
 if __name__ == "__main__":
-    from pagoda_environment_utils import print_pagoda_environment
-    from pagoda_environment_utils import list_pesistent_volume_files
+    from pagoda_environment_utils import (
+        print_pagoda_environment,
+        list_pesistent_volume_files,
+    )
     from pagoda_environment_definition import environment
-    from input_2012_tiny_import_dump import parameters
+    from input_2012_tiny_import_dump import inputs
     from hera.workflows import (
         ConfigMapEnvFrom,
         Container,
@@ -56,6 +58,7 @@ if __name__ == "__main__":
         Workflow,
     )
 
+    constants = inputs.constants
     with Workflow(
         generate_name="testing-numerical-experiment-setup-", entrypoint="main"
     ) as w:
@@ -102,7 +105,7 @@ if __name__ == "__main__":
                     ),
                     Parameter(
                         name="experiment_output_dir",
-                        value=parameters.experiment_output_dir,
+                        value=constants.experiment_output_dir,
                     ),
                 ],
             )

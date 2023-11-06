@@ -28,14 +28,27 @@ def convert_message_to_output_parameter(message):
         f_out.write(message)
 
 
-def ip_http_check_container(cluster):
+@script()
+def print_script(message):
+    print(message)
+
+
+@script()
+def print_list_script(messages: list):
+    for message in messages:
+        print(message)
+
+
+def ip_http_check_container(environment):
     return Container(
         name="iphttpcheck",
-        image=cluster.docker_registry + "vcity/iphttpcheck:0.1",
+        image=environment.cluster.docker_registry + "vcity/iphttpcheck:0.1",
         image_pull_policy=models.ImagePullPolicy.always,
         env_from=[
             # Assumes the corresponding config map is defined in the k8s cluster
-            ConfigMapEnvFrom(name=cluster.configmap, optional=False),
+            ConfigMapEnvFrom(
+                name=environment.cluster.configmap, optional=False
+            ),
         ],
         command=["python", "entrypoint.py"],
     )

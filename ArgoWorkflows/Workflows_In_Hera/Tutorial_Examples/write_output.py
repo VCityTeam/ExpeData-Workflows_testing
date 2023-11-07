@@ -1,10 +1,18 @@
-import os
-from hera import (
-    ConfigMapEnvFrom,
-    ImagePullPolicy,
+import sys, os
+
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
+)
+from hera_utils import hera_assert_version
+
+hera_assert_version("5.6.0")
+
+#############
+from hera.workflows import (
+    DAG,
+    models,
     Parameter,
-    Task,
-    ValueFrom,
+    script,
     Workflow,
 )
 
@@ -21,7 +29,7 @@ from hera import (
 # But what are the workarounds when a container does _not_ provide its outputs
 # structure ? The need is now decomposed in two steps
 #  - first, capture this information (the knowledge of the output structure)
-#    and materialize it some form
+#    and materialize it in some form
 #  - second, flow that information to the downstream task that will exploit it
 #    as its input.
 #
@@ -48,38 +56,41 @@ from hera import (
 #     Failing_Or_Issues/raw_archive.py
 #
 # Solution C/ : Have Hera produce this output file
-# When the provider of the Task that wraps the guilty container has some
+# When the provider of the Task that wraps the "guilty" container has some
 # knowledge of the container outputs layout, that developer can prodive a
 # post-treatment Task that produces that output strucutre file (in a effort
 # of "normalization" of the container with a perspective of workflow usage).
 #
-# The following write_output_task Task constructor implement this
+# The following write_output_task Task constructor implements this
 # post-treatment strategy by writing the necessary file. Its code can be
 # seen as an Hera rewrite of the following docker one-liner
 #  docker run --mount type=bind,source="$(pwd)",target=/tmp \
 #         -t python:3.11.3-bullseye python -c
 #         "with open('/tmp/test_write.log', 'a') as log: log.write('Message\n')"
-def write_output_task(cluster, content):
+#
+# Historical note: eventually (after evolving code from Hera version 4.4.1) the
+# following code is almost identical to the one of
+# https://github.com/argoproj-labs/hera/blob/main/examples/workflows/dag_with_script_output_param_passing.py
+
+
+@script(
+    outputs=[
+        Parameter(name="result", value_from=models.ValueFrom(path="/tmp/junk"))
+    ]
+)
+def write_output(content):
     dummy_file = "/tmp/junk"
-    command = (
-        "with open('"
-        + dummy_file
-        + "', 'a') as log: log.write('"
-        + content
-        + "')"
-    )
-    task = Task(
-        "writeoutput",
-        image="python:3.11.3-bullseye",
-        image_pull_policy=ImagePullPolicy.Always,
-        env=[
-            # Assumes the corresponding config map is defined in the k8s cluster
-            ConfigMapEnvFrom(config_map_name=cluster.configmap, optional=False)
-        ],
-        command=["python", "-c", command],
-        outputs=[Parameter("msg", value_from=ValueFrom(path=dummy_file))],
-    )
-    return task
+    with open(dummy_file, "a") as log:
+        log.write(str(content))
+
+
+@script()
+def consume(msg):
+    print(msg)
+    # FAIL note: for some strange reason defining the body as this function
+    # as
+    #      print(f"Message was: {msg}")
+    # will provoque Hera to fail at submission stage.
 
 
 if __name__ == "__main__":
@@ -88,16 +99,20 @@ if __name__ == "__main__":
     sys.path.append(
         os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
     )
-    from pagoda_cluster_definition import define_cluster
+    from pagoda_environment_definition import environment
 
-    def consume(msg: str):
-        print(f"Message was: {msg}")
-
-    cluster = define_cluster()
-    with Workflow("fullcollect-", generate_name=True) as w:
-        write_output_t = write_output_task(
-            cluster, content="Some_nice_message"
-        )
-        t2 = Task("c", consume, inputs=[write_output_t.get_parameter("msg")])
-        write_output_t >> t2
+    with Workflow(generate_name="write-output-", entrypoint="d") as w:
+        with DAG(name="d"):
+            write_output_t = write_output(
+                arguments=Parameter(
+                    name="content",
+                    value="Some_nice_message",
+                )
+            )
+            consume_t = consume(
+                arguments=write_output_t.get_parameter("result").with_name(
+                    "msg"
+                )
+            )
+            write_output_t >> consume_t
     w.create()

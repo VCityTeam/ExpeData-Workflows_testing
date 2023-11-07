@@ -187,3 +187,33 @@ with Workflow([...], entrypoint="main") as w:
   2. (b) Still at python level, use mangled template names
 - Eventually, what is dynamic (e.g. the IP number of a service pod) must
   be flown at the Hera/ArgoWorkflows level
+
+## Concerning loops
+
+As expressed in the comments of 
+[Failing_Or_Issues/test_collect_fail_first.py](Failing_Or_Issues/test_collect_fail_first.py)
+[Failing_Or_Issues/test_collect_fail_second.py](Failing_Or_Issues/test_collect_fail_second.py),
+the notational syntax of AW does NOT allow to express in Python (at Hera level)
+some experimental logic that is to be evaluated at AW runtime.
+For example the directory layout of the pipeline must be expressed with
+[AW expressions](https://argoproj.github.io/argo-workflows/variables/#expression)
+which exposes Hera underlying mechanisms and constrains Hera users to know (and
+mix) both Python and AW-expressions.
+
+Thus is we wish to stick to a single language for expressing the experimental
+logic (that is Python as offered by Hera) we need to drop the native AW way for
+expressing loops and instead express such loops in Python. Such a scheme has
+two main drawbacks:
+- [fan-in](https://github.com/argoproj-labs/hera/blob/main/examples/workflows/dynamic_fanout_fanin.py)
+  techniques cannot use Hera/AW syntactic "sugar" (which might not be such a
+  loss given the current, as of version 5.X, notational intricacies) and they
+  thus require a dedicated task to be manually written,
+- because such loops are realized at AW construction stage (when the YAML files
+  are generated) the pipeline topology/structure is fixed and Hera evaluation
+  stage as opposed to AW running stage i.e. dynamically.
+
+When possible (i.e. when the pipeline topology/structure is known at Hera 
+evaluation stage), the expression of looping structures in Python has 
+nevertheless an advantage: nested loops are much easier to express since they
+do not require to 
+[declare a WorkflowTemplate for the inner loop](../Workflows_In_Yaml/Failing_Or_Issues/nested-loops-issue.yml). 

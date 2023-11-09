@@ -33,12 +33,6 @@ def print_script(message):
     print(message)
 
 
-@script()
-def print_list_script(messages: list):
-    for message in messages:
-        print(message)
-
-
 def ip_http_check_container(environment):
     return Container(
         name="iphttpcheck",

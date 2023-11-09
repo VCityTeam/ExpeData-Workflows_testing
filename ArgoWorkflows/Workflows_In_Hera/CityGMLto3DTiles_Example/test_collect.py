@@ -33,7 +33,8 @@ if __name__ == "__main__":
                 name="iphttpcheck", template=ip_http_check_c
             )
             dummy_fanin_t = print_script(
-                name="print-results", arguments={"message": "dummy"}
+                name="print-results",
+                arguments={"message": "End of collecting stage"},
             )
 
             vintage = inputs.parameters.vintage

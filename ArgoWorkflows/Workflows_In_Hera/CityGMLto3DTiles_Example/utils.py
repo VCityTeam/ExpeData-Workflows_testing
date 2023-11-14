@@ -29,6 +29,11 @@ def convert_message_to_output_parameter(message):
 
 
 @script()
+def print_list_script(messages: list):
+    print(messages)
+
+
+@script()
 def print_script(message):
     print(message)
 

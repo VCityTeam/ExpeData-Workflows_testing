@@ -35,9 +35,12 @@ class layout:
         )
 
     def split_buildings_output_filename(self, vintage, borough):
+        return borough + "_" + self.pattern + "_" + vintage + "_split.gml"
+
+    def split_buildings_output_absolute_filename(self, vintage, borough):
         return os.path.join(
             self.split_buildings_output_dir(vintage, borough),
-            borough + "_" + self.pattern + "_" + vintage + "_split.gml",
+            self.split_buildings_output_filename(self, vintage, borough),
         )
 
     ###### stage 3
@@ -49,7 +52,22 @@ class layout:
         )
 
     def strip_gml_output_filename(self, vintage, borough):
+        return borough + "_" + self.pattern + "_" + vintage + "_stripped.gml"
+
+    def strip_gml_output_absolute_filename(self, vintage, borough):
         return os.path.join(
             self.strip_gml_output_dir(vintage, borough),
-            borough + "_" + self.pattern + "_" + vintage + "_stripped.gml",
+            self.strip_gml_output_filename(vintage, borough),
         )
+
+    ##### Utils
+    def container_name_postend(vintage, borough):
+        """Hera Tasks need to have distinguished named. When looping we thus
+        need to generated task names by declining a task radical (e.g. collect,
+        strip, split) with parameter (vintage, borough) dependent names.
+
+        Returns:
+            str: an AW compatible (part of a) task name declined out of
+            the argument parameters.
+        """
+        return str(vintage) + "-" + borough.replace("_", "-")

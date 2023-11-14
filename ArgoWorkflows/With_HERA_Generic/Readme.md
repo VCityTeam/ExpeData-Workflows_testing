@@ -127,9 +127,9 @@ k -n argo exec -it vcity-pvc-ubuntu-pod -- rm -r /vcity-data/junk/
 
 
 ```bash
-(venv) python CityGMLto3DTiles_Example/collect.py
-(venv) python CityGMLto3DTiles_Example/split_buildings.py
-(venv) python CityGMLto3DTiles_Example/strip_gml.py 
+(venv) python CityGMLto3DTiles_Example/test_collect.py
+(venv) python CityGMLto3DTiles_Example/test_split_buildings.py
+(venv) python CityGMLto3DTiles_Example/test_strip_gml.py 
 ```
 
 The next workflow, 

@@ -11,9 +11,7 @@ hera_assert_version("5.6.0")
 from hera.workflows import Container, ExistingVolume, models, Parameter
 
 
-def split_buildings_container(
-    environment,
-):
+def split_buildings_container(environment):
     return Container(
         inputs=[
             # Absolute file path

@@ -1,8 +1,6 @@
 import sys, os
 
-sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-)
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition"))
 from hera_utils import hera_assert_version
 
 hera_assert_version("5.6.0")
@@ -21,20 +19,16 @@ if __name__ == "__main__":
     from input_2012_tiny_import_dump import inputs
     from experiment_layout import layout
 
-    layout_instance = layout(inputs)
+    layout_instance = layout(inputs.constants)
 
-    with Workflow(
-        generate_name="collect-vintages-boroughs-", entrypoint="dag"
-    ) as w:
+    with Workflow(generate_name="collect-vintages-boroughs-", entrypoint="dag") as w:
         ip_http_check_c = ip_http_check_container(environment)
         collect_c = collect_container_constructor(
             environment,
             inputs.constants,
         )
         with DAG(name="dag"):
-            check_ip_connectivity_t = Task(
-                name="iphttpcheck", template=ip_http_check_c
-            )
+            check_ip_connectivity_t = Task(name="iphttpcheck", template=ip_http_check_c)
             dummy_fanin_t = print_script(
                 name="print-results",
                 arguments={"message": "End of collecting stage."},

@@ -2,18 +2,16 @@ from hera_utils import hera_assert_version, hera_clear_workflow_template
 
 hera_assert_version("5.6.0")
 
+###########
 import os
 from hera.workflows import (
     ConfigMapEnvFrom,
     Container,
-    DAG,
     Env,
     ExistingVolume,
     models,
     Parameter,
     script,
-    Task,
-    WorkflowTemplate,
 )
 from hera.expr import g as expr
 from utils import convert_message_to_output_parameter
@@ -59,7 +57,7 @@ def get_statistical_value_of_initial_delay(db_files_out_of_container: bool):
     #  |---------------------|---------------------|-----------------|
     #
     # The above table values were aquired through an empirical trial
-    # and error process and are probably cluster dependent.
+    # and error process and are probably environment dependent.
     #
     # Technical notes (if further debug is required):
     #    Oddly enough, when the chosen value of `initialDelaySeconds` is
@@ -83,19 +81,35 @@ def get_statistical_value_of_initial_delay(db_files_out_of_container: bool):
     return initialDelaySeconds
 
 
-def threedcitydb_start_db_container(cluster, parameters):
+def threedcitydb_start_db_container(environment, constants, database):
+    # LIMITS: the 3dcitydb-pg container doesn't seem to use a CMD entry in
+    # its Dockefile definition (refer to
+    # https://github.com/3dcitydb/3dcitydb/blob/master/postgresql/Dockerfile)
+    # but instead uses the Un*x deamon/init.d starting script mechanism.
+    # This prevents passing arguments to the container at runtime (e.g. by
+    # providing arguments, with `docker run 3dcitydb-pg arg1 arg2`, or
+    # environment parameters, with `docker run -e ENV_VAR=my_value 3dcitydb-pg`).
+    # In turn this constrains to build as many containers as they are
+    # parameters (or combination of parameters) at the Hera level. For example
+    # the database.name derives from the vintage parameter for which we need
+    # to loop for. We thus have no choice but to define as many containers
+    # (and associated container names) as they are vintage values.
+    # In conclusion: some container run time limitations deport to constrains,
+    # at the Hera level, like container multiplication...
+
     # The simplest possible usage of the 3dcitydb container per se
     new_container = Container(
-        name="threedcitydb-start-db",
-        daemon=True,  # Run 3dcitydb container as a daemon (i.e. in background)
+        name="threedcitydb-start-db" + database.name,
+        # Run 3dcitydb container as a daemon (i.e. in background)
+        daemon=True,
         # Number of container retrial when failing
         # retry_strategy=RetryStrategy(limit=2),
-        image=cluster.docker_registry + "vcity/3dcitydb-pg:13-3.1-4.1.0",
+        image=environment.cluster.docker_registry + "vcity/3dcitydb-pg:13-3.1-4.1.0",
         image_pull_policy=models.ImagePullPolicy.always,
         env=[
             # Assumes the corresponding config map is defined in the k8s cluster
             ConfigMapEnvFrom(
-                config_map_name=cluster.configmap, optional=False
+                config_map_name=environment.cluster.configmap, optional=False
             ),
             # Specific to 3dCityDB container, refer to
             # https://3dcitydb-docs.readthedocs.io/en/latest/3dcitydb/docker.html#citydb-docker-config-psql
@@ -104,20 +118,20 @@ def threedcitydb_start_db_container(cluster, parameters):
             # Adressed to postgres (that underpins 3DCityDB) at container level
             # as opposed to libpq environment variables refer to
             # https://www.postgresql.org/docs/current/libpq-envars.html
-            Env(name="POSTGRES_DB", value=parameters.database.name),
-            Env(name="POSTGRES_PASSWORD", value=parameters.database.password),
-            Env(name="POSTGRES_USER", value=parameters.database.user),
+            Env(name="POSTGRES_DB", value=database.name),
+            Env(name="POSTGRES_PASSWORD", value=database.password),
+            Env(name="POSTGRES_USER", value=database.user),
         ],
         # FIXME command=["docker-entrypoint.sh"],
         # FIXME args=["postgres", "-p", "5432"],
     )
 
-    if parameters.database.keep_database:
-        # IMPROVE: promote this derived variable to become a paramters attribute ?
+    if database.keep_database:
+        # IMPROVE: promote this derived variable to become a parameters attribute ?
         results_dir = os.path.join(
-            parameters.persistedVolume,
-            parameters.experiment_output_dir,
-            parameters.database.name,
+            environment.persisted_volume.mount_path,
+            constants.experiment_output_dir,
+            database.name,
         )
         # As offered by 3dCityDB container, just provide a PGDATA environment
         # value that points to the ad-hoc directory
@@ -126,10 +140,10 @@ def threedcitydb_start_db_container(cluster, parameters):
         )
         new_container.volumes = [
             ExistingVolume(
-                claim_name=cluster.volume_claim,
+                claim_name=environment.persisted_volume.claim_name,
                 # Providing a name is mandatory but how is it relevant/used ?
                 name="dummy-name",
-                mount_path=parameters.persistedVolume,
+                mount_path=environment.persisted_volume.mount_path,
             )
         ]
 
@@ -145,13 +159,12 @@ def threedcitydb_start_db_container(cluster, parameters):
         )
         new_container.readiness_probe = readiness_probe
 
-    use_startup_probe = True
-    if use_startup_probe:
+    if use_startup_probe := True:
         # The inital delay of availability depends on the mode db serialization
         # storage and associated
 
         initialDelaySeconds = get_statistical_value_of_initial_delay(
-            parameters.database.keep_database
+            database.keep_database
         )
 
         # CAVEAT EMPTOR:
@@ -172,11 +185,11 @@ def threedcitydb_start_db_container(cluster, parameters):
                     #    'FATAL:  database " citydb-lyon-2012" does not exist'
                     # (notice the leading whitespace in the string). It looks
                     # like HERA/AW throws an extra withespace at run time !?
-                    "--dbname=" + parameters.database.name,
+                    "--dbname=" + database.name,
                     # "-U user" FAILS with
                     #     'FATAL:  role " postgres" does not exist'
                     # with a similar symptom as for the "-d " flag (refer above)
-                    "--username=" + parameters.database.user,
+                    "--username=" + database.user,
                     "-c",
                     # '"SELECT * FROM citydb.building"' (that is with enquoted
                     # double-quotes) yields
@@ -200,11 +213,11 @@ def threedcitydb_start_db_container(cluster, parameters):
 
 
 def send_command_to_postgres_container(
-    cluster, parameters, name, command, arguments
+    environment, database, container_name, command, arguments
 ):
     container = Container(
-        name=name,
-        image=cluster.docker_registry + "vcity/postgres:15.2",
+        name=container_name,
+        image=environment.cluster.docker_registry + "vcity/postgres:15.2",
         image_pull_policy=models.ImagePullPolicy.if_not_present,
         inputs=Parameter(name="hostaddr"),
         # Avoid conflicting demands with other pods.
@@ -212,12 +225,12 @@ def send_command_to_postgres_container(
         env=[
             # Assumes the corresponding config map is defined in the k8s cluster
             ConfigMapEnvFrom(
-                config_map_name=cluster.configmap, optional=False
+                config_map_name=environment.cluster.configmap, optional=False
             ),
             # The following command variables are libpq environment variables
             # refer to https://www.postgresql.org/docs/current/libpq-envars.html
             # (as opposed to docker container variables)
-            Env(name="PGDATABASE", value=parameters.database.name),
+            Env(name="PGDATABASE", value=database.name),
             # FIXME: at some point the database name will need to be derived
             # with the vintage name
             # {{inputs.parameters.database_name}}-{{inputs.parameters.vintage}}
@@ -228,12 +241,12 @@ def send_command_to_postgres_container(
             # - the value of PGHOSTADDR is evaluated at workflow run-time
             #   (on the argo server) and it thus follows the yaml syntax of an
             #   Argo Workflow,
-            # - the value of PGHOSTADDR is evaluated at (hera based) workflow
-            #   definition that is when hera constructs the yaml translation
+            # - the value of PGPASSWORD is evaluated at (hera based) workflow
+            #   submission that is when hera constructs the yaml translation
             #   and sends it to the argo server (for later evaluation).
             Env(name="PGHOSTADDR", value="{{inputs.parameters.hostaddr}}"),
-            Env(name="PGPASSWORD", value=parameters.database.password),
-            Env(name="PGUSER", value=parameters.database.user),
+            Env(name="PGPASSWORD", value=database.password),
+            Env(name="PGUSER", value=database.user),
             ### FIXME DO WE NEED THE PORT IN ALL THE FOLLOWING COMMAND ?
             # The variable is parameters.database.port
         ],
@@ -243,7 +256,7 @@ def send_command_to_postgres_container(
     return container
 
 
-def db_isready_container(cluster, parameters, name):
+def db_isready_container(environment, database, name):
     # On success this only validates the host address and the port since
     # as reminded by
     # https://stackoverflow.com/questions/26911508/postgres-testing-database-connection-in-bash
@@ -253,57 +266,66 @@ def db_isready_container(cluster, parameters, name):
     command = ["/bin/bash", "-c"]
     arguments = ["pg_isready"]
     return send_command_to_postgres_container(
-        cluster, parameters, name, command, arguments
+        environment, database, name, command, arguments
     )
 
 
-def db_probe_catalog_container(cluster, parameters, name):
+def db_probe_catalog_container(environment, database, name):
     command = ["psql"]
-    # Note: oddly enough (?) the following arguments definition fails with
+    # Note: oddly enough (?) when taking the following arguments value
+    #     arguments = ["psql", "-c", "SELECT * FROM pg_catalog.pg_tables"]
+    # the the commands fail with the following error message
     #     "10.42.2.130:5432 - no response"
     #     ...
     #     Error: exit status 2
-    # arguments = ["psql", "-c", "SELECT * FROM pg_catalog.pg_tables"]
     arguments = [
-        "--dbname=" + parameters.database.name,
-        "--username=" + parameters.database.user,
+        # FIXME: --dbname and --username are given twice (which is one to many)
+        # to send_command_to_postgres_container(database, [...]) : once through
+        # the following argument flags and once through the definition of
+        # ENV() variables within send_command_to_postgres_container(database, [...])
+        # "--dbname=" + database.name,
+        "--username=" + database.user,
         "-c",
         "SELECT * FROM citydb.building",
     ]
     return send_command_to_postgres_container(
-        cluster, parameters, name, command, arguments
+        environment, database, name, command, arguments
     )
 
 
-def import_citygml_file_to_db_container(cluster, parameters):
+def import_citygml_file_to_db_container(environment, database):
     container = Container(
         name="threedcitydb-importer",
-        image=cluster.docker_registry + "vcity/impexp:4.3.0",
+        image=environment.cluster.docker_registry + "vcity/impexp:4.3.0",
         image_pull_policy=models.ImagePullPolicy.always,
-        inputs=[Parameter(name="hostaddr"), Parameter(name="filenames")],
+        inputs=[
+            Parameter(name="database_ip_address"),
+            Parameter(name="filenames"),
+        ],
         volumes=[
             ExistingVolume(
-                claim_name=cluster.volume_claim,
                 # Providing a name is mandatory but how is it relevant/used ?
                 name="dummy-name",
-                mount_path=parameters.persistedVolume,
+                claim_name=environment.persisted_volume.claim_name,
+                mount_path=environment.persisted_volume.mount_path,
             )
         ],
         command=["impexp-entrypoint.sh"],
         args=[
             "import",
             "-H",
-            "{{inputs.parameters.hostaddr}}",
+            "{{inputs.parameters.database_ip_address}}",
             "-d",
-            parameters.database.name,
+            database.name,
             "-u",
-            parameters.database.user,
+            database.user,
             "-p",
-            parameters.database.password,
+            database.password,
+            # "-P", database.port,
             os.path.join(
-                parameters.persistedVolume, "{{inputs.parameters.filenames}}"
-            )
-            # "-P", "{{inputs.parameters.port}}",
+                environment.persisted_volume.mount_path,
+                "{{inputs.parameters.filenames}}",
+            ),
         ],
     )
     return container
@@ -325,77 +347,3 @@ def check_is_valid_ip(ip_addr: str):
     except socket.error:
         print(ip_addr, " was NOT well formed string to stand as IP number.")
         raise Exception("failure")
-
-
-def define_db_check_template(cluster, parameters):
-    # Notice: we cannot integrate the starting of the database within this
-    # workflow because as stated in the ArgoWorkflows documentation (refer to
-    # https://argoproj.github.io/argo-workflows/walk-through/daemon-containers/)
-    #   the daemons will be automatically destroyed when the workflow exits
-    #   the template scope in which the daemon was invoked.
-    with WorkflowTemplate(
-        name="workflow-checkdb",
-        entrypoint="db-check-template",
-    ) as w:
-        db_isready_c = db_isready_container(
-            cluster, parameters, "shellprobing"
-        )
-        db_probe_c = db_probe_catalog_container(
-            cluster, parameters, "catalogprobing"
-        )
-        with DAG(
-            name="db-check-template", inputs=[Parameter(name="dbhostaddr")]
-        ) as main_dag:
-            # When the database fails to start properly, sometimes the ip number
-            # returned by the AW engine is the original/uninterpreted expression
-            # of the form "{{tasks.<TASKNAME>.ip}}" as opposed to a valid ip
-            # number. We thus first check that the AW engine did its job.
-            t1: Task = check_is_valid_ip(
-                name="check-db-ip-is-valid",
-                arguments={"ip_addr": "{{inputs.parameters.dbhostaddr}}"},
-            )
-            t2 = Task(
-                name="db-shell-probing",
-                template=db_isready_c,
-                arguments=[
-                    Parameter(
-                        name="hostaddr",
-                        value="{{inputs.parameters.dbhostaddr}}",
-                    )
-                ],
-            )
-            t3 = Task(
-                name="db-catalog-probing",
-                template=db_probe_c,
-                arguments=[
-                    Parameter(
-                        name="hostaddr",
-                        value="{{inputs.parameters.dbhostaddr}}",
-                    )
-                ],
-            )
-            # At this stage we can consider the db ip is valid (because behind
-            # that IP the DB was proprely initialized/loaded and answering
-            # requests). We thus repeat it to the output (although it was
-            # handled over as input) in order for the caller to have the
-            # notational convenience to hook his workflow downstream from this
-            # check as opposed to directly downstream from the db starting
-            # (which could be corrupted/ill-initialized/brain-damaged)
-            t4: Task = convert_message_to_output_parameter(
-                name="repeat-validated-ip",
-                arguments=Parameter(
-                    name="message", value="{{inputs.parameters.dbhostaddr}}"
-                ),
-            )
-            t1 >> t2 >> t3 >> t4
-            # Template output(s) forwarding:
-            expression = expr.tasks[
-                "repeat-validated-ip"
-            ].outputs.parameters.message
-            main_dag.outputs = [
-                Parameter(
-                    name="dbip", value_from={"expression": str(expression)}
-                )
-            ]
-    hera_clear_workflow_template(cluster, "workflow-checkdb")
-    w.create()

@@ -1,10 +1,11 @@
 import os
+import types
 
 
 class layout:
-    def __init__(self, inputs) -> None:
-        self.experiment_output_dir = inputs.constants.experiment_output_dir
-        self.pattern = inputs.constants.pattern
+    def __init__(self, constants) -> None:
+        self.experiment_output_dir = constants.experiment_output_dir
+        self.pattern = constants.pattern
 
     def stage_output_dir(self, stage_output_dir):
         return os.path.join(self.experiment_output_dir, stage_output_dir)
@@ -71,3 +72,16 @@ class layout:
             the argument parameters.
         """
         return str(vintage) + "-" + borough.replace("_", "-")
+
+    def database(vintage=None):
+        if vintage:
+            name = "citydb-lyon-" + str(vintage)
+        else:
+            name = "dummy-db-name"
+        return types.SimpleNamespace(
+            port="5432",
+            name=name,
+            user="postgres",
+            password="postgres",
+            keep_database=True,
+        )

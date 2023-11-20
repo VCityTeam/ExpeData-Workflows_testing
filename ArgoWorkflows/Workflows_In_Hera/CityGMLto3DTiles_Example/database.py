@@ -322,10 +322,7 @@ def import_citygml_file_to_db_container(environment, database):
             "-p",
             database.password,
             # "-P", database.port,
-            os.path.join(
-                environment.persisted_volume.mount_path,
-                "{{inputs.parameters.filenames}}",
-            ),
+            "{{inputs.parameters.filenames}}",
         ],
     )
     return container

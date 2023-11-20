@@ -61,8 +61,19 @@ class layout:
             self.strip_gml_output_filename(vintage, borough),
         )
 
-    ##### Utils
-    def container_name_postend(vintage, borough):
+    ##### Utils (fake @staticmethods)
+    # DESIGN NOTES: strictly speaking the following methods are @staticmethod
+    # (they do not use any instnace attributes). Yet in order to avoid passing
+    # e.g. three arguments
+    #   1. layout (as a class)
+    #   2. an instance (layout(constants)) or just the constructor argument
+    #      that is some constants
+    #   3. a database instance (layout.database(vintage)) or just/equivalently
+    #      a vintage value
+    # if suffice to pass
+    #   1. layout_instance = layout(constants) that is an instance of the class
+    #   2. vintage (that enables to build) database = layout_instance(vintage)
+    def container_name_postend(unused_self, vintage, borough):
         """Hera Tasks need to have distinguished named. When looping we thus
         need to generated task names by declining a task radical (e.g. collect,
         strip, split) with parameter (vintage, borough) dependent names.
@@ -73,11 +84,11 @@ class layout:
         """
         return str(vintage) + "-" + borough.replace("_", "-")
 
-    def database(vintage=None):
+    def database(unused_self, vintage=None):
         if vintage:
             name = "citydb-lyon-" + str(vintage)
         else:
-            name = "dummy-db-name"
+            name = "no-vingage-given-dummy-db-name"
         return types.SimpleNamespace(
             port="5432",
             name=name,

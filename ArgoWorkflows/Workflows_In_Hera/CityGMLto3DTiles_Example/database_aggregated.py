@@ -7,7 +7,7 @@ from hera_utils import hera_assert_version, hera_clear_workflow_template
 hera_assert_version("5.6.0")
 
 ###############
-# Notes:
+# LIMIT notes:
 # 1/ non inclusion of db starter:
 #    Some db related WorkflowTemplates might need to express the creation of a
 #    db server. Alas we cannot integrate the starting of the database within
@@ -40,7 +40,7 @@ from database import (
 
 
 def define_db_check_template(environment, database, vintage, template_name):
-    # Note: refer above to note [1]
+    # LIMIT: refer above to note [1]
     workflow_template_name = "workflow-checkdb-" + str(vintage)
     with WorkflowTemplate(
         name=workflow_template_name,
@@ -104,12 +104,12 @@ def define_db_check_template(environment, database, vintage, template_name):
     w.create()
 
 
-def define_import_bouroughs_to_3dcitydb_template(
-    environment, database, layout, vintage, boroughs
+def define_import_boroughs_to_3dcitydb_template(
+    environment, layout_instance, vintage, boroughS, template_name
 ):
-    # FIXME FIXME NOT FUNCTIONNAL YET
     """For the considered vintage, and the associated database, import all
-    the (many) argument designated boroughs
+    the (many) argument designated boroughS (thus the capital S that underlines
+    the multiplicty of buroughs)
 
     Args:
         environment (_type_): the experimental environment (cluster, partitions)
@@ -119,50 +119,77 @@ def define_import_bouroughs_to_3dcitydb_template(
         vintage (_type_): the considered and unique vintage
         boroughs (_type_): the set of boroughs that must be imported
     """
-    # Note:
-    # - refer above to note [1]
-    # - we need to apply the note [2]. In the case of this workflow, we flow
-    #   the ip address
+    # Notes:
+    # - LIMIT: refer above to note [1]
+    # - LIMIT: we need to apply the note [2]. In the case of this workflow, we
+    #   flow the ip address
+    # - EXPERIMENT DESIGN: concerning the reasons for the vintage vs borough
+    #   role asymetry, the refer to "test_import_gml.py" EXPERIMENT DESIGN NOTES
+    # - SOFTWARE DESIGN NOTES: before importing any paired (vintage, borough)
+    #   set of data it is a recommendable practice to first asserts that the
+    #   concerned database is up and active. Because such precondition is
+    #   expensive (the `"db-check-template-"+ str(vintage)` WorkflowTemplates
+    #   have many containers) to assert this implementation design choses to
+    #   integrate the borough loop in order to minimise the number or database
+    #   checks.
+
+    ### First define the WorkFlowTemplates used below by the main Workflow.
+    #
+    # LIMIT: trying to define the following WorkFlowTemplate(s) in the context
+    # of the Workflow (that is after the
+    #     `with Workflow(generate_name="threedcitydb-start-",[...])`
+    # declaration) will fail. Hera complains that the @scripts used by the
+    # WorkFlowTemplates are undefined (e.g. `template print_script undefined`).
+
+    database = layout_instance.database(vintage)
+    db_check_template_name = "db-check-template-" + str(vintage)
+    define_db_check_template(
+        environment,
+        database,
+        vintage,
+        template_name=db_check_template_name,
+    )
+
+    workflow_template_name = "workflow-import-" + str(vintage)
     with WorkflowTemplate(
-        name="workflow-import-boroughs",
-        entrypoint="import-boroughs-template",
+        name=workflow_template_name,
+        entrypoint=template_name,
     ) as w:
         import_citygml_file_to_db_c = import_citygml_file_to_db_container(
             environment, database
         )
         with DAG(
-            name="import-boroughs-template",
+            name=template_name,
             inputs=[Parameter(name="dbhostaddr")],
-        ) as main_dag:
+        ):
             #### Preconditions:
             # Check the database is up and available.
             threed_city_db_check_t = Task(
-                name="threed-city-db-check"
-                + layout.container_name_postend(vintage, boroughs),
+                name="threed-city-db-check-" + str(vintage),
                 template_ref=models.TemplateRef(
-                    name="workflow-checkdb",
-                    template="db-check-template",
+                    name="workflow-checkdb-" + str(vintage),
+                    template=db_check_template_name,
                 ),
                 arguments={"dbhostaddr": "{{inputs.parameters.dbhostaddr}}"},
             )
-            #### Proceed with importation per se
-            dummy_fanin_t = print_script(
-                name="print-results",
-                arguments={"message": "End of importation stage."},
-            )
 
-            for borough in boroughs:
-                input_dir = (
-                    os.path.join(
-                        environment.persisted_volume.mount_path,
-                        layout.strip_gml_output_dir(vintage, borough),
-                    ),
+            for borough in boroughS:
+                input_dir = os.path.join(
+                    environment.persisted_volume.mount_path,
+                    layout_instance.strip_gml_output_dir(vintage, borough),
                 )
-                input_filename = (layout.strip_gml_output_filename(vintage, borough),)
+
+                input_filename = layout_instance.strip_gml_output_filename(
+                    vintage, borough
+                )
+
+                # FIXME: call the importation method with a real list of
+                # filenameS as opposed to this single filename
                 filenames_to_import = os.path.join(input_dir, input_filename)
 
                 import_t = Task(
-                    name="import-citygml-files-to-db" + str(vintage) + str(borough),
+                    name="import-citygml-files-to-db"
+                    + layout_instance.container_name_postend(vintage, borough),
                     template=import_citygml_file_to_db_c,
                     arguments=[
                         Parameter(
@@ -176,7 +203,7 @@ def define_import_bouroughs_to_3dcitydb_template(
                     ],
                 )
 
-            threed_city_db_check_t >> import_t >> dummy_fanin_t
+                threed_city_db_check_t >> import_t
 
-    hera_clear_workflow_template(environment, "workflow-import-boroughs")
+    hera_clear_workflow_template(environment, workflow_template_name)
     w.create()

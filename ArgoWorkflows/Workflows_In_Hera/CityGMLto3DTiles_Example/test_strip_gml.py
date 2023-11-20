@@ -25,7 +25,7 @@ if __name__ == "__main__":
                 for borough in inputs.parameters.boroughs:
                     strip_gml_t = Task(
                         name="strip-gml-"
-                        + layout.container_name_postend(vintage, borough),
+                        + layout_instance.container_name_postend(vintage, borough),
                         template=strip_gml_c,
                         arguments={
                             "input_filename": os.path.join(
@@ -63,7 +63,7 @@ if __name__ == "__main__":
                     )
                     write_output_t: Task = convert_message_to_output_parameter(
                         name="write-output-"
-                        + layout.container_name_postend(vintage, borough),
+                        + layout_instance.container_name_postend(vintage, borough),
                         arguments=Parameter(name="message", value=output_dir),
                     )
                     strip_gml_t >> write_output_t

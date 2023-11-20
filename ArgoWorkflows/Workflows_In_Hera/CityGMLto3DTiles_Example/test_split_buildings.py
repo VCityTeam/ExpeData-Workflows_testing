@@ -15,7 +15,7 @@ if __name__ == "__main__":
     from input_2012_tiny_import_dump import inputs
     from experiment_layout import layout
 
-    layout_instance = layout(inputs)
+    layout_instance = layout(inputs.constants)
 
     with Workflow(generate_name="split-buildings-", entrypoint="dag") as w:
         split_buildings_c = split_buildings_container(environment)
@@ -24,7 +24,7 @@ if __name__ == "__main__":
                 for borough in inputs.parameters.boroughs:
                     split_buildings_t = Task(
                         name="split-buildings"
-                        + layout.container_name_postend(vintage, borough),
+                        + layout_instance.container_name_postend(vintage, borough),
                         template=split_buildings_c,
                         arguments={
                             "input_filename": os.path.join(
@@ -60,7 +60,7 @@ if __name__ == "__main__":
                     )
                     write_output_t: Task = convert_message_to_output_parameter(
                         name="write-output-"
-                        + layout.container_name_postend(vintage, borough),
+                        + layout_instance.container_name_postend(vintage, borough),
                         arguments=Parameter(name="message", value=output_dir),
                     )
                     split_buildings_t >> write_output_t

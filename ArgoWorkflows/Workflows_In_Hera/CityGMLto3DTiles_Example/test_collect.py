@@ -42,7 +42,7 @@ if __name__ == "__main__":
                     )
                     collect_t = Task(
                         name="collect-"
-                        + layout.container_name_postend(vintage, borough),
+                        + layout_instance.container_name_postend(vintage, borough),
                         template=collect_c,
                         arguments={
                             "vintage": vintage,

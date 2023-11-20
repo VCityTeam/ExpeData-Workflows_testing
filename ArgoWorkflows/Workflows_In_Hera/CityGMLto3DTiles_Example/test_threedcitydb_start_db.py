@@ -43,7 +43,7 @@ if __name__ == "__main__":
         db_check_template_name = "db-check-template-" + str(vintage)
         define_db_check_template(
             environment,
-            layout.database(vintage),
+            layout(inputs.constants).database(vintage),
             vintage,
             template_name=db_check_template_name,
         )
@@ -58,11 +58,13 @@ if __name__ == "__main__":
         threedcitydb_containers = {}
         for vintage in inputs.parameters.vintages:
             threedcitydb_start_db_c = threedcitydb_start_db_container(
-                environment, inputs.constants, layout.database(vintage)
+                environment,
+                inputs.constants,
+                layout(inputs.constants).database(vintage),
             )
             threedcitydb_containers[vintage] = threedcitydb_start_db_c
 
-        with DAG(name="main") as s:
+        with DAG(name="main"):
             for vintage in inputs.parameters.vintages:
                 start_db_t = Task(
                     name="start-db-daemon-" + str(vintage),
@@ -76,15 +78,25 @@ if __name__ == "__main__":
                     ),
                     arguments={"dbhostaddr": start_db_t.ip},
                 )
-                ## start_db_t >> threed_city_db_check_t
 
                 print_ip_t = check_is_valid_ip(
                     name="db-check-ip-validity" + str(vintage),
                     arguments=Parameter(
                         name="ip_addr",
                         value=start_db_t.ip
-                        # We wanted to write
+                        # LIMIT: we wanted to write
                         # value="{{tasks.threed-city-db-check.outputs.parameters.dbip}}",
+                        # but we need to decline the tasks names with the vintages
+                        # i.e. to write an expression that evaluates to
+                        #    value="{{tasks.threed-city-db-check-2012.outputs.parameters.dbip}}
+                        # starting from
+                        #    value="{{tasks.threed-city-db-check-+str(vintage).outputs.parameters.dbip}}
+                        # There is thus a double evaluation of the value string
+                        # - a first one at Hera definition stage where the
+                        #   vintage for loop is expressed
+                        # - a second evaluation at AW runtime stage to retrieve
+                        #   the current value out of the expression.
+                        # Writing such value string promisses to be painfull...
                     ),
                 )
                 start_db_t >> threed_city_db_check_t >> print_ip_t

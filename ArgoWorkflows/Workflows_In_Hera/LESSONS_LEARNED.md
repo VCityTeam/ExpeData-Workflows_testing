@@ -200,7 +200,7 @@ For example the directory layout of the pipeline must be expressed with
 which exposes Hera underlying mechanisms and constrains Hera users to know (and
 mix) both Python and AW-expressions.
 
-Thus is we wish to stick to a single language for expressing the experimental
+Thus if we wish to stick to a single language for expressing the experimental
 logic (that is Python as offered by Hera) we need to drop the native AW way for
 expressing loops and instead express such loops in Python. Such a scheme has
 two main drawbacks:

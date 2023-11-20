@@ -123,15 +123,9 @@ def define_import_boroughs_to_3dcitydb_template(
     # - LIMIT: refer above to note [1]
     # - LIMIT: we need to apply the note [2]. In the case of this workflow, we
     #   flow the ip address
-    # - EXPERIMENT DESIGN: concerning the reasons for the vintage vs borough
-    #   role asymetry, the refer to "test_import_gml.py" EXPERIMENT DESIGN NOTES
-    # - SOFTWARE DESIGN NOTES: before importing any paired (vintage, borough)
-    #   set of data it is a recommendable practice to first asserts that the
-    #   concerned database is up and active. Because such precondition is
-    #   expensive (the `"db-check-template-"+ str(vintage)` WorkflowTemplates
-    #   have many containers) to assert this implementation design choses to
-    #   integrate the borough loop in order to minimise the number or database
-    #   checks.
+    # - EXPERIMENT DESIGN: refer to "EXPERIMENT_DESIGN.md" for the priming
+    #   vintage over boroughs in the databases and its "functional" integration
+    #   approach/consquence ending in the creation of this WorkflowTemplate.
 
     ### First define the WorkFlowTemplates used below by the main Workflow.
     #

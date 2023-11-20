@@ -18,25 +18,8 @@ if __name__ == "__main__":
     from input_2012_tiny_import_dump import inputs
     from experiment_layout import layout
 
-    #### EXPERIMENT DESIGN NOTES (and on of its consequence that is that
-    # vintage and borough parameters do NOT play a symetrical role):
-    # At some level of abstraction
-    # - a boroughs-3Dtiles (of a city) can be seen as the (geographic)
-    #   geometrical data the set of boroughs that are considered to describe
-    #   that city.
-    # - a Temporal-3DTiles can be seen as temporal (vintages being the coarse
-    #   grain for time) stack of such boroughs-3Dtiles.
-    # Most often when projects work on city data, they first scale up the data
-    # by considering a greater number of boroughs (bigger cities). Once
-    # geographic scale-up is achieved then (and only then) does time kick-in
-    # (through different time based versions of the city).
-    # When a city modeling project adopts such a project history (implicitly)
-    # inherited ranking of space vs time parameters, and when data size imposes
-    # to split among different databases, then a "natural" choice arises:
-    # make as many databases are they are vintages (each vintaged-db regrouping
-    # all the boroughs).
-    # DESIGN CONSEQUENCE: the vintage parameters primes over the borough
-    # parameter (because databases are vintaged-databases).
+    ##### EXPERIMENT DESIGN NOTE: refer to "EXPERIMENT_DESIGN.md" for priming
+    # vintage over boroughs in the databases.
 
     layout_instance = layout(inputs.constants)
     db_import_boroughs_template_names = {}

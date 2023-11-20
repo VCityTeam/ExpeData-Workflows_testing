@@ -295,7 +295,7 @@ def db_probe_catalog_container(environment, database, name):
 
 def import_citygml_file_to_db_container(environment, database):
     container = Container(
-        name="threedcitydb-importer",
+        name="threedcitydb-importer" + database.name,
         image=environment.cluster.docker_registry + "vcity/impexp:4.3.0",
         image_pull_policy=models.ImagePullPolicy.always,
         inputs=[

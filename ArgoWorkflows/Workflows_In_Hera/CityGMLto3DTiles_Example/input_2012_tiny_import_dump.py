@@ -10,9 +10,8 @@ inputs = types.SimpleNamespace(
     parameters=types.SimpleNamespace(
         # Parameters vary independently from one another
         boroughs=["LYON_1ER", "LYON_8EME"],
-        vintages=["2012", "2015"],
-        # FIXME: debug entries (to be removed when loops are effective):
-        borough="LYON_8EME",
-        vintage="2012",
+        # FIXME: for 2015 split buildings produces an empty output (no
+        # buildings at all) !
+        vintages=["2009", "2012"],
     ),
 )

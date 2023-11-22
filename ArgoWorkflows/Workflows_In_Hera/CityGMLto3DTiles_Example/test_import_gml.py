@@ -30,7 +30,7 @@ if __name__ == "__main__":
         db_check_template_name = "db-check-template-" + str(vintage)
         define_db_check_template(
             environment,
-            layout(inputs.constants).database(vintage),
+            layout_instance.database(vintage),
             vintage,
             template_name=db_check_template_name,
         )
@@ -41,7 +41,6 @@ if __name__ == "__main__":
         for vintage in inputs.parameters.vintages:
             threedcitydb_start_db_c = threedcitydb_start_db_container(
                 environment,
-                inputs.constants,
                 layout_instance.database(vintage),
             )
             threedcitydb_containers[vintage] = threedcitydb_start_db_c

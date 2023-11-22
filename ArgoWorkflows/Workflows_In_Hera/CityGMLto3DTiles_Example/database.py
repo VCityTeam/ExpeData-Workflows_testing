@@ -81,7 +81,7 @@ def get_statistical_value_of_initial_delay(db_files_out_of_container: bool):
     return initialDelaySeconds
 
 
-def threedcitydb_start_db_container(environment, constants, database):
+def threedcitydb_start_db_container(environment, database):
     # LIMITS: the 3dcitydb-pg container doesn't seem to use a CMD entry in
     # its Dockefile definition (refer to
     # https://github.com/3dcitydb/3dcitydb/blob/master/postgresql/Dockerfile)
@@ -130,7 +130,7 @@ def threedcitydb_start_db_container(environment, constants, database):
         # IMPROVE: promote this derived variable to become a parameters attribute ?
         results_dir = os.path.join(
             environment.persisted_volume.mount_path,
-            constants.experiment_output_dir,
+            database.serialization_output_dir,
             database.name,
         )
         # As offered by 3dCityDB container, just provide a PGDATA environment
@@ -231,9 +231,6 @@ def send_command_to_postgres_container(
             # refer to https://www.postgresql.org/docs/current/libpq-envars.html
             # (as opposed to docker container variables)
             Env(name="PGDATABASE", value=database.name),
-            # FIXME: at some point the database name will need to be derived
-            # with the vintage name
-            # {{inputs.parameters.database_name}}-{{inputs.parameters.vintage}}
             # Note: the difference of syntax between the respective definitions
             # of the values of the PGHOSTADDR and PGPASSWORD environment
             # variables is due to the difference of their respective stages of

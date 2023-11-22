@@ -59,7 +59,6 @@ if __name__ == "__main__":
         for vintage in inputs.parameters.vintages:
             threedcitydb_start_db_c = threedcitydb_start_db_container(
                 environment,
-                inputs.constants,
                 layout(inputs.constants).database(vintage),
             )
             threedcitydb_containers[vintage] = threedcitydb_start_db_c

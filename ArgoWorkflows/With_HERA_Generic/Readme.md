@@ -142,6 +142,13 @@ for the available behavioral parameters as well as a few usage caveats
 (venv) python CityGMLto3DTiles_Example/test_threedcitydb_start_db.py
 ```
 
+Then proceed with the last steps
+
+```bash
+(venv) python CityGMLto3DTiles_Example/test_import_gml.py
+(venv) python CityGMLto3DTiles_Example/test_compute_tileset.py
+```
+
 ## Developers
 
 ### Running the failing or issues

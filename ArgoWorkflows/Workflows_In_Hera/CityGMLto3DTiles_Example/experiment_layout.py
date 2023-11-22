@@ -10,7 +10,7 @@ class layout:
     def stage_output_dir(self, stage_output_dir):
         return os.path.join(self.experiment_output_dir, stage_output_dir)
 
-    ###### stage 1
+    ###### stage 1: collect from Lyon Metropole open data
     def collect_output_dir(self, vintage, borough):
         return os.path.join(
             self.stage_output_dir("stage_1"),
@@ -24,7 +24,7 @@ class layout:
             borough + "_" + self.pattern + "_" + vintage + ".gml",
         )
 
-    ###### stage 2
+    ###### stage 2: splitting buildings
     def split_buildings_input_filename(self, vintage, borough):
         return self.collect_output_filename(vintage, borough)
 
@@ -44,7 +44,7 @@ class layout:
             self.split_buildings_output_filename(self, vintage, borough),
         )
 
-    ###### stage 3
+    ###### stage 3: stripping files
     def strip_gml_output_dir(self, vintage, borough):
         return os.path.join(
             self.stage_output_dir("stage_3"),
@@ -61,18 +61,39 @@ class layout:
             self.strip_gml_output_filename(vintage, borough),
         )
 
-    ##### Utils (fake @staticmethods)
-    # DESIGN NOTES: strictly speaking the following methods are @staticmethod
-    # (they do not use any instnace attributes). Yet in order to avoid passing
-    # e.g. three arguments
-    #   1. layout (as a class)
-    #   2. an instance (layout(constants)) or just the constructor argument
-    #      that is some constants
-    #   3. a database instance (layout.database(vintage)) or just/equivalently
-    #      a vintage value
-    # if suffice to pass
-    #   1. layout_instance = layout(constants) that is an instance of the class
-    #   2. vintage (that enables to build) database = layout_instance(vintage)
+    ###### stage 4: create and eventually serialize database(s)
+    def database(self, vintage=None):
+        if vintage:
+            name = "citydb-lyon-" + str(vintage)
+        else:
+            name = "no-vintage-given-dummy-db-name"
+        return types.SimpleNamespace(
+            port="5432",
+            name=name,
+            user="postgres",
+            password="postgres",
+            serialization_output_dir=self.stage_output_dir("stage_4"),
+            keep_database=True,
+        )
+
+    ###### stage 5: compute the tilesets
+    def compute_tileset_output_dir(self, vintage):
+        return os.path.join(self.stage_output_dir("stage_5"), vintage)
+
+    def compute_tileset_configuration_filename(self, vintage):
+        # FIXME: respect the DRY principal and avoid repeating (and depending
+        # on) the definition given in
+        #    generate_compute_tileset_configuration_file()
+        return "CityTilerDBConfigStatic" + str(vintage) + ".yml"
+
+    ### Utility methods
+
+    # DESIGN NOTES strictly speaking the `container_name_postend()` method
+    # should be @staticmethod (they do not use any instance attributes).
+    # Its purpose is to enable to decline container names out of vintage and
+    # borough values. It thus doesn't concern file layout but container naming
+    # organization. It is left in this Layour class until under a better
+    # class/organisational-llogic is found
     def container_name_postend(unused_self, vintage, borough):
         """Hera Tasks need to have distinguished named. When looping we thus
         need to generated task names by declining a task radical (e.g. collect,
@@ -83,16 +104,3 @@ class layout:
             the argument parameters.
         """
         return str(vintage) + "-" + borough.replace("_", "-")
-
-    def database(unused_self, vintage=None):
-        if vintage:
-            name = "citydb-lyon-" + str(vintage)
-        else:
-            name = "no-vingage-given-dummy-db-name"
-        return types.SimpleNamespace(
-            port="5432",
-            name=name,
-            user="postgres",
-            password="postgres",
-            keep_database=True,
-        )

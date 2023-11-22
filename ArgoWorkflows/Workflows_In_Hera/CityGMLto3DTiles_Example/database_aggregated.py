@@ -30,7 +30,7 @@ from hera.workflows import (
     WorkflowTemplate,
 )
 from hera.expr import g as expr
-from utils import convert_message_to_output_parameter, print_script
+from utils import convert_message_to_output_parameter
 from database import (
     check_is_valid_ip,
     db_isready_container,

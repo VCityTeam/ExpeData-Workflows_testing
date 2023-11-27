@@ -1,8 +1,6 @@
 import sys, os
 
-sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-)
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition"))
 
 from hera_utils import hera_assert_version
 
@@ -30,9 +28,7 @@ from hera.workflows import (
         )
     ],
 )
-def list_experiment_pesisted_files(
-    claim_name, mount_path, experiment_output_dir
-):
+def list_experiment_pesisted_files(claim_name, mount_path, experiment_output_dir):
     import os
 
     print()
@@ -71,7 +67,10 @@ if __name__ == "__main__":
                     optional=False,
                 )
             ],
-            command=["cowsay", "PaGoda can pull whalesay docker container."],
+            command=[
+                "cowsay",
+                "PaGoda can pull whalesay docker container (across HTTP proxies).",
+            ],
         )
         with DAG(name="main"):
             t1 = print_pagoda_environment(

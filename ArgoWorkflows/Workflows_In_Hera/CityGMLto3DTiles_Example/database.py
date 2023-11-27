@@ -216,10 +216,6 @@ def send_command_to_postgres_container(
         # Avoid conflicting demands with other pods.
         # synchronization=models.Mutex(name=mutex_lock_on_database_dump_import),
         env=[
-            # CLEANME Assumes the corresponding config map is defined in the k8s cluster
-            # CLEANME ConfigMapEnvFrom(
-            # CLEANME    config_map_name=environment.cluster.configmap, optional=False
-            # CLEANME),
             # The following command variables are libpq environment variables
             # refer to https://www.postgresql.org/docs/current/libpq-envars.html
             # (as opposed to docker container variables)

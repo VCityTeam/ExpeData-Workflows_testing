@@ -65,18 +65,56 @@ if __name__ == "__main__":
                     )
                     split_buildings_t >> write_output_t
 
-                    # FIXME Somehow we gave up on collecting outputs to plug them
-                    # at AW level as inputs for the next task because the so-called
-                    # fanout-fanin techniques e.g.
+                    # LIMIT: with AW, loops must be expressed through dedicated
+                    # commands (`with_items` together with `{{item}}`). Hera
+                    # offers its AW native counterpart. But when using Hera we
+                    # also sometimes (when the loop bound are known at Hera
+                    # submission stage) have the freedom to express loops at the
+                    # Python level (although the topology/breadth of the loop
+                    # will then not be driven at runtime).
+                    # When using AW loops language mechanism, AW offers a
+                    # technique for so-called fanout-fanin techniques refer to
                     # https://github.com/argoproj-labs/hera/blob/main/examples/workflows/dynamic_fanout_fanin.py
-                    # do NOT work when there is more than a single fanout task.
-                    # For example if we add the following lines
+                    # If we chose to express the loop natively in Python, we
+                    # must have an equivalent of the fanout-fanin technique.
+                    # The question is then: what is this equivalent ?
+                    #
+                    # In the above design of the present workflow, we chose to
+                    # express the for loop in Python. But we (might) still need
+                    # to collect the outputs of the tasks that are part of the
+                    # loop (for example in order to plug such values into the
+                    # next task's input).
+                    #
+                    # As a first trial, if we add the following lines
                     #     print_t = print_list_script(
                     #         name="print-results",
                     #         arguments=write_output_t.get_parameter("message"),
                     #     )
                     #     write_output_t >> print_t
-                    # then (and as expected) Hera would complain about/with
+                    # to the python for loop then (and as expected) Hera would
+                    # complain about/with the following message
                     #     templates.dag sorting failed:
                     #        duplicated nodeName print-results
+                    #
+                    # As a second trial, we might try to decline the name of
+                    # the task as e.g. in
+                    #     print_t = print_list_script(
+                    #         name="print-results"+ str(borough),
+                    #         arguments=write_output_t.get_parameter("message"),
+                    #     )
+                    #     write_output_t >> print_t
+                    # which shall work but with the wrong semantics: they are
+                    # many print_t tasks that thus cannot be a fanin task
+                    # (because they are many fanout tasks for a single fanin
+                    # task).
+                    #
+                    # Eventually the only solutions seems to create a fanin
+                    # task whose input is not flown at the AW/Hera level but
+                    # that will collect its input out of the outputs files
+                    # of the fanout tasks: this fanin task will thus require
+                    # the knowledge of where the files describing the result
+                    # of a fanout task are located (as well as their structure).
+                    # And it will require this knowledge for each of the fanout
+                    # task i.e. it will require the knowledge of loop (resulting
+                    # files) layout.
     w.create()

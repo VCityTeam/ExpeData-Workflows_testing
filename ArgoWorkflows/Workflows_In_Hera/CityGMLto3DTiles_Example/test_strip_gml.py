@@ -67,10 +67,5 @@ if __name__ == "__main__":
                         arguments=Parameter(name="message", value=output_dir),
                     )
                     strip_gml_t >> write_output_t
-                    # FIXME CLEAN ME
-                    # # print_t = print_script(
-                    # #     name="print-results",
-                    # #     arguments=write_output_t.get_parameter("message"),
-                    # # )
-                    # strip_gml_t >> write_output_t  # >> print_t
+
     w.create()

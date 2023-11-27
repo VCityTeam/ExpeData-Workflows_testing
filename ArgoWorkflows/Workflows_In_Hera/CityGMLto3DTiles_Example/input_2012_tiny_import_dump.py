@@ -10,8 +10,10 @@ inputs = types.SimpleNamespace(
     parameters=types.SimpleNamespace(
         # Parameters vary independently from one another
         boroughs=["LYON_1ER", "LYON_8EME"],
-        # FIXME: for 2015 split buildings produces an empty output (no
-        # buildings at all) !
+        # BUG: for 2015 split buildings produces an empty output (no
+        # buildings at all). This might be due to the fact that 2015 buildings
+        # are already nicely split and only a copy to the targer directory is
+        # required (but not done?)...
         vintages=["2009", "2012"],
     ),
 )

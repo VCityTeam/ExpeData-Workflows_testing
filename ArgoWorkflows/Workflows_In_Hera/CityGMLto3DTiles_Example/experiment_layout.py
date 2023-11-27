@@ -72,7 +72,9 @@ class layout:
             name=name,
             user="postgres",
             password="postgres",
-            serialization_output_dir=self.stage_output_dir("stage_4"),
+            serialization_output_dir=os.path.join(
+                self.stage_output_dir("stage_4"), name
+            ),
             keep_database=True,
         )
 

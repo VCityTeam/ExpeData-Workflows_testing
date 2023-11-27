@@ -5,7 +5,6 @@ hera_assert_version("5.6.0")
 ###########
 import os
 from hera.workflows import (
-    ConfigMapEnvFrom,
     Container,
     Env,
     ExistingVolume,
@@ -13,8 +12,8 @@ from hera.workflows import (
     Parameter,
     script,
 )
-from hera.expr import g as expr
-from utils import convert_message_to_output_parameter
+
+# CLEAN ME from hera.expr import g as expr
 
 
 def get_statistical_value_of_initial_delay(db_files_out_of_container: bool):
@@ -107,10 +106,6 @@ def threedcitydb_start_db_container(environment, database):
         image=environment.cluster.docker_registry + "vcity/3dcitydb-pg:13-3.1-4.1.0",
         image_pull_policy=models.ImagePullPolicy.always,
         env=[
-            # Assumes the corresponding config map is defined in the k8s cluster
-            ConfigMapEnvFrom(
-                config_map_name=environment.cluster.configmap, optional=False
-            ),
             # Specific to 3dCityDB container, refer to
             # https://3dcitydb-docs.readthedocs.io/en/latest/3dcitydb/docker.html#citydb-docker-config-psql
             Env(name="SRID", value=3946),
@@ -122,21 +117,19 @@ def threedcitydb_start_db_container(environment, database):
             Env(name="POSTGRES_PASSWORD", value=database.password),
             Env(name="POSTGRES_USER", value=database.user),
         ],
-        # FIXME command=["docker-entrypoint.sh"],
-        # FIXME args=["postgres", "-p", "5432"],
     )
 
     if database.keep_database:
-        # IMPROVE: promote this derived variable to become a parameters attribute ?
-        results_dir = os.path.join(
-            environment.persisted_volume.mount_path,
-            database.serialization_output_dir,
-            database.name,
-        )
         # As offered by 3dCityDB container, just provide a PGDATA environment
         # value that points to the ad-hoc directory
         new_container.env.append(
-            Env(name="PGDATA", value=results_dir),
+            Env(
+                name="PGDATA",
+                value=os.path.join(
+                    environment.persisted_volume.mount_path,
+                    database.serialization_output_dir,
+                ),
+            ),
         )
         new_container.volumes = [
             ExistingVolume(
@@ -223,10 +216,10 @@ def send_command_to_postgres_container(
         # Avoid conflicting demands with other pods.
         # synchronization=models.Mutex(name=mutex_lock_on_database_dump_import),
         env=[
-            # Assumes the corresponding config map is defined in the k8s cluster
-            ConfigMapEnvFrom(
-                config_map_name=environment.cluster.configmap, optional=False
-            ),
+            # CLEANME Assumes the corresponding config map is defined in the k8s cluster
+            # CLEANME ConfigMapEnvFrom(
+            # CLEANME    config_map_name=environment.cluster.configmap, optional=False
+            # CLEANME),
             # The following command variables are libpq environment variables
             # refer to https://www.postgresql.org/docs/current/libpq-envars.html
             # (as opposed to docker container variables)
@@ -244,8 +237,9 @@ def send_command_to_postgres_container(
             Env(name="PGHOSTADDR", value="{{inputs.parameters.hostaddr}}"),
             Env(name="PGPASSWORD", value=database.password),
             Env(name="PGUSER", value=database.user),
-            ### FIXME DO WE NEED THE PORT IN ALL THE FOLLOWING COMMAND ?
-            # The variable is parameters.database.port
+            # Note: we default PGPORT because each database runs on a separate
+            # host. Port distinction was originaly required because all
+            # databases were running on the same desktop.
         ],
         command=command,
         args=arguments,
@@ -276,12 +270,6 @@ def db_probe_catalog_container(environment, database, name):
     #     ...
     #     Error: exit status 2
     arguments = [
-        # FIXME: --dbname and --username are given twice (which is one to many)
-        # to send_command_to_postgres_container(database, [...]) : once through
-        # the following argument flags and once through the definition of
-        # ENV() variables within send_command_to_postgres_container(database, [...])
-        # "--dbname=" + database.name,
-        "--username=" + database.user,
         "-c",
         "SELECT * FROM citydb.building",
     ]

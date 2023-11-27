@@ -10,7 +10,6 @@ hera_assert_version("5.6.0")
 if __name__ == "__main__":
     from hera.workflows import DAG, Task, models, Parameter, Workflow
 
-    from utils import whalesay_container
     from database import (
         threedcitydb_start_db_container,
         import_citygml_file_to_db_container,
@@ -100,5 +99,4 @@ if __name__ == "__main__":
                     # The following line is thus NOT for some parameter flow
                     # but only to imposer some ordering to be respected.
                     threed_city_db_check_t >> import_vintage_borough_t
-                    # FIXME >> whalesay_input_dir_t
     w.create()

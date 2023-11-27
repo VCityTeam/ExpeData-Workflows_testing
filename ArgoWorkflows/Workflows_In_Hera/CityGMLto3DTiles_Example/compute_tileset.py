@@ -21,10 +21,17 @@ from hera.workflows import Container, ExistingVolume, models, Parameter, script
         Parameter(name="vintage"),
         Parameter(name="target_directory"),
     ],
-    # FIXME: The following introduces an undue dependency between a
-    # treatment/process and an environment. This awkward resuling treatment
-    # could be fixed if Hera allowed it, refer to
-    # https://github.com/argoproj-labs/hera/discussions/738
+    # LIMIT: as opposed to container definition, it seems HERA does not allow
+    # for scripts to declare the volume that a task (using the script) will use
+    # in the Task definition. Instead one has to define the volumes within the
+    # script definition itself. This limitation introduces an undue dependency
+    # between a process (the script) and its environment (the cluster volume
+    # claims).
+    # In addition the specification of the volume, that has to be in the
+    # @script decorator section (it's a context of execution of the script),
+    # must be partly done in Argo (altough Hera might someday offer a more
+    # pythonic expression refer to
+    # https://github.com/argoproj-labs/hera/discussions/738 )
     volumes=[
         ExistingVolume(
             # Providing a name is mandatory but how is it relevant/usefull ?
@@ -62,9 +69,11 @@ def generate_compute_tileset_configuration_file(
     print("Target filename: ", target_file)
 
     with open(target_file, "w") as output:
-        # It seems that f-strings formating is not supported by Hera ?
-        # Try uncommenting next line:
+        # LIMIT: Although the container specifies that it must use Python
+        # version 3.9 (that accepts f-strings), it seems that f-strings
+        # formating is not supported by Hera ? Try uncommenting the next line
         #    output.write(f"PG_HOST: {hostname}\n")
+        # and watch the execution crash.
         output.write("PG_HOST: " + database_hostname + "\n")
         output.write("PG_PORT: " + str(database_port) + "\n")
         output.write("PG_NAME: " + database_name + "\n")
@@ -95,7 +104,7 @@ def compute_tileset_container(
         args=[arguments],  # A list with a single string
         volumes=[
             ExistingVolume(
-                name="dummy-name",  # FIXME: Mandatory but how is it usefull ?
+                name="dummy-name",  # LIMIT: Mandatory but how is it usefull ?
                 claim_name=environment.persisted_volume.claim_name,
                 mount_path=environment.persisted_volume.mount_path,
             )

@@ -10,7 +10,7 @@ if __name__ == "__main__":
     from hera.workflows import DAG, Task, Parameter, Workflow
 
     from strip_gml import strip_gml_container
-    from utils import print_script, convert_message_to_output_parameter
+    from utils import convert_message_to_output_parameter
 
     from pagoda_environment_definition import environment
     from input_2012_tiny_import_dump import inputs

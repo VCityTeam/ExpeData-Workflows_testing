@@ -9,7 +9,7 @@ hera_assert_version("5.6.0")
 
 #################### Cluster independent code
 if __name__ == "__main__":
-    from hera.workflows import DAG, models, Parameter, Task, Workflow
+    from hera.workflows import DAG, models, Task, Workflow
     from compute_tileset import (
         generate_compute_tileset_configuration_file,
         compute_tileset_container,

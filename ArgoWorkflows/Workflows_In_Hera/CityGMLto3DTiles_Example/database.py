@@ -4,6 +4,7 @@ hera_assert_version("5.6.0")
 
 ###########
 import os
+from utils import get_new_container_identifier
 from hera.workflows import (
     Container,
     Env,
@@ -209,17 +210,17 @@ def send_command_to_postgres_container(
     environment, database, container_name, command, arguments
 ):
     container = Container(
-        name=container_name,
+        name=container_name + "-" + get_new_container_identifier(),
         image=environment.cluster.docker_registry + "vcity/postgres:15.2",
         image_pull_policy=models.ImagePullPolicy.if_not_present,
-        inputs=Parameter(name="hostaddr"),
+        inputs=[Parameter(name="hostaddr"), Parameter(name="database_name")],
         # Avoid conflicting demands with other pods.
         # synchronization=models.Mutex(name=mutex_lock_on_database_dump_import),
         env=[
             # The following command variables are libpq environment variables
             # refer to https://www.postgresql.org/docs/current/libpq-envars.html
             # (as opposed to docker container variables)
-            Env(name="PGDATABASE", value=database.name),
+            Env(name="PGDATABASE", value="{{inputs.parameters.database_name}}"),
             # Note: the difference of syntax between the respective definitions
             # of the values of the PGHOSTADDR and PGPASSWORD environment
             # variables is due to the difference of their respective stages of
@@ -243,7 +244,7 @@ def send_command_to_postgres_container(
     return container
 
 
-def db_isready_container(environment, database, name):
+def db_isready_container(environment, database):
     # On success this only validates the host address and the port since
     # as reminded by
     # https://stackoverflow.com/questions/26911508/postgres-testing-database-connection-in-bash
@@ -253,11 +254,11 @@ def db_isready_container(environment, database, name):
     command = ["/bin/bash", "-c"]
     arguments = ["pg_isready"]
     return send_command_to_postgres_container(
-        environment, database, name, command, arguments
+        environment, database, "db-isready-container", command, arguments
     )
 
 
-def db_probe_catalog_container(environment, database, name):
+def db_probe_catalog_container(environment, database):
     command = ["psql"]
     # Note: oddly enough (?) when taking the following arguments value
     #     arguments = ["psql", "-c", "SELECT * FROM pg_catalog.pg_tables"]
@@ -270,7 +271,7 @@ def db_probe_catalog_container(environment, database, name):
         "SELECT * FROM citydb.building",
     ]
     return send_command_to_postgres_container(
-        environment, database, name, command, arguments
+        environment, database, "probe-catalog-container", command, arguments
     )
 
 

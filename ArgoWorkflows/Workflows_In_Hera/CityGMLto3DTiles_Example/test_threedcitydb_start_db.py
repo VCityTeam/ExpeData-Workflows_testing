@@ -43,7 +43,7 @@ if __name__ == "__main__":
         db_check_template_name = "db-check-template-" + str(vintage)
         define_db_check_template(
             environment,
-            layout(inputs.constants).database(vintage),
+            layout(inputs.constants).database(),
             vintage,
             template_name=db_check_template_name,
         )
@@ -82,7 +82,7 @@ if __name__ == "__main__":
                     name="db-check-ip-validity" + str(vintage),
                     arguments=Parameter(
                         name="ip_addr",
-                        value=start_db_t.ip
+                        value=start_db_t.ip,
                         # LIMIT: we wanted to write
                         # value="{{tasks.threed-city-db-check.outputs.parameters.dbip}}",
                         # but we need to decline the tasks names with the vintages

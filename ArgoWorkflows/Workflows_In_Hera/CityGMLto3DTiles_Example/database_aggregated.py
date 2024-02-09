@@ -46,12 +46,14 @@ def define_db_check_template(environment, database, vintage, template_name):
         name=workflow_template_name,
         entrypoint=template_name,
     ) as w:
-        db_isready_c = db_isready_container(
-            environment, database, "shellprobing" + str(vintage)
-        )
-        db_probe_c = db_probe_catalog_container(
-            environment, database, "catalogprobing" + str(vintage)
-        )
+        # FIXME FIXME A présent que le conteneurs suivants sont indépendants
+        # de vintage (lors de leur définition mais plus lors de leur usage)
+        # peut-on les définir à l'extérieur de cette fonction (par exemple
+        # au niveau du fichier ou même dans database.py) et donc une bonne
+        # fois pour toutes ? Car si tel était le cas alors cela éviterait de
+        # devoir utiliser get_new_container_identifier() dans database.py...
+        db_isready_c = db_isready_container(environment, database)
+        db_probe_c = db_probe_catalog_container(environment, database)
         with DAG(name=template_name, inputs=[Parameter(name="dbhostaddr")]) as main_dag:
             # When the database fails to start properly, sometimes the ip number
             # returned by the AW engine is the original/uninterpreted expression
@@ -64,22 +66,18 @@ def define_db_check_template(environment, database, vintage, template_name):
             t2 = Task(
                 name="db-shell-probing",
                 template=db_isready_c,
-                arguments=[
-                    Parameter(
-                        name="hostaddr",
-                        value="{{inputs.parameters.dbhostaddr}}",
-                    )
-                ],
+                arguments={
+                    "hostaddr": "{{inputs.parameters.dbhostaddr}}",
+                    "database_name": database.name + str(vintage),
+                },
             )
             t3 = Task(
                 name="db-catalog-probing",
                 template=db_probe_c,
-                arguments=[
-                    Parameter(
-                        name="hostaddr",
-                        value="{{inputs.parameters.dbhostaddr}}",
-                    )
-                ],
+                arguments={
+                    "hostaddr": "{{inputs.parameters.dbhostaddr}}",
+                    "database_name": database.name + str(vintage),
+                },
             )
             # At this stage we can consider the db ip is valid (because behind
             # that IP the DB was proprely initialized/loaded and answering

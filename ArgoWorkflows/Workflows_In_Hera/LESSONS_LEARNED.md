@@ -1,5 +1,20 @@
+# Lessons learned
 
-## Pre and post conditions
+<!-- TOC -->
+
+- [HERA/AW related lessons learned](#heraaw-related-lessons-learned)
+  - [Pre and post conditions](#pre-and-post-conditions)
+  - [Parameters vs environment variables](#parameters-vs-environment-variables)
+  - [Concerning the flowing of parameters](#concerning-the-flowing-of-parameters)
+  - [Concerning loops](#concerning-loops)
+- [Non HERA related lessons learned](#non-hera-related-lessons-learned)
+  - [Concerning the difficulty of asserting database availability](#concerning-the-difficulty-of-asserting-database-availability)
+
+<!-- /TOC -->
+
+## HERA/AW related lessons learned
+
+### Pre and post conditions
 
 Ideally, every task should have an 
 [explicit postcondition](https://en.wikipedia.org/wiki/Postcondition)
@@ -8,7 +23,8 @@ to modify the core of task to include the postcondition, a recommandable good
 practice is to have a separate postcondition task that possibly exploits the
 content of `results.json` output file.
 
-## Parameters vs environment variables
+### Parameters vs environment variables
+
 First, let us remind that parameters (that belong to the experiment level) 
 should be properly separated from the environment (and/or the implementation
 details). Such a separation can go up to creating two separated files: a first
@@ -21,7 +37,7 @@ In the testing examples a typical setup goes:
     from experiment_layout import layout
 ```
 
-## Concerning the flowing of parameters
+### Concerning the flowing of parameters
 
 They are at least to way of flowing the workflow (run time) parameters:
 - at the **Hera level** (that is in ArgoWorkflows): the inconvenience is that
@@ -41,13 +57,13 @@ The following is a set of recommendations in order to drive this choice in
 favor of a simpler Hera code. Their logic boils down to: "Whenever if possible
 prefer python over the ArgoWorkflows ways of things.
 
-### Flowing constants
+#### Flowing constants
 
 Constants (that is input parameters that have singular values and are shared
 by all the containers as opposed to multi-valued parameters that required to 
 be swept) can easily be flown at the python level.
 
-### Input parameters flown through `WorkflowTemplates`
+#### Input parameters flown through `WorkflowTemplates`
 
 Input parameters that must be flown through `WorkflowTemplates` face an
 ArgoWorkflows related specific constraint. This constraint arises from the 
@@ -174,7 +190,7 @@ with Workflow([...], entrypoint="main") as w:
         )
 ```
 
-### Rules of the thumb
+#### Rules of the thumb
 
 - Constants should be transmitted at the python level.
 - input parameters that do _not_ require to be flown through 
@@ -188,7 +204,7 @@ with Workflow([...], entrypoint="main") as w:
 - Eventually, what is dynamic (e.g. the IP number of a service pod) must
   be flown at the Hera/ArgoWorkflows level
 
-## Concerning loops
+### Concerning loops
 
 As expressed in the comments of 
 [Failing_Or_Issues/test_collect_fail_first.py](Failing_Or_Issues/test_collect_fail_first.py)
@@ -217,3 +233,23 @@ evaluation stage), the expression of looping structures in Python has
 nevertheless an advantage: nested loops are much easier to express since they
 do not require to 
 [declare a WorkflowTemplate for the inner loop](../Workflows_In_Yaml/Failing_Or_Issues/nested-loops-issue.yml). 
+
+## Non HERA related lessons learned
+
+### Concerning the difficulty of asserting database availability
+In order to define the 
+[various probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+for a database pod, one might use the k8s equivalent of  
+
+```bash
+docker run -t postgres:15 bash -c "export PGPASSWORD=smdb ; psql --user smdb --host 10.42.204.224 --port 5444 --dbname smdb -c 'SELECT * FROM pg_catalog.pg_tables'"
+```
+One of the difficulties is to designate the host that should be checked in
+a portable (pod independent) manner. In the above request the host was 
+specified with it's IP number (that varies accros pipeline invocations).
+But if one tries to use e.g. `0.0.0.0`, `localhost` or `127.0.0.1` instead of
+the IP of the pod then the request (and thus the probe)... 
+
+Notes:
+- [Customizing the host file looks kludgy](https://kubernetes.io/docs/tasks/network/customize-hosts-file-for-pods/) 
+- [here is a k8s related issue](https://github.com/kubernetes/kubernetes/issues/86504) that proposes (to be tested) to remove any reference to the host flag...

@@ -41,8 +41,9 @@ from database import (
 
 def define_db_check_template(environment, database, template_name):
     # LIMIT: refer above to note [1]
+    workflow_name = "workflow-" + template_name
     with WorkflowTemplate(
-        name="workflow-" + template_name,
+        name=workflow_name,
         entrypoint=template_name,
     ) as w:
         # LIMITS: it seems the containers used to define this WorkfloTemplate
@@ -113,7 +114,7 @@ def define_db_check_template(environment, database, template_name):
             main_dag.outputs = [
                 Parameter(name="dbip", value_from={"expression": str(expression)})
             ]
-    hera_clear_workflow_template(environment, template_name)
+    hera_clear_workflow_template(environment, workflow_name)
     w.create()
 
 

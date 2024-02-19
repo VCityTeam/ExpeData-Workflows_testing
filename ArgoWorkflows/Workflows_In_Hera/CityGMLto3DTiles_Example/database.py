@@ -14,8 +14,6 @@ from hera.workflows import (
     script,
 )
 
-# CLEAN ME from hera.expr import g as expr
-
 
 def get_statistical_value_of_initial_delay(db_files_out_of_container: bool):
     """_summary_
@@ -99,6 +97,7 @@ def threedcitydb_start_db_container(environment, database):
 
     # The simplest possible usage of the 3dcitydb container per se
     new_container = Container(
+        # LIMITS: Container() does not allow the usage of "generate_name="
         name="threedcitydb-start-db-" + get_new_container_identifier(),
         # Run 3dcitydb container as a daemon (i.e. in background)
         daemon=True,

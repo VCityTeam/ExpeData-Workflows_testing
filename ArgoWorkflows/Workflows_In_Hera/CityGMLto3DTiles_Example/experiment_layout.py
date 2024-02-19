@@ -80,7 +80,7 @@ class layout:
         return os.path.join(self.stage_output_dir("stage_5"), vintage)
 
     def compute_tileset_configuration_filename(self, vintage):
-        # FIXME: respect the DRY principal and avoid repeating (and depending
+        # FIXME: respect the DRY principle and avoid repeating (and depending
         # on) the definition given in
         #    generate_compute_tileset_configuration_file()
         return "CityTilerDBConfigStatic" + str(vintage) + ".yml"

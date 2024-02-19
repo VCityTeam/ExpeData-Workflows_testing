@@ -30,7 +30,7 @@ from hera.workflows import (
     WorkflowTemplate,
 )
 from hera.expr import g as expr
-from utils import convert_message_to_output_parameter
+from utils import convert_message_to_output_parameter, get_new_container_identifier
 from database import (
     check_is_valid_ip,
     db_isready_container,
@@ -39,22 +39,37 @@ from database import (
 )
 
 
-def define_db_check_template(environment, database, vintage, template_name):
+def define_db_check_template(environment, database, template_name):
     # LIMIT: refer above to note [1]
-    workflow_template_name = "workflow-checkdb-" + str(vintage)
     with WorkflowTemplate(
-        name=workflow_template_name,
+        name="workflow-" + template_name,
         entrypoint=template_name,
     ) as w:
-        # FIXME FIXME A présent que le conteneurs suivants sont indépendants
-        # de vintage (lors de leur définition mais plus lors de leur usage)
-        # peut-on les définir à l'extérieur de cette fonction (par exemple
-        # au niveau du fichier ou même dans database.py) et donc une bonne
-        # fois pour toutes ? Car si tel était le cas alors cela éviterait de
-        # devoir utiliser get_new_container_identifier() dans database.py...
+        # LIMITS: it seems the containers used to define this WorkfloTemplate
+        # have to be defined within the WorkflowTemplate. But the
+        # WorkflowTemplate will be invocated several time (with different
+        # inputs values). The following containers will thus be defined (as)
+        # many times which will provoke duplicate container names (refer to
+        # Failing_Or_Issues/issue_duplicate_container_name.py for illustrating
+        # the problem). Hence the necessity to make the container creating
+        # functions (e.g. db_isready_container()) re-entrant (susceptible to
+        # be called many times) and in turn the necessety of having to
+        # distinguish container names with get_new_container_identifier()...
         db_isready_c = db_isready_container(environment, database)
         db_probe_c = db_probe_catalog_container(environment, database)
-        with DAG(name=template_name, inputs=[Parameter(name="dbhostaddr")]) as main_dag:
+        with DAG(
+            name=template_name,
+            inputs=[
+                Parameter(name="dbhostaddr"),
+                # LIMIT: in the original version of this function, "vintage" was
+                # a python level argument i.e. the function was of the form
+                # define_db_check_template(..., vintage, ...). In order to avoid
+                # having to define as many WorkflowTemplates are they are
+                # vintages in the loop, we thus have to promote the vintage to
+                # become a WorkflowTemplate parameter.
+                Parameter(name="vintage"),
+            ],
+        ) as main_dag:
             # When the database fails to start properly, sometimes the ip number
             # returned by the AW engine is the original/uninterpreted expression
             # of the form "{{tasks.<TASKNAME>.ip}}" as opposed to a valid ip
@@ -68,7 +83,7 @@ def define_db_check_template(environment, database, vintage, template_name):
                 template=db_isready_c,
                 arguments={
                     "hostaddr": "{{inputs.parameters.dbhostaddr}}",
-                    "database_name": database.name + str(vintage),
+                    "vintage": "{{inputs.parameters.vintage}}",
                 },
             )
             t3 = Task(
@@ -76,7 +91,7 @@ def define_db_check_template(environment, database, vintage, template_name):
                 template=db_probe_c,
                 arguments={
                     "hostaddr": "{{inputs.parameters.dbhostaddr}}",
-                    "database_name": database.name + str(vintage),
+                    "vintage": "{{inputs.parameters.vintage}}",
                 },
             )
             # At this stage we can consider the db ip is valid (because behind
@@ -98,7 +113,7 @@ def define_db_check_template(environment, database, vintage, template_name):
             main_dag.outputs = [
                 Parameter(name="dbip", value_from={"expression": str(expression)})
             ]
-    hera_clear_workflow_template(environment, workflow_template_name)
+    hera_clear_workflow_template(environment, template_name)
     w.create()
 
 

@@ -91,7 +91,7 @@ def threedcitydb_start_db_container(environment, database):
     # environment parameters, with `docker run -e ENV_VAR=my_value 3dcitydb-pg`).
     # In turn this constrains to build as many containers as they are
     # parameters (or combination of parameters) at the Hera level. For example
-    # the database.name derives from the vintage parameter for which we need
+    # the database name derives from the vintage parameter for which we need
     # to loop for. We thus have no choice but to define as many containers
     # (and associated container names) as they are vintage values.
     # In conclusion: some container run time limitations deport to constrains,
@@ -99,13 +99,14 @@ def threedcitydb_start_db_container(environment, database):
 
     # The simplest possible usage of the 3dcitydb container per se
     new_container = Container(
-        name="threedcitydb-start-db" + database.name,
+        name="threedcitydb-start-db-" + get_new_container_identifier(),
         # Run 3dcitydb container as a daemon (i.e. in background)
         daemon=True,
         # Number of container retrial when failing
         # retry_strategy=RetryStrategy(limit=2),
         image=environment.cluster.docker_registry + "vcity/3dcitydb-pg:13-3.1-4.1.0",
         image_pull_policy=models.ImagePullPolicy.always,
+        inputs=[Parameter(name="vintage")],
         env=[
             # Specific to 3dCityDB container, refer to
             # https://3dcitydb-docs.readthedocs.io/en/latest/3dcitydb/docker.html#citydb-docker-config-psql
@@ -114,7 +115,10 @@ def threedcitydb_start_db_container(environment, database):
             # Adressed to postgres (that underpins 3DCityDB) at container level
             # as opposed to libpq environment variables refer to
             # https://www.postgresql.org/docs/current/libpq-envars.html
-            Env(name="POSTGRES_DB", value=database.name),
+            Env(
+                name="POSTGRES_DB",
+                value=database.name + "{{inputs.parameters.vintage}}",
+            ),
             Env(name="POSTGRES_PASSWORD", value=database.password),
             Env(name="POSTGRES_USER", value=database.user),
         ],
@@ -128,7 +132,7 @@ def threedcitydb_start_db_container(environment, database):
                 name="PGDATA",
                 value=os.path.join(
                     environment.persisted_volume.mount_path,
-                    database.serialization_output_dir,
+                    database.serialization_output_dir + "{{inputs.parameters.vintage}}",
                 ),
             ),
         )
@@ -173,21 +177,22 @@ def threedcitydb_start_db_container(environment, database):
             exec=models.ExecAction(
                 command=[
                     "/usr/lib/postgresql/13/bin/psql",
-                    # "password=postgres",
-                    # "export PGPASSWORD=postgres ;",
-                    # "-d citydb-lyon-2012" FAILS with message
+                    # Note: oddly engough psql does not seem to require a valid
+                    # password. Hence we just skip it.
+                    #
+                    # Note: "-d citydb-lyon-2012" FAILS with message
                     #    'FATAL:  database " citydb-lyon-2012" does not exist'
                     # (notice the leading whitespace in the string). It looks
                     # like HERA/AW throws an extra withespace at run time !?
-                    "--dbname=" + database.name,
-                    # "-U user" FAILS with
+                    "--dbname=" + database.name + "{{inputs.parameters.vintage}}",
+                    # Note: "-U user" FAILS with
                     #     'FATAL:  role " postgres" does not exist'
                     # with a similar symptom as for the "-d " flag (refer above)
                     "--username=" + database.user,
                     "-c",
-                    # '"SELECT * FROM citydb.building"' (that is with enquoted
-                    # double-quotes) yields
-                    #     ERROR:  syntax error at or near ""SELECT * FROM citydb.building"" at character 1
+                    # Note: '"SELECT * FROM citydb.building"' (that is with
+                    # enquoted double-quotes) yields
+                    #    ERROR:  syntax error at or near ""SELECT * FROM citydb.building"" at character 1
                     "SELECT * FROM citydb.building",
                 ]
             ),
@@ -213,14 +218,20 @@ def send_command_to_postgres_container(
         name=container_name + "-" + get_new_container_identifier(),
         image=environment.cluster.docker_registry + "vcity/postgres:15.2",
         image_pull_policy=models.ImagePullPolicy.if_not_present,
-        inputs=[Parameter(name="hostaddr"), Parameter(name="database_name")],
+        inputs=[
+            Parameter(name="hostaddr"),
+            Parameter(name="vintage"),
+        ],
         # Avoid conflicting demands with other pods.
         # synchronization=models.Mutex(name=mutex_lock_on_database_dump_import),
         env=[
             # The following command variables are libpq environment variables
             # refer to https://www.postgresql.org/docs/current/libpq-envars.html
             # (as opposed to docker container variables)
-            Env(name="PGDATABASE", value="{{inputs.parameters.database_name}}"),
+            Env(
+                name="PGDATABASE",
+                value=database.name + "{{inputs.parameters.vintage}}",
+            ),
             # Note: the difference of syntax between the respective definitions
             # of the values of the PGHOSTADDR and PGPASSWORD environment
             # variables is due to the difference of their respective stages of

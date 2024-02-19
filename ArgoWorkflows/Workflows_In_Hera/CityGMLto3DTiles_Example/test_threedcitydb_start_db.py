@@ -31,6 +31,8 @@ if __name__ == "__main__":
     from input_2012_tiny_import_dump import inputs
     from experiment_layout import layout
 
+    layout_database = layout(inputs.constants).database()
+
     ### First define the WorkFlowTemplates used below by the main Workflow.
     #
     # LIMIT: trying to define the following WorkFlowTemplate(s) in the context
@@ -38,44 +40,47 @@ if __name__ == "__main__":
     #     `with Workflow(generate_name="threedcitydb-start-",[...])`
     # declaration) will fail. Hera complains that the @scripts used by the
     # WorkFlowTemplates are undefined (e.g. `template print_script` undefined)
-    db_check_template_names = {}
-    for vintage in inputs.parameters.vintages:
-        db_check_template_name = "db-check-template-" + str(vintage)
-        define_db_check_template(
-            environment,
-            layout(inputs.constants).database(),
-            vintage,
-            template_name=db_check_template_name,
-        )
-        db_check_template_names[vintage] = db_check_template_name
+    db_check_template_name = "db-check-template"
+    define_db_check_template(
+        environment,
+        layout_database,
+        template_name=db_check_template_name,
+    )
 
     with Workflow(generate_name="threedcitydb-start-", entrypoint="main") as w:
         ### Define containers used by this workflow
-        # LIMIT: because of a runtime configuration limit of the container
-        # (refer to the LIMIT comment within threedcitydb_start_db_container())
-        # we have no choice but to define as many containers as they are
-        # vintages (parameter) values.
-        threedcitydb_containers = {}
-        for vintage in inputs.parameters.vintages:
-            threedcitydb_start_db_c = threedcitydb_start_db_container(
-                environment,
-                layout(inputs.constants).database(vintage),
-            )
-            threedcitydb_containers[vintage] = threedcitydb_start_db_c
+        threedcitydb_start_db_c = threedcitydb_start_db_container(
+            environment,
+            layout_database,
+        )
 
         with DAG(name="main"):
             for vintage in inputs.parameters.vintages:
                 start_db_t = Task(
                     name="start-db-daemon-" + str(vintage),
-                    template=threedcitydb_containers[vintage],
+                    template=threedcitydb_start_db_c,
+                    arguments={
+                        "database_name": layout_database.name,
+                        "vintage": vintage,
+                    },
                 )
                 threed_city_db_check_t = Task(
                     name="threed-city-db-check-" + str(vintage),
                     template_ref=models.TemplateRef(
-                        name="workflow-checkdb-" + str(vintage),
-                        template=db_check_template_names[vintage],
+                        # LIMITS: the construction of the name has to be aligned
+                        # with the name chosen within the definition of the
+                        # define_db_check_template() function. Find a better
+                        # mechanism since this is error prone (e.g. changing
+                        # the definition of define_db_check_template() might
+                        # impact the following "calling" call or template
+                        # reference).
+                        name="workflow-" + db_check_template_name,
+                        template=db_check_template_name,
                     ),
-                    arguments={"dbhostaddr": start_db_t.ip},
+                    arguments={
+                        "dbhostaddr": start_db_t.ip,
+                        "vintage": vintage,
+                    },
                 )
 
                 print_ip_t = check_is_valid_ip(

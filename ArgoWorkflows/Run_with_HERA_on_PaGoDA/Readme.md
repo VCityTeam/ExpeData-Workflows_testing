@@ -35,15 +35,15 @@ you must also ask your cluster admin to provide you with three information
 3. the service account for accessing argo-workflows.
 
 The first two items can be 
-[retrieved through the argo UI](# retrieve-your-cluster-credentials-at-the-argo-server-level)
+[retrieved through the argo UI](#retrieve-your-cluster-credentials-at-the-argo-server-level)
 and correspond respectively to the `ARGO_SERVER` and the `ARGO_NAMESPACE`
 environment variables.
 You are left with obtaining the name of service account, for accessing 
 argo-workflows, from your cluster admin.
 
 Because each workflow that you'll launch will require the above information,
-place them in an environment variables file e.g. `.env` (configure the 
-provided [`.env.tmpl`](env.tmpl) file):
+place them in an environment variables file e.g. `Workflows_In_Hera/.env` 
+(a default configuration file [`.env.tmpl` is provided here](env.tmpl)):
 
 ```bash
 ARGO_SERVER=argowf.pagoda.os.univ-lyon1.fr:443

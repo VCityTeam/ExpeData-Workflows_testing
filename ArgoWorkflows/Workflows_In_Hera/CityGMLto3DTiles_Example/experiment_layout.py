@@ -62,18 +62,15 @@ class layout:
         )
 
     ###### stage 4: create and eventually serialize database(s)
-    def database(self, vintage=None):
-        if vintage:
-            name = "citydb-lyon-" + str(vintage)
-        else:
-            name = "no-vintage-given-dummy-db-name"
+    def database(self):
+        database_name = "citydb-lyon-"
         return types.SimpleNamespace(
             port="5432",
-            name=name,
+            name=database_name,
             user="postgres",
             password="postgres",
             serialization_output_dir=os.path.join(
-                self.stage_output_dir("stage_4"), name
+                self.stage_output_dir("stage_4"), database_name
             ),
             keep_database=True,
         )

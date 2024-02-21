@@ -55,6 +55,11 @@ if __name__ == "__main__":
         )
 
         with DAG(name="main"):
+            # LIMITS: because a deamon task cannot be integrated within a
+            # WorkflowTemplate (refer to the comments within
+            # define_db_check_template()), the following for loop cannot be
+            # expressed natively in AW (that is by using "with_param" or
+            # "with_item").
             for vintage in inputs.parameters.vintages:
                 start_db_t = Task(
                     name="start-db-daemon-" + str(vintage),

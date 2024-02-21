@@ -35,6 +35,11 @@ Facile, une fois que
    
 
 ## Todo
+* Factoriser la création des conteneurs des WorflowTemplates (check_db)
+  Le travail est commencé (dans test_threedcitydb_start_db.py ). Le finir
+  pour d'autres occurrences e.g. test_import_gml.py en faisant 
+  "grep threedcitydb_containers *.py" )
+
 * Documenter (LESSONS LEARNED):
   1. que l'on ne peut pas toujours faire des nested loops car la boucle sur
      le vintage ne peut inclure la créations de la base (partir de 
@@ -62,10 +67,12 @@ Facile, une fois que
      parse_args.
    - Retarder l'usage du parsing en laissant le soin à l'utilisateur de faire
      l'appel.
-  Regarder si y'a mieux qu'arg_parse pour gérer simultanément le fichier
-  de config et les variables d'environment.
+  NOTE: 
+  1. on peut étendre arg_parse pour gérer simultanément le fichier
+     de config et les variables d'environment, cf
+     https://stackoverflow.com/questions/10551117/setting-options-from-environment-variables-when-using-argparse
+  2. d'autres librairies type https://pypi.org/project/ConfigArgParse/ ????????
+     (d'ailleurs pointée dans le stackoverflow précédent)
   
-* Factoriser la création des conteneurs des WorflowTemplates (check_db)
-
-* Regarder comment factoriser la création des conteneurs dont le nom est
-  décliné par des vintages.
+* Regarder si il reste des créations des conteneurs dont le nom est
+  décliné par des vintages/boroughs.

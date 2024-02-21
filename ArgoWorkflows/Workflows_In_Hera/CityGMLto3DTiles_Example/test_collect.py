@@ -35,20 +35,24 @@ if __name__ == "__main__":
             )
 
             for vintage in inputs.parameters.vintages:
-                for borough in inputs.parameters.boroughs:
-                    results_dir = os.path.join(
-                        environment.persisted_volume.mount_path,
-                        layout_instance.collect_output_dir(vintage, borough),
-                    )
-                    collect_t = Task(
-                        name="collect-"
-                        + layout_instance.container_name_postend(vintage, borough),
-                        template=collect_c,
-                        arguments={
-                            "vintage": vintage,
-                            "borough": borough,
-                            "results_dir": results_dir,
-                        },
-                    )
-                    check_ip_connectivity_t >> collect_t >> dummy_fanin_t
+                # LESSON LEARNED: results_dir is a string that is constructed
+                # at Hera submission stage (where the python for loop is
+                # evaluated) but evaluated at AW run time. As thus it can be
+                # seen as an hybrid expression.
+                results_dir = os.path.join(
+                    environment.persisted_volume.mount_path,
+                    layout_instance.collect_output_dir(vintage, "{{item}}"),
+                )
+                collect_t = Task(
+                    name="collect-"
+                    + layout_instance.container_name_postend(vintage, "DUMMYborough"),
+                    template=collect_c,
+                    arguments={
+                        "vintage": vintage,
+                        "borough": "{{item}}",
+                        "results_dir": results_dir,
+                    },
+                    with_items=inputs.parameters.boroughs,
+                )
+                check_ip_connectivity_t >> collect_t >> dummy_fanin_t
     w.create()

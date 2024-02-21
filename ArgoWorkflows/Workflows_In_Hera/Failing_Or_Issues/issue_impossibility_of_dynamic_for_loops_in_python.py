@@ -1,12 +1,22 @@
-# When workflow uses a for loop with a breadth (number of parallel tasks)
-# that is known at Hera submission stage and then the workflow writter has
-# the freedom to express the for loop at the python level. In other terms
-# the workflow writter can circumvent the native AW expression of foor loops
-# (refer to "with_item" or "with_param" AW expressions), as illustrated by
-# the pipeline of this example.
-# But when the breadth of the for loop is (only) available at AR run-time stage
-# then is it still possible to circumvent that native AW expression of foor
-# loops?
+# When workflow uses a for loop with a breadth/range (e.g. the number of
+# parallel tasks) that is known at Hera submission stage, then the workflow
+# writter has the freedom to express the for loop at the python/Hera level.
+# In other terms the workflow writter can circumvent the native AW expression
+# of foor loops (refer to "with_item" or "with_param" AW expressions), as
+# illustrated by the pipeline of this example.
+# Notice that this example further illustates that in such a case, the
+# fanout/fanin feature (that is being able to collect the outputs of each
+# of the spawn processes) is possible in Python although a bit painfull
+# to express.
+#
+# In addition also notice that the below example IS NOT A TRUE DYNAMIC FOR
+# LOOP. Indeed, althgouh the value of the scope variable is randomized it is
+# still known at Hera submission stage !
+# The QUESTION is then: when the breadth/range of the for loop is (only)
+# available at AW run-time stage (we would need the for-loop to range on a
+# parameter whose value would be the output of a previous task.) can we still
+# express this loop at the python/Hera level ? Or, in such case, do we have to
+# "fold back" the native AW expression of foor loops?
 #
 # LESSON LEARNED: for dynamic for loops, we coulnd't find a mechanism enabling
 # the expression of such loops at the python (Hera) level (as opposed to the

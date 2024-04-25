@@ -1,8 +1,6 @@
 import sys, os
 
-sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-)
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition"))
 # Following import points Hera to the PAgoDA cluster (although the
 # numertical environment variables is not used, this has some side effects)
 from pagoda_environment_definition import environment
@@ -14,7 +12,7 @@ from hera_utils import hera_assert_version
 hera_assert_version("5.6.0")
 
 ####
-from hera.workflows import Container, Parameter, Steps, script, Task, Workflow
+from hera.workflows import Container, Parameter, Steps, script, Workflow
 
 
 @script(image="python:alpine3.6")
@@ -22,9 +20,7 @@ def hello(message):
     print(message)
 
 
-with Workflow(
-    generate_name="mixed-scripts-and-container-", entrypoint="entry"
-) as w:
+with Workflow(generate_name="mixed-scripts-and-container-", entrypoint="entry") as w:
     # Callable container
     whalesay = Container(
         name="whalesay",

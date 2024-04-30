@@ -1,5 +1,6 @@
 __pycache__
-.env
+hera.bash
+hera.config
 pagoda_kubeconfig.yaml
 hera/
 hera-*/

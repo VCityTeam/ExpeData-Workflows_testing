@@ -2,10 +2,7 @@ import base64
 import errno
 import os
 from typing import Optional
-import logging
 from kubernetes import client, config
-
-logger = logging.getLogger(__name__)
 
 
 def retrieve_access_token(
@@ -35,14 +32,10 @@ def retrieve_access_token(
     """
     if config_file is None:
         logger.error("K8s configuration file pathname not set.")
-        raise FileNotFoundError(
-            errno.ENOENT, os.strerror(errno.ENOENT), config_file
-        )
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), config_file)
     if not os.path.isfile(config_file):
         logger.error("K8s configuration file pathname is not valid.")
-        raise FileNotFoundError(
-            errno.ENOENT, os.strerror(errno.ENOENT), config_file
-        )
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), config_file)
 
     config.load_kube_config(config_file=config_file)
     v1 = client.CoreV1Api()
@@ -62,14 +55,17 @@ def retrieve_access_token(
 
 
 if __name__ == "__main__":
+    import logging
     from parse_arguments import parse_arguments
 
-    args = parse_arguments()
-    print(args)
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(filename="example.log", level=logging.DEBUG)
+
+    args = parse_arguments(logger)
 
     token = retrieve_access_token(
-        args.service_account,
-        namespace=args.namespace,
+        args.argo_service_account,
+        namespace=args.argo_namespace,
         config_file=args.k8s_config_file,
     )
     print("The retrieved token is {}".format(token))

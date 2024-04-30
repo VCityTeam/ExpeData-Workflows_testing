@@ -1,7 +1,8 @@
 if __name__ == "__main__":
+    from parse_arguments import parse_arguments
+    from pagoda_environment_definition import construct_environment
     from pagoda_environment_utils import print_pagoda_environment
     from pagoda_environment_utils import list_pesistent_volume_files
-    from pagoda_environment_definition import environment
     from hera.workflows import (
         ConfigMapEnvFrom,
         Container,
@@ -10,6 +11,9 @@ if __name__ == "__main__":
         Task,
         Workflow,
     )
+
+    args = parse_arguments()
+    environment = construct_environment(args)
 
     with Workflow(generate_name="test-pagoda-setup-", entrypoint="main") as w:
         cowsayprint = Container(

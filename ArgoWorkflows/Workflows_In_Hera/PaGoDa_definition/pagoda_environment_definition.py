@@ -1,102 +1,104 @@
-from hera_utils import hera_check_version, hera_assert_version
-
-if hera_check_version("5.6.0") or hera_check_version("5.1.3"):
-    from hera.shared._global_config import GlobalConfig
-elif hera_check_version("4.4.1"):
-    from hera.global_config import GlobalConfig
-else:
-    hera_assert_version("X.X.X")  # Will fail
-
-from hera.workflows import ExistingVolume
-
 import types
 import json
+import logging
 from parse_arguments import parse_arguments
-from retrieve_access_token import retrieve_access_token
-from assert_pagoda_configmap import get_configmap_name
-from assert_volume_claim import get_volume_claim_name
+from k8s_cluster_utils import k8s_cluster
+from argo_server_utils import argo_server
 
 
-def define_cluster_part_of_environment():
-    """
-    Define the (Execution) Environment of the Experiment
-    Refer to https://gitlab.liris.cnrs.fr/expedata/expe-data-project/-/blob/master/lexicon.md#execution-environment
-    for a definition
-    """
+class Struct:
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
-    class Struct:
-        def toJSON(self):
-            return json.dumps(
-                self, default=lambda o: o.__dict__, sort_keys=True, indent=4
-            )
 
-    environment = Struct()
+class numerical_experiment_environment(Struct):
 
-    ### Retrieve cluster information from arguments/environment
-    args = parse_arguments()
+    def __init__(self, k8s_cluster, args):
+        """The CLI arguments (parameters) are collected at three levels:
+        - the ones designating the underlyin k8s cluster, and
+        - the ones designating the Argo server,
+        - the remaining ones that are still required to run the workflows and
+          that are gathered within this numerical_experiment environment class.
 
-    ### Parameters (including credentials) designating the cluster as passed to
-    # Hera. Hera transmits the information through a global variable (acting as
-    # persasive context for all Hera classes)
-    GlobalConfig.host = args.server
-    GlobalConfig.token = retrieve_access_token(
-        args.service_account,
-        namespace=args.namespace,
-        config_file=args.k8s_config_file,
-    )
+        :param k8s_cluster: k8s cluster used to assert that the environment
+                            elements are properly accessible.
+        :param args: the CLI arguments holding the environment tidbits.
+        """
 
-    ### The service account seems to be required as soon as the workflow has
-    # to transmit the output results of a Task to the input of another Task.
-    GlobalConfig.service_account_name = args.service_account
-    GlobalConfig.namespace = args.namespace
+        # The information that are "close/related" to k8s server that will be
+        # required to run the workflows. This is to be distinguished from the
+        # k8s cluster it self on top of which the argo server is deployed.
+        # The numerical experiment can be defined
+        self.cluster = types.SimpleNamespace(
+            docker_registry="harbor.pagoda.os.univ-lyon1.fr/"
+        )
 
-    ### Other parameters that are cluster specific and that must be transmitted
-    # to the workflow definition
-    environment.cluster = types.SimpleNamespace(
-        docker_registry="harbor.pagoda.os.univ-lyon1.fr/"
-    )
+        ### Some tasks require to retrieve cluster specific environment
+        # (e.g. HTTP_PROXY) values at runtime. This retrieval is done through an
+        # ad-hoc k8s configuration map. Assert this map exists.
+        k8s_cluster.assert_configmap(args.k8s_configmap_name)
+        self.cluster.configmap = args.k8s_configmap_name
 
-    ### Some tasks require to retrieve cluster specific environment
-    # (e.g. HTTP_PROXY) values at runtime. They do by retrieving the ad-hoc
-    # k8s configuration map. Assert this map exists.
-    environment.cluster.configmap = get_configmap_name()
+        ### A persistent volume (defined at the k8s level) can be used by
+        # tasks of a workflow in order to flow output results from an upstream
+        # task to a downstream one, and persist once the workflow is finished
+        self.persisted_volume = Struct()
+        k8s_cluster.assert_volume_claim(args.k8s_volume_claim_name)
+        self.persisted_volume.claim_name = args.k8s_volume_claim_name
 
-    ### A persistent volume (defined at the k8s level) can be used by
-    # tasks of a workflow in order to flow output results from an upstream
-    # task to a downstream one, and persist once the workflow is finished
-    environment.persisted_volume = Struct()
-    environment.persisted_volume.claim_name = get_volume_claim_name()
+        # The mount path is technicality standing in between Environment and
+        # Experiment related notions: more precisely it is a technicality that should
+        # be dealt by the (Experiment) Conductor (refer to
+        # https://gitlab.liris.cnrs.fr/expedata/expe-data-project/-/blob/master/lexicon.md#conductor )
+        self.persisted_volume.mount_path = "/within-container-mount-point"
+
+    def print_config(self):
+        print("Environment of numerical experiment (at Python level):")
+        print(self.toJSON())
+
+
+def construct_environment(args, verbose=False):
+    k8s = k8s_cluster(args)
+    k8s.assert_cluster()
+    if verbose:
+        k8s.print_config()
+        print("Kubernetes cluster seems ok.")
+        print("")
+
+    argo = argo_server(k8s, args)
+    argo.define_argo_server_part_of_environment()
+    if verbose:
+        argo.print_config()
+        print("Argo server looks ok.")
+        print("")
+
+    # The above components of the environment are not stored. They are
+    # used by HERA to submit the workflow to the Argo server (thus at
+    # submission stage).
+    # The remanining elements of the environment are integrated in the
+    # workflow definitions (and retrieved by the Argo engine at workflow
+    # execution stage)
+    environment = numerical_experiment_environment(k8s, args)
+    if verbose:
+        environment.print_config()
 
     return environment
 
 
-environment = define_cluster_part_of_environment()
-# The mount path is technicality standing in between Environment and
-# Experiment related notions: more precisely it is a technicality that should
-# be dealt by the (Experiment) Conductor (refer to
-# https://gitlab.liris.cnrs.fr/expedata/expe-data-project/-/blob/master/lexicon.md#conductor )
-environment.persisted_volume.mount_path = "/within-container-mount-point"
-
-
 if __name__ == "__main__":
-    from hera_utils import hera_print_version
+    from hera_utils import hera_check_version, hera_print_version
 
-    hera_print_version()
+    if not hera_check_version("5.6.0"):
+        print("Hera version ")
+        hera_print_version()
+        print(" is untested.")
 
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(filename="example.log", level=logging.DEBUG)
+
+    args = parse_arguments(logger)
     print("CLI arguments/environment variables:")
-    print(json.dumps(parse_arguments().__dict__, indent=4))
+    print(json.dumps(args.__dict__, indent=4))
+    print("")
 
-    # The following implictly assumes that environement was defined as
-    #    environment=define_cluster_part_of_environment()
-    print("Cluster related variables (either direct or derived):")
-    print("  - Hera global variables: ")
-    print("    host = ", GlobalConfig.host)
-    print("    Namespace = ", GlobalConfig.namespace)
-    print("    Service account = ", GlobalConfig.service_account_name)
-    print("    Token = <found>")
-
-    print(
-        "Environment (of numerical experiment related definition",
-        " (at Python level):",
-    )
-    print(environment.toJSON())
+    environment = construct_environment(args, verbose=True)

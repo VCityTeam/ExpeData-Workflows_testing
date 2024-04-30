@@ -1,26 +1,27 @@
-# Lessons learned
+# Lessons learned<!-- omit from toc -->
+
+## Table of content<!-- omit from toc -->
 
 <!-- TOC -->
 
-- [Lessons learned](#lessons-learned)
-  - [ArgoWorkflows lessons learned (also valid for HERA)](#argoworkflows-lessons-learned-also-valid-for-hera)
-    - [Pre and post conditions](#pre-and-post-conditions)
-    - [Parameters vs environment variables](#parameters-vs-environment-variables)
-  - [HERA (specific) lessons](#hera-specific-lessons)
-    - [Concerning the flowing of parameters](#concerning-the-flowing-of-parameters)
-      - [Flowing constants](#flowing-constants)
-      - [Input parameters flown through `WorkflowTemplates`](#input-parameters-flown-through-workflowtemplates)
-      - [Rules of the thumb for flowing parameters](#rules-of-the-thumb-for-flowing-parameters)
-    - [Concerning the uniqueness of Container names](#concerning-the-uniqueness-of-container-names)
-    - [Concerning loops](#concerning-loops)
-      - [Expression of the need](#expression-of-the-need)
-      - ["Dynamic" for-loops in HERA require AW logic expression](#dynamic-for-loops-in-hera-require-aw-logic-expression)
-      - ["Static" for-loops expressed in Python: possible but with restrictions](#static-for-loops-expressed-in-python-possible-but-with-restrictions)
-      - [Python expressed nested static for-loop restriction](#python-expressed-nested-static-for-loop-restriction)
-    - [Daemon task](#daemon-task)
-  - [Lessons learned for container based workflows](#lessons-learned-for-container-based-workflows)
-    - [Disclose reproducibility information encapsulated by container](#disclose-reproducibility-information-encapsulated-by-container)
-    - [Concerning the difficulty of asserting database availability](#concerning-the-difficulty-of-asserting-database-availability)
+- [ArgoWorkflows lessons learned (also valid for HERA)](#argoworkflows-lessons-learned-also-valid-for-hera)
+  - [Pre and post conditions](#pre-and-post-conditions)
+  - [Parameters vs environment variables](#parameters-vs-environment-variables)
+- [HERA (specific) lessons](#hera-specific-lessons)
+  - [Concerning the flowing of parameters](#concerning-the-flowing-of-parameters)
+    - [Flowing constants](#flowing-constants)
+    - [Input parameters flown through `WorkflowTemplates`](#input-parameters-flown-through-workflowtemplates)
+    - [Rules of the thumb for flowing parameters](#rules-of-the-thumb-for-flowing-parameters)
+  - [Concerning the uniqueness of Container names](#concerning-the-uniqueness-of-container-names)
+  - [Concerning loops](#concerning-loops)
+    - [Expression of the need](#expression-of-the-need)
+    - ["Dynamic" for-loops in HERA require AW logic expression](#dynamic-for-loops-in-hera-require-aw-logic-expression)
+    - ["Static" for-loops expressed in Python: possible but with restrictions](#static-for-loops-expressed-in-python-possible-but-with-restrictions)
+    - [Python expressed nested static for-loop restriction](#python-expressed-nested-static-for-loop-restriction)
+  - [Daemon task](#daemon-task)
+- [Lessons learned for container based workflows](#lessons-learned-for-container-based-workflows)
+  - [Disclose reproducibility information encapsulated by container](#disclose-reproducibility-information-encapsulated-by-container)
+  - [Concerning the difficulty of asserting database availability](#concerning-the-difficulty-of-asserting-database-availability)
 
 <!-- /TOC -->
 

@@ -1,6 +1,4 @@
 import sys
-import os
-from kubernetes import client, config
 from hera.workflows import WorkflowsService
 from hera._version import version
 

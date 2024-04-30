@@ -1,0 +1,16 @@
+# Hera configuration file (shell file format) 
+
+### Kubernetes layer
+# The k8s cluster configuration file
+KUBECONFIG=./pagoda_kubeconfig.yaml  # Your file layout may vary
+
+# The optionnal configuration map as set by the k8s admin (usefull to provide
+# cluster specific configuration elements like the HTTP_PROXY)
+KUBECONFIGMAP=
+# The optionnal volume claim (name) to be used by the experiment
+KUBEVOLUMECLAIMNAME=
+
+### ArgoWorkflow server and associated credentials
+ARGO_SERVER=
+ARGO_NAMESPACE=
+ARGO_SERVICE_ACCOUNT=

@@ -1,9 +1,7 @@
 import types
 import json
 import logging
-from parse_arguments import parse_arguments
-from k8s_cluster_utils import k8s_cluster
-from argo_server_utils import argo_server
+from hera_utils import parse_arguments, k8s_cluster, argo_server
 
 
 class Struct:
@@ -86,11 +84,11 @@ def construct_environment(args, verbose=False):
 
 
 if __name__ == "__main__":
-    from hera_utils import hera_check_version, hera_print_version
+    from hera_utils import check_version, print_version
 
-    if not hera_check_version("5.6.0"):
+    if not check_version("5.6.0"):
         print("Hera version ")
-        hera_print_version()
+        print_version()
         print(" is untested.")
 
     logger = logging.getLogger(__name__)

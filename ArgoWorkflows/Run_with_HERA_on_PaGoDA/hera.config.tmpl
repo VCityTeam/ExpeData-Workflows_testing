@@ -1,0 +1,18 @@
+# Hera configuration file for an Argo server with a
+# Python configparser shlex (unix shell like) file format.
+# References:
+#  * configparser: https://docs.python.org/3/library/configparser.html
+#  * Shlex: https://docs.python.org/3/library/shlex.html#module-shlex
+
+### Kubernetes layer
+# The configuration file (can also be provided through the KUBECONFIG environment variable):
+k8s_config_file='<path-to>/kubeconfig.yaml'
+# The optionnal configuration map as set by the k8s admin (usefull to provide
+# cluster specific configuration elements like the HTTP_PROXY or the DOCKER_REGISTRY
+k8s_configmap_name='mycluster-configmap-environment'
+k8s_volume_claim_name='my-pvc'
+
+### ArgoWorkflow server and associated credentials
+argo_server='argowf.pagoda.os.univ-lyon1.fr:443' 
+argo_namespace='argo'
+argo_service_account='argo-user'

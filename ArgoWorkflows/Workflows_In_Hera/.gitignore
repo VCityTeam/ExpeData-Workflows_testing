@@ -6,3 +6,4 @@ hera/
 hera-*/
 venv
 venv-*/
+*.log

@@ -1,3 +1,4 @@
 hera==5.6.0
 kubernetes==26.1.0
 configargparse
+./hera_utils

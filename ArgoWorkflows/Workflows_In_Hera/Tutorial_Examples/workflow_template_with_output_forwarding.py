@@ -1,21 +1,16 @@
-### Cluster specific
 import sys, os
 
-sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-)
-from pagoda_environment_definition import environment
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from hera_utils import parse_arguments
+from environment import construct_environment
 
-# Some Hera helpers and checks...
-from hera_utils import hera_assert_version, hera_clear_workflow_template
-
-hera_assert_version("5.6.0")
+args = parse_arguments()
+environment = construct_environment(args)
 
 
-### The following is cluster independent (well almost)
 # Note: this example was submitted to the community, refer to
 # https://github.com/argoproj-labs/hera/discussions/732
-
+from hera_utils import clear_workflow_template
 from hera.workflows import (
     DAG,
     models as m,
@@ -53,9 +48,7 @@ with WorkflowTemplate(
     ) as main_dag:
         t1: Task = increment(
             name="increment-once",
-            arguments=[
-                Parameter(name="a", value="{{inputs.parameters.value}}")
-            ],
+            arguments=[Parameter(name="a", value="{{inputs.parameters.value}}")],
         )
         t2 = increment(
             name="increment-twice",
@@ -68,11 +61,9 @@ with WorkflowTemplate(
         # First part: register the output as the template output.
         expression = expr.tasks["increment-twice"].outputs.result
         main_dag.outputs = [
-            Parameter(
-                name="computed", value_from={"expression": str(expression)}
-            )
+            Parameter(name="computed", value_from={"expression": str(expression)})
         ]
-hera_clear_workflow_template(environment.cluster, "increment-workflow-template")
+clear_workflow_template(environment.cluster, "increment-workflow-template")
 w.create()
 
 

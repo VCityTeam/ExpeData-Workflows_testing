@@ -1,16 +1,11 @@
 import sys, os
 
-sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-)
-from pagoda_cluster_definition import define_cluster
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from hera_utils import parse_arguments
+from environment import construct_environment
 
-cluster = define_cluster()
-
-####
-from hera_utils import hera_assert_version
-
-hera_assert_version("5.6.0")
+args = parse_arguments()
+environment = construct_environment(args)
 
 #########################################################################
 # This is a simplification of

@@ -1,18 +1,14 @@
-### Cluster specific
 import sys, os
 
-sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-)
-from pagoda_environment_definition import environment
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from hera_utils import parse_arguments
+from environment import construct_environment
 
-### Some Hera helpers and checks...
-from hera_utils import hera_assert_version, hera_clear_workflow_template
+args = parse_arguments()
+environment = construct_environment(args)
 
-hera_assert_version("5.6.0")
-
-### The following is cluster independent (well almost)
-
+### The workflow definition starts here:
+from hera_utils import clear_workflow_template
 from hera.workflows import (
     Container,
     models as m,
@@ -55,17 +51,13 @@ with WorkflowTemplate(
         say(
             name="a",
             arguments=[
-                Parameter(
-                    name="message", value="{{inputs.parameters.message}}"
-                )
+                Parameter(name="message", value="{{inputs.parameters.message}}")
             ],
         )
 # CHANGED: if we want the workflow script (that is this file) to be run once
 # edited we need to remove a previously submitted version of this workflow
 # template (or AW server will reject this new version with a name conflict):
-hera_clear_workflow_template(
-    environment.cluster, "workflow-template-whalesay-template"
-)
+clear_workflow_template(environment.cluster, "workflow-template-whalesay-template")
 
 # CHANGED: following line added for the workflow templae to be registered
 w.create()

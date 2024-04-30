@@ -1,12 +1,11 @@
 import sys, os
 
-sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-)
-from hera_utils import hera_assert_version
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from hera_utils import parse_arguments
+from environment import construct_environment
 
-hera_assert_version("5.6.0")
-from pagoda_environment_definition import environment
+args = parse_arguments()
+environment = construct_environment(args)
 
 ###############################################################################
 # The following is a copy of

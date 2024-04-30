@@ -1,12 +1,12 @@
+# In addition to hera_test_environment.py the following workflow tests the
+# inputs of this numerical experiment
 import sys, os
+import hera_utils
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition"))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+hera_utils.assert_version("5.6.0")
 
-from hera_utils import hera_assert_version
-
-hera_assert_version("5.6.0")
-
-########
+##################
 from hera.workflows import (
     ExistingVolume,
     Parameter,
@@ -38,23 +38,24 @@ def list_experiment_pesisted_files(claim_name, mount_path, experiment_output_dir
     print("Done.")
 
 
+##################
 if __name__ == "__main__":
-    from pagoda_environment_utils import (
-        print_pagoda_environment,
-        list_pesistent_volume_files,
-    )
-    from pagoda_environment_definition import environment
+    from hera_test_environment import print_environment, list_pesistent_volume_files
+    from hera_utils import parse_arguments
+    from environment import construct_environment
     from input_2012_tiny_import_dump import inputs
     from hera.workflows import (
         ConfigMapEnvFrom,
         Container,
         DAG,
-        Parameter,
         Task,
         Workflow,
     )
 
+    args = parse_arguments()
+    environment = construct_environment(args)
     constants = inputs.constants
+
     with Workflow(
         generate_name="testing-numerical-experiment-setup-", entrypoint="main"
     ) as w:
@@ -69,11 +70,11 @@ if __name__ == "__main__":
             ],
             command=[
                 "cowsay",
-                "PaGoda can pull whalesay docker container (across HTTP proxies).",
+                "Argo can pull whalesay docker container (across HTTP proxies).",
             ],
         )
         with DAG(name="main"):
-            t1 = print_pagoda_environment(
+            t1 = print_environment(
                 arguments=Parameter(
                     name="config_map_name",
                     value=environment.cluster.configmap,

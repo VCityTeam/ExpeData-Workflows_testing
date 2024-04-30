@@ -1,11 +1,11 @@
 import sys, os
 
-sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-)
-from hera_utils import hera_assert_version
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from hera_utils import parse_arguments
+from environment import construct_environment
 
-hera_assert_version("5.6.0")
+args = parse_arguments()
+environment = construct_environment(args)
 
 #############
 from hera.workflows import (
@@ -15,7 +15,6 @@ from hera.workflows import (
     script,
     Workflow,
 )
-
 
 # The need:
 # Some containers do provide a file summarizing the (file) outputs of their
@@ -74,9 +73,7 @@ from hera.workflows import (
 
 
 @script(
-    outputs=[
-        Parameter(name="result", value_from=models.ValueFrom(path="/tmp/junk"))
-    ]
+    outputs=[Parameter(name="result", value_from=models.ValueFrom(path="/tmp/junk"))]
 )
 def write_output(content):
     dummy_file = "/tmp/junk"
@@ -93,26 +90,16 @@ def consume(msg):
     # will provoque Hera to fail at submission stage.
 
 
-if __name__ == "__main__":
-    import sys, os
-
-    sys.path.append(
-        os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-    )
-    from pagoda_environment_definition import environment
-
-    with Workflow(generate_name="write-output-", entrypoint="d") as w:
-        with DAG(name="d"):
-            write_output_t = write_output(
-                arguments=Parameter(
-                    name="content",
-                    value="Some_nice_message",
-                )
+with Workflow(generate_name="write-output-", entrypoint="d") as w:
+    with DAG(name="d"):
+        write_output_t = write_output(
+            arguments=Parameter(
+                name="content",
+                value="Some_nice_message",
             )
-            consume_t = consume(
-                arguments=write_output_t.get_parameter("result").with_name(
-                    "msg"
-                )
-            )
-            write_output_t >> consume_t
-    w.create()
+        )
+        consume_t = consume(
+            arguments=write_output_t.get_parameter("result").with_name("msg")
+        )
+        write_output_t >> consume_t
+w.create()

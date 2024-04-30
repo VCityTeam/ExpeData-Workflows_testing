@@ -10,30 +10,10 @@ New entries are now within the
   pour d'autres occurrences e.g. test_import_gml.py en faisant
   "grep threedcitydb_containers \*.py" )
 
-- Comment éviter que les scripts soient dupliqués pour chaque plateforme ?
-  I.e. comment éviter qu'un script doive déclarer des lignes plateforme
-  dépendantes du type
-  ```python
-  sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-  )
-  from pagoda_environment_definition import environment
-  ```
-  TODO: faire le chemin sur minikube, puis rendre générique un équivalent de
-  pagoda_definitions et la definition de l'environnement.
-  Pour cela il faut que
-  - le script accepte un parser optionnel fournit par l'utilisateur en
-    argument.
-  - Si jamais un parser a été fourni en argument alors ne pas faire le
-    parse_args.
-  - Retarder l'usage du parsing en laissant le soin à l'utilisateur de faire
-    l'appel.
-    NOTE:
-  1. on peut étendre arg_parse pour gérer simultanément le fichier
-     de config et les variables d'environment, cf
-     https://stackoverflow.com/questions/10551117/setting-options-from-environment-variables-when-using-argparse
-  2. d'autres librairies type https://pypi.org/project/ConfigArgParse/ ????????
-     (d'ailleurs pointée dans le stackoverflow précédent)
+- Tester les scripts sur minikube, afin de s'assurer que les scripts sont bien
+  cluster independants (mais ne depends que args et/ou hera.config) au travers
+  de environment
+
 - Regarder si il reste des créations des conteneurs dont le nom est
   décliné par des vintages/boroughs.
 

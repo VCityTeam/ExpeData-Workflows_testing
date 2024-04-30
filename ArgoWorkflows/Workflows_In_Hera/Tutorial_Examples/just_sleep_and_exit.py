@@ -1,14 +1,13 @@
 import sys, os
 
-sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-)
-from hera_utils import hera_assert_version
-from pagoda_environment_definition import environment
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from hera_utils import parse_arguments
+from environment import construct_environment
 
-hera_assert_version("5.6.0")
+args = parse_arguments()
+environment = construct_environment(args)
 
-####### Cluster independent
+####### The workflow starts here
 from hera.workflows import script
 
 
@@ -22,9 +21,7 @@ def sleep_while_db_boots():
 if __name__ == "__main__":
     from hera.workflows import Container, DAG, Task, Workflow
 
-    with Workflow(
-        generate_name="sleep-and-exit-", entrypoint="dag-entry"
-    ) as w:
+    with Workflow(generate_name="sleep-and-exit-", entrypoint="dag-entry") as w:
         whalesay_c = Container(
             name="whalesay",
             image="docker/whalesay:latest",

@@ -1,3 +1,6 @@
+# Test, at HERA level, whether the enverinoment is properly defined.
+# See also CityGMLto3DTiles_Example/test_experiment_setup.py that in addition
+# to checking the environment, also checks the experiment inputs.
 from hera.workflows import (
     ConfigMapEnvFrom,
     ExistingVolume,

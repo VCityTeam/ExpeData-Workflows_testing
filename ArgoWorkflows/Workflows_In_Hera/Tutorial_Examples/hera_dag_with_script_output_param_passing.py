@@ -31,7 +31,9 @@ def in_(a):
     print(a)
 
 
-with Workflow(generate_name="script-output-param-passing-", entrypoint="d") as w:
+with Workflow(
+    generate_name="hera-dag-with-script-output-param-passing-", entrypoint="d"
+) as w:
     with DAG(name="d"):
         t1: Task = out()
         t2 = in_(arguments=t1.get_parameter("a"))

@@ -68,7 +68,7 @@ w.create()
 
 
 with Workflow(
-    generate_name="workflow-template-with-output-",
+    generate_name="workflow-template-with-output-forwarding-",
     entrypoint="main",
 ) as w:
     with DAG(name="main"):

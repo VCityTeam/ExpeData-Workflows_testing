@@ -65,7 +65,7 @@ w.create()
 ### The following Workflow is a copy of
 ### https://github.com/argoproj-labs/hera/blob/5.1.3/examples/workflows/upstream/workflow_template__steps.py
 with Workflow(
-    generate_name="workflow-template-steps-",
+    generate_name="hera-workflow-template--steps-",
     entrypoint="hello-hello-hello",
 ) as w:
     with Steps(name="hello-hello-hello") as s:

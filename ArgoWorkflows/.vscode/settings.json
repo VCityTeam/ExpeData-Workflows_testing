@@ -1,7 +1,12 @@
 {
   "cSpell.words": [
     "argo",
+    "configmap",
+    "hera",
+    "kubeconfig",
+    "KUBECONFIG",
     "kubectl",
+    "lyon",
     "minikube",
     "tileset"
   ]

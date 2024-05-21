@@ -1,15 +1,3 @@
-import sys, os
-
-sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "PaGoDa_definition")
-)
-from hera_utils import hera_assert_version
-
-hera_assert_version("5.6.0")
-
-####
-
-import os
 from hera.workflows import (
     ConfigMapEnvFrom,
     Container,
@@ -27,14 +15,11 @@ def collect_container_constructor(environment, constants):
             Parameter(name="results_dir"),
         ],
         name="collect",
-        image=environment.cluster.docker_registry
-        + "vcity/collect_lyon_data:0.1",
+        image=environment.cluster.docker_registry + "vcity/collect_lyon_data:0.1",
         image_pull_policy=models.ImagePullPolicy.always,
         env_from=[
             # Assumes the corresponding config map is defined in the k8s cluster
-            ConfigMapEnvFrom(
-                name=environment.cluster.configmap, optional=False
-            ),
+            ConfigMapEnvFrom(name=environment.cluster.configmap, optional=False),
         ],
         command=[
             "python3",

@@ -1,18 +1,16 @@
-# Running the implemented Argo workflows on the PAGoDA cluster
+# Running the implemented Argo workflows on the PAGoDA cluster<!-- omit from toc -->
 
-<!-- TOC depthfrom:2 orderedlist:false depthto:4 -->
+## TOC<!-- omit from toc -->
 
 - [General note](#general-note)
 - [Cluster preparation](#cluster-preparation)
   - [Retrieve your cluster credentials at the Kubernetes "level"](#retrieve-your-cluster-credentials-at-the-kubernetes-level)
-  - [Retrieve your cluster credentials at the Argo server "level"](#retrieve-your-cluster-credentials-at-the-argo-server-level)
+  - [Retrieve your cluster credentials at the Argo (server) "level"](#retrieve-your-cluster-credentials-at-the-argo-server-level)
   - [Install docker on your desktop](#install-docker-on-your-desktop)
   - [Registering the container images](#registering-the-container-images)
   - [Define an argo server namespace](#define-an-argo-server-namespace)
   - [Volumes and context creation](#volumes-and-context-creation)
 - [Accessing results](#accessing-results)
-
-<!-- /TOC -->
 
 ## General note
 
@@ -48,6 +46,7 @@ Assert you have access to the pagoda (Kubernetes) cluster with the commands
 cd $(git rev-parse --show-cdup)/ArgoWorkflows/Run_on_PAGoDA
 export KUBECONFIG=`pwd`/pagoda_kubeconfig.yaml     # Make it an absolute path
 kubectl get nodes
+kubectl get pods
 ```
 
 ### Retrieve your cluster credentials at the Argo (server) "level"
@@ -90,7 +89,6 @@ source ./pagoda_argo.bash
 
 and [assert that the argo server is ready](../With_CLI_Generic/Readme.md#asserting-argo-server-is-ready)
 
-
 ### Install docker on your desktop
 
 Unlike on a [Minikube cluster](../On_Minikube_cluster/Readme.md#expose-built-in-docker-command)
@@ -102,13 +100,14 @@ complicates the Dockerfile writing).
 You will thus need to install [install docker on your desktop](../With_CLI_Generic/Readme.md#installing-docker-on-your-desktop).
 
 ### Registering the container images
-Unlike on Minikube, PaGoDa requires the additional stage of (tagging and) 
-pushing the container images to a docker registry that is accessible (not 
-behind some firewall). A possible solution is to use the docker registry 
+
+Unlike on Minikube, PaGoDa requires the additional stage of (tagging and)
+pushing the container images to a docker registry that is accessible (not
+behind some firewall). A possible solution is to use the docker registry
 offered by the PAGoDA platform itself.
 
 Once the [local images are build/pulled](../With_CLI_Generic/Readme.md#buildpull-the-required-containers))
-you first need to tag them with a tag of the form 
+you first need to tag them with a tag of the form
 `harbor.pagoda.os.univ-lyon1.fr/vcity/<MYIMAGENAME>:<MYVERSION>` prior to
 pushing them to the registry. The resulting tagging commands are
 
@@ -145,15 +144,14 @@ docker push harbor.pagoda.os.univ-lyon1.fr/vcity/iphttpcheck:0.1
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/refstudycentre:latest
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/3dcitydb-pg:13-3.1-4.1.0
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/impexp:4.3.0
-docker push harbor.pagoda.os.univ-lyon1.fr/vcity/postgres:15.2 
+docker push harbor.pagoda.os.univ-lyon1.fr/vcity/postgres:15.2
 ```
 
 Note: if you wish to list the pushed (available) images on the pagoda container
-registry (as you do with a local registry with the `docker images` command) you 
+registry (as you do with a local registry with the `docker images` command) you
 will alas need to use the UI and web-browse
-`https://harbor.pagoda.os.univ-lyon1.fr`. Indeed it 
+`https://harbor.pagoda.os.univ-lyon1.fr`. Indeed it
 [seems docker doesn't allow remote registry image consultation](https://stackoverflow.com/questions/28320134/how-can-i-list-all-tags-for-a-docker-image-on-a-remote-registry).
-
 
 ### Define an argo server namespace
 
@@ -193,7 +191,7 @@ allowing for the http retrieval of out-of-cluster data (e.g. with wget).
 
 One can
 
-- either browse the results (at shell level) from within an ad-hoc container 
+- either browse the results (at shell level) from within an ad-hoc container
   with (refer to [the header](define_zombie_pod_for_PV_navigation_with_bash.yaml)
   for further details)
 
@@ -206,8 +204,8 @@ One can
   k -n argo exec -it vcity-pvc-ubuntu-pod -- bash
   # And then `cd /vcity-data/` and navigate with bash...
   ```
-  
-Eventually (when the work session is over), free the allocated pod
+
+  Eventually (when the work session is over), free the allocated pod
 
   ```bash
   k -n argo delete -f define_zombie_pod_for_PV_navigation_with_bash.yaml
@@ -220,4 +218,11 @@ Eventually (when the work session is over), free the allocated pod
   k -n argo apply -f define_zombie_pod_for_PV_navigation_with_browser.yaml
   kubectl -n argo cp vcity-pvc-nginx-pod:/var/lib/www/html/junk/stage_1/2012/LYON_8EME_2012 junk
   k -n argo delete -f define_zombie_pod_for_PV_navigation_with_browser.yaml
+  ```
+
+  When the pod deletion fails (and appears with "Terminating" status in
+  `k get pods`) then forcing the deletion can be done with
+
+  ```bash
+  k delete pod vcity-pvc-ubuntu-pod --force
   ```

@@ -2,8 +2,6 @@
 
 ## Table of content<!-- omit from toc -->
 
-<!-- TOC -->
-
 - [Preparing the execution context](#preparing-the-execution-context)
   - [Retrieve your cluster credentials (at k8s level)](#retrieve-your-cluster-credentials-at-k8s-level)
     - [Persisting your Argo server configuration at shell level](#persisting-your-argo-server-configuration-at-shell-level)
@@ -12,8 +10,7 @@
 - [Run the workflows](#run-the-workflows)
 - [Accessing the workflow results](#accessing-the-workflow-results)
 - [Developers](#developers)
-
-<!-- /TOC -->
+  - [Concerning the levels of failure](#concerning-the-levels-of-failure)
 
 ## Preparing the execution context
 
@@ -39,12 +36,12 @@ you must also ask your cluster admin to provide you with three information
 3. the service account for accessing argo-workflows.
 
 The first two items can be
-[retrieved through the argo UI](#retrieve-your-cluster-credentials-at-the-argo-server-level).
+[retrieved through the argo UI](../On_PaGoDA_cluster/Readme.md#retrieve-your-cluster-credentials-at-the-argo-server-level).
 You are left with obtaining the name of service account, for accessing
 argo-workflows, from your cluster admin.
 
 Because each workflow that you'll launch will require the above information,
-the default mechanism used by Hera is the one proposed by ArgoWorflows that
+the default mechanism used by Hera is the one proposed by ArgoWorkflows that
 consists in retrieving this information out of conventional environment
 variables.
 In order to persist that configuration information, you can either (among
@@ -85,15 +82,15 @@ example). Then you "import" that file into your current active shell
 
 #### Persisting your Argo server configuration at the Python level
 
-If you decide to used Python to persist your argo server configuration, and
-because that configuration file will be parser by the
+If you decide to use Python to persist your argo server configuration, and
+because that configuration file will be parsed by the
 [ConfigParser](https://docs.python.org/3/library/configparser.html)
 Python library, you should use the
 [so called `Shlex`](https://docs.python.org/3/library/shlex.html#module-shlex)
 syntax.
 A default configuration template file
 [`hera.config.tmpl` is provided here](hera.config.tmpl). Customize that
-file to suit your local platform and place it in the
+file to suit your local cluster/platform and place it in the
 `Workflows_In_Hera/hera.config` file.
 
 ### Further installation steps
@@ -112,3 +109,44 @@ file to suit your local platform and place it in the
 ## [Accessing the workflow results](../On_PaGoDA_cluster/Readme.md#accessing-results)
 
 ## [Developers](../With_HERA_Generic/Readme.md#developers)
+
+### Concerning the levels of failure
+
+When a workflow submitted at Hera or AW level errors/fails/lags a key
+difficulty lies in understanding the level at which the difficulty stands.
+Indeed, the difficulty can be
+
+- at HERA/AW user level (problem is in between the Hera user and some k8s
+  ressource): for example a PVC was required but k8s cannot provide it, or
+  an erroneous (not findable in the docker registry) container name was
+  prescribed but the user (but AW waits for a container that does not exist),
+- at ArgoWorkflow server level (problem lies in between the AW server and some
+  k8s ressource of the server): the AW server cannot access the k8s name
+  service or a network service is order to create the pods and the sub-network
+  is needs to create (due e.g. to some erroneous access right). Or the AW
+  server waits for a specific node (with a specific amount of memory) that is
+  not available.
+- at k8s level (problem is at k8s level): k8s has a dangling or sporadic node.
+
+When a workflow (execution fails), the debugging information is scattered at
+AW or k8s level. And this debugging information (quite often) remains hidden
+to the HERA end user.
+Here a short list of possible causes of failure
+
+- some (workflow) pod remains blocked/idle with an `Init:0/1` status. The cause:
+  as shown by the `k describe pod <pod-name>` command, the following warning
+  states
+  ```
+  [...] Failed to create pod sandbox: rpc error [...] plugin type="calico"
+  failed [...] error getting ClusterInformation: Get
+  "https://10.43.0.1:443/apis/crd.projectcalico.org/v1/clusterinformations/default":
+  dial tcp 10.43.0.1:443: connect: connection refused
+  ```
+- a workflow submitted with success at HERA level doesn't appear in AW-UI. Yet
+  when looking for the "well known" (one has to know the workflow description)
+  pod name with ` k get pods | grep <well-known-pod-name>` one finds
+  ```bash
+  NAME                           READY   STATUS      RESTARTS   AGE
+  <well-known-pod-name>-11456    0/2     Error       0          41m
+  ```
+  that is the pod was launched but it errored (without AW logs reporting it).

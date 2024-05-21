@@ -1,21 +1,17 @@
 # Hera framework cluster neutral instructions<!-- omit from toc -->
 
-**TOC**
-
-<!-- TOC -->
+## TOC<!-- omit from toc -->
 
 - [Introduction](#introduction)
 - [References](#references)
 - [Install Hera and its dependencies](#install-hera-and-its-dependencies)
 - [Running workflows](#running-workflows)
-  - [Running the "Hello Hera on PaGoDa" workflow](#running-the-hello-hera-on-pagoda-workflow)
+  - [Testing the installation with the "Hera test environment" workflow](#testing-the-installation-with-the-hera-test-environment-workflow)
   - [Running the hera-workflow examples](#running-the-hera-workflow-examples)
   - [Running the CityGMLto3DTiles example](#running-the-citygmlto3dtiles-example)
 - [Developers](#developers)
   - [Running the failing or issues](#running-the-failing-or-issues)
   - [IDE notes](#ide-notes)
-
-<!-- /TOC -->
 
 ## Introduction
 
@@ -40,34 +36,23 @@ pip3 install -r requirements.txt  # Installs hera-workflows among others
 
 ## Running workflows
 
-### Running the "Hello Hera on PaGoDa" workflow
+### Testing the installation with the "Hera test environment" workflow
 
-First assert that the k8s cluster is available, accessible (access rights) and
-that the Argo-workflows server is ready for workflow submission
+In order to assert that the k8s cluster is available, accessible (access rights)
+and that the Argo-workflows server is accepting workflow submission and
+running them, try running the `hera_test_environment.py` workflow
 
 ```bash
 cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera
 export $(grep -v '^#' hera.bash | xargs)   # Refer above for hera.bash creation
-python PaGoDa_definition/pagoda_environment_definition.py
+python hera_test_environment.py
 ```
 
-When this fails try running things step by step for troubleshooting
+and assert that the workflow submission ran smoothly and the by checking its
+execution through the argo UI.
 
-```bash
-cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera
-python PaGoDa_definition/parse_arguments.py
-python PaGoDa_definition/k8s_cluster_utils.py
-python PaGoDa_definition/argo_server_utils.py
-python PaGoDa_definition/pagoda_environment_definition.py
-```
-
-Eventually run the testing workflow
-
-```bash
-python PaGoDa_definition/test_pagoda_setup.py
-```
-
-and assert the workflow ran smoothly with argo UI.
+When this fails use error messages in order to troubleshoot the access
+configuration of the Argo-workflows server.
 
 ### Running the hera-workflow examples
 
@@ -91,21 +76,23 @@ docker login harbor.pagoda.os.univ-lyon1.fr/vcity --username <my-username>
 docker push harbor.pagoda.os.univ-lyon1.fr/vcity/argosay:v2
 ```
 
-You can now proceed with submitting the hera-workflows examples with:
+You can now proceed with submitting the hera-workflows examples with (make sure
+you python interpreter is the one of the ad-hoc virtual environment):
 
 ```bash
-(venv) cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera
-(venv) python Tutorial_Examples/hello_world_pagoda.py
-(venv) python Tutorial_Examples/hello_world_container_script_pagoda.py
-(venv) python Tutorial_Examples/hera_workflow_template__steps.py
-(venv) python Tutorial_Examples/hera_coin_flip.py
-(venv) python Tutorial_Examples/hera_dag_with_param_passing_pagoda.py
-(venv) python Tutorial_Examples/hera_dag_with_script_output_param_passing_pagoda.py
-(venv) python Tutorial_Examples/just_sleep_and_exit_pagoda.py
-(venv) python Tutorial_Examples/retrieving_pod_ip_pagoda.py
-(venv) python Tutorial_Examples/steps_with_callable_container.py
-(venv) python Tutorial_Examples/workflow_template_with_output_forwarding.py
-(venv) ...
+cd $(git rev-parse --show-cdup)/ArgoWorkflows/Workflows_In_Hera
+python Tutorial_Examples/hello_world_container.py
+python Tutorial_Examples/hera_coin_flip.py
+python Tutorial_Examples/hera_dag_container_with_item.py
+python Tutorial_Examples/hera_dag_with_param_passing.py
+python Tutorial_Examples/hera_dag_with_script_output_param_passing.py
+python Tutorial_Examples/hera_steps_with_callable_container.py
+python Tutorial_Examples/hera_workflow_template__steps.py
+python Tutorial_Examples/just_sleep_and_exit.py
+python Tutorial_Examples/retrieving_pod_ip.py
+python Tutorial_Examples/script_mixed_with_container.py
+python Tutorial_Examples/workflow_template_with_output_forwarding.py
+python Tutorial_Examples/write_output.py
 ```
 
 ### Running the CityGMLto3DTiles example
@@ -131,9 +118,10 @@ k -n argo exec -it vcity-pvc-ubuntu-pod -- rm -r /vcity-data/junk/
 ```
 
 ```bash
-(venv) python CityGMLto3DTiles_Example/test_collect.py
-(venv) python CityGMLto3DTiles_Example/test_split_buildings.py
-(venv) python CityGMLto3DTiles_Example/test_strip_gml.py
+python CityGMLto3DTiles_Example/test_collect.py
+THE REST IS STILL FAILING
+python CityGMLto3DTiles_Example/test_split_buildings.py
+python CityGMLto3DTiles_Example/test_strip_gml.py
 ```
 
 The next workflow,

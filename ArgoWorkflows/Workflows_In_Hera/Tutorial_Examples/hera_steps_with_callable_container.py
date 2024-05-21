@@ -13,7 +13,7 @@ environment = construct_environment(args)
 from hera.workflows import Container, Steps, Parameter, Workflow
 
 with Workflow(
-    generate_name="containers-sequence-with-steps-",
+    generate_name="hera-steps-with-collable-container-",
     entrypoint="sequence-entry",
 ) as w:
     whalesay = Container(  # Container must be callable

@@ -12,7 +12,7 @@ environment = construct_environment(args)
 ### https://github.com/argoproj-labs/hera/blob/5.1.3/examples/workflows/dag_with_param_passing.py
 from hera.workflows import DAG, Container, Parameter, Task, Workflow
 
-with Workflow(generate_name="param-passing-", entrypoint="d") as w:
+with Workflow(generate_name="hera-dag-with-param-passing-", entrypoint="d") as w:
     out = Container(
         name="out",
         image="docker/whalesay",

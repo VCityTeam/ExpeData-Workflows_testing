@@ -17,7 +17,7 @@ def hello(message):
     print(message)
 
 
-with Workflow(generate_name="mixed-scripts-and-container-", entrypoint="entry") as w:
+with Workflow(generate_name="script-mixed-with-container-", entrypoint="entry") as w:
     # Callable container
     whalesay = Container(
         name="whalesay",

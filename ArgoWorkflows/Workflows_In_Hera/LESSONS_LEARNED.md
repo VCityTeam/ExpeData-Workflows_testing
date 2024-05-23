@@ -2,11 +2,10 @@
 
 ## Table of content<!-- omit from toc -->
 
-<!-- TOC -->
-
-- [ArgoWorkflows lessons learned (also valid for HERA)](#argoworkflows-lessons-learned-also-valid-for-hera)
-  - [Pre and post conditions](#pre-and-post-conditions)
+- [ArgoWorkflows lessons learned (that are also valid at HERA level)](#argoworkflows-lessons-learned-that-are-also-valid-at-hera-level)
+  - [Concerning pre and post conditions](#concerning-pre-and-post-conditions)
   - [Parameters vs environment variables](#parameters-vs-environment-variables)
+  - [Concerning dynamic loops input retrieval](#concerning-dynamic-loops-input-retrieval)
 - [HERA (specific) lessons](#hera-specific-lessons)
   - [Concerning the flowing of parameters](#concerning-the-flowing-of-parameters)
     - [Flowing constants](#flowing-constants)
@@ -23,18 +22,18 @@
   - [Disclose reproducibility information encapsulated by container](#disclose-reproducibility-information-encapsulated-by-container)
   - [Concerning the difficulty of asserting database availability](#concerning-the-difficulty-of-asserting-database-availability)
 
-<!-- /TOC -->
+## ArgoWorkflows lessons learned (that are also valid at HERA level)
 
-## ArgoWorkflows lessons learned (also valid for HERA)
-
-### Pre and post conditions
+### Concerning pre and post conditions
 
 Ideally, every task should have an
 [explicit postcondition](https://en.wikipedia.org/wiki/Postcondition)
 enabling a success/failure test at run time. Because it is not always possible
-to modify the core of task to include the postcondition, a recommandable good
-practice is to have a separate postcondition task that possibly exploits the
-content of `results.json` output file.
+to modify the core of a task in order to include the postcondition, a
+recommandable good practice consists in expressing the postcondition as
+a separate task that possibly exploits the content of `results.json` output
+file.
+The same argument is valid for pre-conditions.
 
 ### Parameters vs environment variables
 
@@ -49,6 +48,21 @@ In the testing examples a typical setup goes:
     from input_2012_tiny_import_dump import parameters
     from experiment_layout import layout
 ```
+
+### Concerning dynamic loops input retrieval
+
+Let us consider a workflow where the parameter range of loop is only known
+at AW run-time (for example the range depends on a previous task output whose
+output itself depends on some conditional).
+Additionally, let us assume that this dynamic loop parameter is e.g. the result
+of previous python (script) task.
+Then in order for the loop
+Then this "dynamic" for-loop must be retrieve its expressed in the AW logic through HERA
+in order for the AW runtime to properly evaluate the range boundaries and for
+the AW engine to build the required number of container (and their respective
+parameters values).
+
+TO BE FINISHED FIXME FIXME FIXME
 
 ## HERA (specific) lessons
 
@@ -252,8 +266,8 @@ expressing loops and instead express such loops in Python.
 
 #### "Dynamic" for-loops in HERA require AW logic expression
 
-Let us consider a workflow where the where the parameter range is only known
-at AW run-time: for example the range depends on a previous task output whose
+Let us consider a workflow where the parameter range is only known at AW
+run-time: for example the range depends on a previous task output whose
 output itself depends on some conditional.
 Then this "dynamic" for-loop must be expressed in the AW logic through HERA
 in order for the AW runtime to properly evaluate the range boundaries and for
